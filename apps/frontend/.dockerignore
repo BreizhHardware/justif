@@ -1,9 +1,0 @@
-**/node_modules
-**/.vinext
-**/.vite
-**/dist
-**/.next
-**/out
-.env
-.env.local
-.git

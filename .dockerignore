@@ -1,0 +1,16 @@
+**/node_modules
+**/dist
+**/.vinext
+**/.vite
+**/.next
+**/out
+**/db
+**/uploads
+**/*.db
+**/*.db-journal
+**/*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.git
+data

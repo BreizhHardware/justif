@@ -21,6 +21,11 @@ Licence : [MIT](./LICENSE)
 
 ### 1. Déploiement Docker (production)
 
+Une seule image regroupe le backend, le frontend et un petit proxy interne
+qui route `/api` et `/uploads` vers le backend et le reste vers le frontend :
+un seul port à exposer, une seule image à pull, et plus de souci CORS/cookies
+puisque tout est servi depuis la même origine.
+
 ```bash
 cp .env.example .env
 # Éditez .env : JWT_SECRET, clé Mistral éventuelle, devise par défaut...
@@ -28,9 +33,11 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-- Frontend : http://localhost:3000
-- Backend (API) : http://localhost:3001
+- Application : http://localhost:3000
 - Les données persistent dans `./data/db` (SQLite) et `./data/uploads` (justificatifs)
+
+Image publiée sur GHCR : `ghcr.io/<owner>/justif:latest` (ou `:<version>`,
+ou `:<branche>` pour les versions de dev).
 
 Au premier lancement, l'application redirige automatiquement vers un assistant
 de création de compte (`/setup`).
@@ -104,6 +111,11 @@ Next.js standard est directe :
 
 ### 1. Docker deployment (production)
 
+A single image bundles the backend, the frontend, and a small internal proxy
+that routes `/api` and `/uploads` to the backend and everything else to the
+frontend: one port to expose, one image to pull, and no more CORS/cookie
+headaches since everything is served from the same origin.
+
 ```bash
 cp .env.example .env
 # Edit .env: JWT_SECRET, optional Mistral key, default currency...
@@ -111,9 +123,11 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-- Frontend: http://localhost:3000
-- Backend (API): http://localhost:3001
+- Application: http://localhost:3000
 - Data persists in `./data/db` (SQLite) and `./data/uploads` (receipts)
+
+Published image on GHCR: `ghcr.io/<owner>/justif:latest` (or `:<version>`,
+or `:<branch-name>` for dev builds).
 
 On first launch, the app automatically redirects to an account-creation
 wizard (`/setup`).

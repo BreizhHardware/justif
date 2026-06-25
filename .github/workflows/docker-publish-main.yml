@@ -2,7 +2,7 @@ name: Docker Publish (main)
 
 # Sur chaque push sur main : incrémente automatiquement le patch de version
 # du package.json racine, commit ce bump ([skip ci] pour éviter une boucle),
-# puis build & push les images backend/frontend taguées `latest` + `<version>`.
+# puis build & push l'image unifiée (backend + frontend) taguée `latest` + `<version>`.
 
 on:
   push:
@@ -78,9 +78,6 @@ jobs:
   publish:
     needs: bump-version
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        app: [backend, frontend]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -90,7 +87,7 @@ jobs:
         id: image
         run: |
           OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          echo "name=${{ env.REGISTRY }}/${OWNER_LOWER}/justif-${{ matrix.app }}" >> "$GITHUB_OUTPUT"
+          echo "name=${{ env.REGISTRY }}/${OWNER_LOWER}/justif" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-buildx-action@v3
 
@@ -102,10 +99,10 @@ jobs:
 
       - uses: docker/build-push-action@v6
         with:
-          context: ./apps/${{ matrix.app }}
+          context: .
           push: true
           tags: |
             ${{ steps.image.outputs.name }}:latest
             ${{ steps.image.outputs.name }}:${{ needs.bump-version.outputs.version }}
-          cache-from: type=gha,scope=${{ matrix.app }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.app }}
+          cache-from: type=gha,scope=app
+          cache-to: type=gha,mode=max,scope=app

@@ -1,20 +1,10 @@
 services:
-  backend:
-    build: ./apps/backend
-    ports:
-      - "3001:3001"
-    volumes:
-      - ./data/uploads:/app/uploads
-      - ./data/db:/app/db
-    env_file: .env
-    restart: unless-stopped
-
-  frontend:
-    build: ./apps/frontend
+  app:
+    build: .
     ports:
       - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://backend:3001
-    depends_on:
-      - backend
+    volumes:
+      - ./data/uploads:/app/backend/uploads
+      - ./data/db:/app/backend/db
+    env_file: .env
     restart: unless-stopped
