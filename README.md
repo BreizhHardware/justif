@@ -37,7 +37,7 @@ de création de compte (`/setup`).
 
 ### 2. Démarrage en dev local
 
-Prérequis : Node.js ≥ 20, [pnpm](https://pnpm.io/) ≥ 9.
+Prérequis : Node.js ≥ 22 (requis par vinext), [pnpm](https://pnpm.io/) ≥ 9.
 
 ```bash
 pnpm install
@@ -120,7 +120,7 @@ wizard (`/setup`).
 
 ### 2. Local dev setup
 
-Requirements: Node.js ≥ 20, [pnpm](https://pnpm.io/) ≥ 9.
+Requirements: Node.js ≥ 22 (required by vinext), [pnpm](https://pnpm.io/) ≥ 9.
 
 ```bash
 pnpm install
