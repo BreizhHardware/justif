@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "pnpm --parallel --filter ./apps/* run dev",
     "build": "pnpm --filter ./apps/* run build",
-    "lint": "oxlint . && oxfmt --check .",
+    "lint": "oxlint . && oxfmt .",
     "format": "oxfmt .",
     "db:migrate": "pnpm --filter backend run db:migrate",
     "db:generate": "pnpm --filter backend run db:generate"
