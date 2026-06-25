@@ -20,9 +20,9 @@ router.post("/setup", async (req, res) => {
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  const user = await prisma.user.create({ data: { email, passwordHash } });
+  const user = await prisma.user.create({ data: { email, passwordHash, role: "admin" } });
 
-  const token = signToken(user.id, user.email);
+  const token = signToken(user.id);
   res.cookie("token", token, COOKIE_OPTS);
   res.json({ token });
 });
@@ -39,8 +39,12 @@ router.post("/login", async (req, res) => {
     res.status(401).json({ error: "Identifiants invalides" });
     return;
   }
+  if (!user.active) {
+    res.status(403).json({ error: "Ce compte a été désactivé" });
+    return;
+  }
 
-  const token = signToken(user.id, user.email);
+  const token = signToken(user.id);
   res.cookie("token", token, COOKIE_OPTS);
   res.json({ token });
 });
@@ -51,7 +55,7 @@ router.post("/logout", (_req, res) => {
 });
 
 router.get("/me", requireAuth, (req, res) => {
-  res.json({ email: req.user!.email });
+  res.json({ email: req.user!.email, role: req.user!.role });
 });
 
 router.get("/status", async (_req, res) => {

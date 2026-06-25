@@ -26,12 +26,45 @@ model Expense {
   fichier          String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+
+  userId    String
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reportedIn ExpenseReportItem[]
 }
 
 model User {
-  id           String @id @default(cuid())
-  email        String @unique
+  id           String   @id @default(cuid())
+  email        String   @unique
   passwordHash String
+  role         String   @default("user") // "admin" | "user"
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  expenses Expense[]
+  reports  ExpenseReport[]
+}
+
+model ExpenseReport {
+  id         String   @id @default(cuid())
+  name       String
+  periodFrom String?
+  periodTo   String?
+  createdAt  DateTime @default(now())
+
+  userId String
+  user   User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items  ExpenseReportItem[]
+}
+
+model ExpenseReportItem {
+  id String @id @default(cuid())
+
+  reportId String
+  report   ExpenseReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  expenseId String
+  expense   Expense      @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+
+  @@unique([reportId, expenseId])
 }
 
 model Setting {

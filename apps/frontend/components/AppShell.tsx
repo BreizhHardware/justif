@@ -3,14 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutGrid, LogOut, Menu, Receipt, Settings, UploadCloud, X } from "lucide-react";
+import { LayoutGrid, LogOut, Menu, Receipt, Settings, UploadCloud, Users, X } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { t } from "@/lib/i18n";
 
 const links = [
-  { href: "/expenses", icon: Receipt, key: "expenses" as const },
-  { href: "/upload", icon: UploadCloud, key: "upload" as const },
-  { href: "/settings", icon: Settings, key: "settings" as const },
+  { href: "/expenses", icon: Receipt, key: "expenses" as const, adminOnly: false },
+  { href: "/upload", icon: UploadCloud, key: "upload" as const, adminOnly: false },
+  { href: "/users", icon: Users, key: "users" as const, adminOnly: true },
+  { href: "/settings", icon: Settings, key: "settings" as const, adminOnly: true },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -18,11 +19,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const i18n = t();
   const [email, setEmail] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    apiFetch<{ email: string }>("/api/auth/me")
-      .then((me) => setEmail(me.email))
+    apiFetch<{ email: string; role: string }>("/api/auth/me")
+      .then((me) => {
+        setEmail(me.email);
+        setRole(me.role);
+      })
       .catch(() => {});
   }, []);
 
@@ -30,6 +35,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     await apiFetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
   }
+
+  const visibleLinks = links.filter((link) => !link.adminOnly || role === "admin");
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
@@ -41,7 +48,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <nav className="flex-1 space-y-1 px-3">
-        {links.map(({ href, icon: Icon, key }) => {
+        {visibleLinks.map(({ href, icon: Icon, key }) => {
           const active = pathname?.startsWith(href);
           return (
             <Link

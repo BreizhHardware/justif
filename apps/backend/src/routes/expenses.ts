@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Request, type Response } from "express";
 import multer from "multer";
 import sharp from "sharp";
 import path from "node:path";
@@ -65,7 +65,62 @@ function parseExpenseBody(body: Record<string, string>) {
   };
 }
 
+// Détermine de quel utilisateur on consulte les dépenses : soi-même, ou,
+// pour un admin, un autre utilisateur via ?userId= (vue globale par onglet).
+async function resolveTargetUserId(req: Request, res: Response): Promise<string | null> {
+  const requestedUserId = req.query.userId as string | undefined;
+  if (!requestedUserId || requestedUserId === req.user!.id) {
+    return req.user!.id;
+  }
+  if (req.user!.role !== "admin") {
+    res.status(403).json({ error: "Accès non autorisé aux dépenses d'un autre utilisateur" });
+    return null;
+  }
+  const target = await prisma.user.findUnique({ where: { id: requestedUserId } });
+  if (!target) {
+    res.status(404).json({ error: "Utilisateur introuvable" });
+    return null;
+  }
+  return target.id;
+}
+
+function canEdit(req: Request, expenseUserId: string): boolean {
+  return expenseUserId === req.user!.id || req.user!.role === "admin";
+}
+
+function buildWhere(query: Record<string, string | undefined>, userId: string) {
+  const { from, to, categorie, devise, q } = query;
+  const where: Record<string, unknown> = { userId };
+  if (from || to) {
+    where.date = {
+      ...(from ? { gte: new Date(from) } : {}),
+      ...(to ? { lte: new Date(to) } : {}),
+    };
+  }
+  if (categorie) where.categorie = categorie;
+  if (devise) where.devise = devise;
+  if (q) {
+    where.OR = [{ fournisseur: { contains: q } }, { description: { contains: q } }];
+  }
+  return where;
+}
+
+function formatFr(isoDate: string): string {
+  const [y, m, d] = isoDate.slice(0, 10).split("-");
+  return `${d}/${m}/${y}`;
+}
+
+function reportName(from?: string, to?: string): string {
+  if (from && to) return `Note de frais ${formatFr(from)} – ${formatFr(to)}`;
+  if (from) return `Note de frais depuis le ${formatFr(from)}`;
+  if (to) return `Note de frais jusqu'au ${formatFr(to)}`;
+  return `Note de frais ${formatFr(new Date().toISOString())}`;
+}
+
 router.get("/", async (req, res) => {
+  const targetUserId = await resolveTargetUserId(req, res);
+  if (!targetUserId) return;
+
   const {
     page = "1",
     limit = "20",
@@ -78,18 +133,7 @@ router.get("/", async (req, res) => {
     order = "desc",
   } = req.query as Record<string, string>;
 
-  const where: Record<string, unknown> = {};
-  if (from || to) {
-    where.date = {
-      ...(from ? { gte: new Date(from) } : {}),
-      ...(to ? { lte: new Date(to) } : {}),
-    };
-  }
-  if (categorie) where.categorie = categorie;
-  if (devise) where.devise = devise;
-  if (q) {
-    where.OR = [{ fournisseur: { contains: q } }, { description: { contains: q } }];
-  }
+  const where = buildWhere({ from, to, categorie, devise, q }, targetUserId);
 
   const pageNum = Math.max(1, Number(page));
   const limitNum = Math.max(1, Number(limit));
@@ -155,6 +199,7 @@ router.post("/", upload.single("fichier"), async (req, res) => {
         pays: parsed.pays,
         langue_detectee: parsed.langue_detectee,
         fichier,
+        userId: req.user!.id,
         ...conversion,
       },
     });
@@ -171,6 +216,10 @@ router.patch("/:id", async (req, res) => {
     const existing = await prisma.expense.findUnique({ where: { id: req.params.id } });
     if (!existing) {
       res.status(404).json({ error: "Dépense introuvable" });
+      return;
+    }
+    if (!canEdit(req, existing.userId)) {
+      res.status(403).json({ error: "Accès non autorisé" });
       return;
     }
 
@@ -224,6 +273,10 @@ router.post("/:id/recalculate", async (req, res) => {
     res.status(404).json({ error: "Dépense introuvable" });
     return;
   }
+  if (!canEdit(req, existing.userId)) {
+    res.status(403).json({ error: "Accès non autorisé" });
+    return;
+  }
   const defaultCurrency = await getDefaultCurrency();
   const conversion = await convertExpenseAmounts({
     devise: existing.devise,
@@ -242,33 +295,92 @@ router.delete("/:id", async (req, res) => {
     res.status(404).json({ error: "Dépense introuvable" });
     return;
   }
+  if (!canEdit(req, existing.userId)) {
+    res.status(403).json({ error: "Accès non autorisé" });
+    return;
+  }
   // Le fichier justificatif original n'est jamais supprimé du disque, même si la dépense l'est
   await prisma.expense.delete({ where: { id: req.params.id } });
   res.status(204).end();
 });
 
-router.get("/export", async (req, res) => {
+// Avant de (re)générer un export, indique quelles dépenses du filtre actuel ont déjà
+// été incluses dans une note de frais précédente, pour proposer de les ré-inclure ou non.
+router.get("/export-overlap", async (req, res) => {
+  const targetUserId = await resolveTargetUserId(req, res);
+  if (!targetUserId) return;
+
   const { from, to, categorie, devise, q } = req.query as Record<string, string>;
+  const where = buildWhere({ from, to, categorie, devise, q }, targetUserId);
 
-  const where: Record<string, unknown> = {};
-  if (from || to) {
-    where.date = {
-      ...(from ? { gte: new Date(from) } : {}),
-      ...(to ? { lte: new Date(to) } : {}),
-    };
-  }
-  if (categorie) where.categorie = categorie;
-  if (devise) where.devise = devise;
-  if (q) {
-    where.OR = [{ fournisseur: { contains: q } }, { description: { contains: q } }];
+  const expenses = await prisma.expense.findMany({
+    where,
+    select: {
+      id: true,
+      reportedIn: { select: { report: { select: { id: true, name: true, createdAt: true } } } },
+    },
+  });
+
+  const reportMap = new Map<string, { id: string; name: string; createdAt: Date; count: number }>();
+  let freshCount = 0;
+  for (const expense of expenses) {
+    if (expense.reportedIn.length === 0) {
+      freshCount += 1;
+      continue;
+    }
+    for (const item of expense.reportedIn) {
+      const entry = reportMap.get(item.report.id) ?? { ...item.report, count: 0 };
+      entry.count += 1;
+      reportMap.set(item.report.id, entry);
+    }
   }
 
-  const expenses = await prisma.expense.findMany({ where, orderBy: { date: "asc" } });
+  res.json({
+    total: expenses.length,
+    freshCount,
+    previousReports: Array.from(reportMap.values()).sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+    ),
+  });
+});
+
+router.get("/export", async (req, res) => {
+  const targetUserId = await resolveTargetUserId(req, res);
+  if (!targetUserId) return;
+
+  const { from, to, categorie, devise, q, includeReportIds } = req.query as Record<string, string>;
+  const where = buildWhere({ from, to, categorie, devise, q }, targetUserId);
+  const includeSet = new Set((includeReportIds ?? "").split(",").filter(Boolean));
+
+  const matching = await prisma.expense.findMany({
+    where,
+    orderBy: { date: "asc" },
+    include: { reportedIn: true },
+  });
+
+  const finalExpenses = matching.filter(
+    (expense) =>
+      expense.reportedIn.length === 0 ||
+      expense.reportedIn.some((item) => includeSet.has(item.reportId)),
+  );
+
   const defaultCurrency = await getDefaultCurrency();
-  const converted = await ensureConvertedAmounts(expenses, defaultCurrency);
+  const converted = await ensureConvertedAmounts(finalExpenses, defaultCurrency);
 
   const workbook = await buildExpensesWorkbook(converted, defaultCurrency);
   const filename = exportFileName(from);
+
+  if (finalExpenses.length > 0) {
+    await prisma.expenseReport.create({
+      data: {
+        name: reportName(from, to),
+        periodFrom: from ?? null,
+        periodTo: to ?? null,
+        userId: targetUserId,
+        items: { create: finalExpenses.map((expense) => ({ expenseId: expense.id })) },
+      },
+    });
+  }
 
   res.setHeader(
     "Content-Type",

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
+import { requireAdmin } from "../middleware/auth.js";
 import { analyzeReceipt, testOcrConnection } from "../services/ocrService.js";
 
 const router = Router();
@@ -30,7 +31,7 @@ router.post("/analyze", upload.single("fichier"), async (req, res) => {
   }
 });
 
-router.post("/test", async (_req, res) => {
+router.post("/test", requireAdmin, async (_req, res) => {
   const result = await testOcrConnection();
   res.status(result.success ? 200 : 502).json(result);
 });

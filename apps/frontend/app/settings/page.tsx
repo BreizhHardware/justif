@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { CheckCircle2, Cloud, HardDrive, XCircle } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { apiFetch } from "@/lib/api";
@@ -19,6 +20,7 @@ interface Settings {
 
 export default function SettingsPage() {
   const i18n = t();
+  const router = useRouter();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [mistralApiKey, setMistralApiKey] = useState("");
   const [saved, setSaved] = useState(false);
@@ -26,8 +28,10 @@ export default function SettingsPage() {
   const [testing, setTesting] = useState(false);
 
   useEffect(() => {
-    apiFetch<Settings>("/api/settings").then(setSettings);
-  }, []);
+    apiFetch<Settings>("/api/settings")
+      .then(setSettings)
+      .catch(() => router.replace("/expenses"));
+  }, [router]);
 
   if (!settings) return null;
 

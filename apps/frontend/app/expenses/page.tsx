@@ -41,6 +41,20 @@ interface ExpensesResponse {
   pages: number;
 }
 
+interface UserSummary {
+  id: string;
+  email: string;
+  role: "admin" | "user";
+  active: boolean;
+}
+
+interface OverlapReport {
+  id: string;
+  name: string;
+  createdAt: string;
+  count: number;
+}
+
 const LIMIT = 20;
 
 export default function ExpensesPage() {
@@ -55,6 +69,36 @@ export default function ExpensesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Partial<Expense>>({});
 
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [users, setUsers] = useState<UserSummary[]>([]);
+  const [viewingUserId, setViewingUserId] = useState<string | null>(null);
+
+  const [exportDialog, setExportDialog] = useState<{
+    freshCount: number;
+    reports: OverlapReport[];
+    selected: Set<string>;
+  } | null>(null);
+
+  useEffect(() => {
+    apiFetch<{ email: string; role: string }>("/api/auth/me").then((me) => {
+      setIsAdmin(me.role === "admin");
+      if (me.role === "admin") {
+        apiFetch<UserSummary[]>("/api/users").then((list) => {
+          setUsers(list);
+          const self = list.find((u) => u.email === me.email);
+          if (self) {
+            setCurrentUserId(self.id);
+            setViewingUserId(self.id);
+          }
+        });
+      }
+    });
+  }, []);
+
+  const userScopeParam: Record<string, string> =
+    isAdmin && viewingUserId && viewingUserId !== currentUserId ? { userId: viewingUserId } : {};
+
   const loadExpenses = useCallback(async () => {
     const params = new URLSearchParams({
       page: String(page),
@@ -66,10 +110,12 @@ export default function ExpensesPage() {
       ...(filters.categorie ? { categorie: filters.categorie } : {}),
       ...(filters.devise ? { devise: filters.devise } : {}),
       ...(filters.q ? { q: filters.q } : {}),
+      ...userScopeParam,
     });
     const result = await apiFetch<ExpensesResponse>(`/api/expenses?${params}`);
     setResponse(result);
-  }, [page, sort, order, filters]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, sort, order, filters, viewingUserId]);
 
   useEffect(() => {
     loadExpenses();
@@ -110,15 +156,48 @@ export default function ExpensesPage() {
     loadExpenses();
   }
 
-  function handleExport() {
-    const params = new URLSearchParams({
+  function filterParams() {
+    return {
       ...(filters.from ? { from: filters.from } : {}),
       ...(filters.to ? { to: filters.to } : {}),
       ...(filters.categorie ? { categorie: filters.categorie } : {}),
       ...(filters.devise ? { devise: filters.devise } : {}),
       ...(filters.q ? { q: filters.q } : {}),
-    });
+      ...userScopeParam,
+    };
+  }
+
+  function runExport(includeReportIds: string[] = []) {
+    const params = new URLSearchParams(filterParams());
+    if (includeReportIds.length > 0) params.set("includeReportIds", includeReportIds.join(","));
     window.location.href = apiUrl(`/api/expenses/export?${params}`);
+    setExportDialog(null);
+  }
+
+  async function handleExportClick() {
+    const params = new URLSearchParams(filterParams());
+    const overlap = await apiFetch<{
+      total: number;
+      freshCount: number;
+      previousReports: OverlapReport[];
+    }>(`/api/expenses/export-overlap?${params}`);
+    if (overlap.previousReports.length === 0) {
+      runExport();
+      return;
+    }
+    setExportDialog({
+      freshCount: overlap.freshCount,
+      reports: overlap.previousReports,
+      selected: new Set(),
+    });
+  }
+
+  function toggleReportSelection(reportId: string) {
+    if (!exportDialog) return;
+    const selected = new Set(exportDialog.selected);
+    if (selected.has(reportId)) selected.delete(reportId);
+    else selected.add(reportId);
+    setExportDialog({ ...exportDialog, selected });
   }
 
   const columns: { key: string; label: string }[] = [
@@ -135,11 +214,32 @@ export default function ExpensesPage() {
   return (
     <AppShell>
       <PageHeader title={i18n.expenses.title}>
-        <Button onClick={handleExport}>
+        <Button onClick={handleExportClick}>
           <Download size={16} />
           {i18n.expenses.export}
         </Button>
       </PageHeader>
+
+      {isAdmin && users.length > 1 && (
+        <div className="mb-4 flex flex-wrap gap-2">
+          {users.map((user) => (
+            <button
+              key={user.id}
+              onClick={() => {
+                setViewingUserId(user.id);
+                setPage(1);
+              }}
+              className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
+                viewingUserId === user.id
+                  ? "bg-brand-500 text-white"
+                  : "bg-white text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              {user.id === currentUserId ? i18n.expenses.myExpenses : user.email}
+            </button>
+          ))}
+        </div>
+      )}
 
       <Card className="mb-5 grid grid-cols-2 gap-3 p-4 sm:grid-cols-5">
         <div>
@@ -460,6 +560,53 @@ export default function ExpensesPage() {
             alt="Justificatif"
             className="max-h-[90vh] max-w-[90vw] rounded-xl shadow-2xl"
           />
+        </div>
+      )}
+
+      {exportDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <Card className="w-full max-w-md p-6">
+            <h2 className="mb-2 text-base font-semibold text-slate-900">
+              {i18n.expenses.exportDialog.title}
+            </h2>
+            <p className="mb-4 text-sm text-slate-600">{i18n.expenses.exportDialog.description}</p>
+
+            {exportDialog.freshCount > 0 && (
+              <p className="mb-3 text-sm text-brand-600">
+                {exportDialog.freshCount} {i18n.expenses.exportDialog.freshLabel}
+              </p>
+            )}
+
+            <div className="mb-5 max-h-60 space-y-2 overflow-y-auto">
+              {exportDialog.reports.map((report) => (
+                <label
+                  key={report.id}
+                  className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50"
+                >
+                  <input
+                    type="checkbox"
+                    checked={exportDialog.selected.has(report.id)}
+                    onChange={() => toggleReportSelection(report.id)}
+                    className="rounded border-slate-300 text-brand-500 focus:ring-brand-200"
+                  />
+                  <span className="flex-1">{report.name}</span>
+                  <span className="text-xs text-slate-400">
+                    {report.count} · {new Date(report.createdAt).toLocaleDateString("fr-FR")}
+                  </span>
+                </label>
+              ))}
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button variant="secondary" onClick={() => setExportDialog(null)}>
+                {i18n.expenses.exportDialog.cancel}
+              </Button>
+              <Button onClick={() => runExport(Array.from(exportDialog.selected))}>
+                <Download size={16} />
+                {i18n.expenses.exportDialog.confirm}
+              </Button>
+            </div>
+          </Card>
         </div>
       )}
     </AppShell>
