@@ -6,6 +6,7 @@ export const messages = {
   fr: {
     appName: "Justif",
     nav: {
+      dashboard: "Tableau de bord",
       expenses: "Dépenses",
       upload: "Importer",
       settings: "Paramètres",

@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutGrid, LogOut, Menu, Receipt, Settings, UploadCloud, Users, X } from "lucide-react";
+import { BarChart2, LayoutGrid, LogOut, Menu, Receipt, Settings, UploadCloud, Users, X } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { t } from "@/lib/i18n";
 
 const links = [
+  { href: "/dashboard", icon: BarChart2, key: "dashboard" as const, adminOnly: false },
   { href: "/expenses", icon: Receipt, key: "expenses" as const, adminOnly: false },
   { href: "/upload", icon: UploadCloud, key: "upload" as const, adminOnly: false },
   { href: "/users", icon: Users, key: "users" as const, adminOnly: true },
