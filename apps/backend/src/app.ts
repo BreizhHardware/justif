@@ -8,6 +8,7 @@ import expensesRoutes from "./routes/expenses.js";
 import ocrRoutes from "./routes/ocr.js";
 import currenciesRoutes from "./routes/currencies.js";
 import settingsRoutes from "./routes/settings.js";
+import dashboardRoutes from "./routes/dashboard.js";
 import { requireAdmin, requireAuth } from "./middleware/auth.js";
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR ?? "./uploads";
@@ -33,6 +34,7 @@ export function createApp() {
   app.use("/api/ocr", requireAuth, ocrRoutes);
   app.use("/api/currencies", requireAuth, currenciesRoutes);
   app.use("/api/settings", requireAuth, requireAdmin, settingsRoutes);
+  app.use("/api/dashboard", requireAuth, dashboardRoutes);
 
   app.get("/api/health", (_req, res) => {
     res.json({ status: "ok" });

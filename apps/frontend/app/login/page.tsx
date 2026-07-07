@@ -24,7 +24,7 @@ export default function LoginPage() {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
-      router.push("/expenses");
+      router.push("/dashboard");
     } catch {
       setError(i18n.login.error);
     } finally {
