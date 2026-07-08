@@ -6,5 +6,13 @@
   "assignees": ["breizhhardware"],
   "baseBranches": ["develop"],
   "dependencyDashboard": true,
-  "dependencyDashboardTitle": "🤖 Renovate – Justif deps status"
+  "dependencyDashboardTitle": "🤖 Renovate – Justif deps status",
+  "packageRules": [
+    {
+      "matchDatasources": ["npm"],
+      "minimumReleaseAge": "1 days",
+      "prCreation": "not-pending",
+      "internalChecksFilter": "strict"
+    }
+  ]
 }
