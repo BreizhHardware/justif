@@ -1,5 +1,5 @@
 import ExcelJS from "exceljs";
-import type { Expense } from "@prisma/client";
+import type { Expense } from "../generated/client.js";
 import { getRateCached } from "./currencyService.js";
 
 const HEADER_FILL: ExcelJS.Fill = {
