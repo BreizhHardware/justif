@@ -1,9 +1,5 @@
 name: Docker Publish (main)
 
-# Sur chaque push sur main : incrémente automatiquement le patch de version
-# du package.json racine, commit ce bump ([skip ci] pour éviter une boucle),
-# puis build & push l'image unifiée (backend + frontend) taguée `latest` + `<version>`.
-
 on:
   push:
     branches: [main]
@@ -109,3 +105,18 @@ jobs:
             ${{ steps.image.outputs.name }}:${{ needs.bump-version.outputs.version }}
           cache-from: type=gha,scope=app
           cache-to: type=gha,mode=max,scope=app
+
+      - name: Create and push tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "v${{ needs.bump-version.outputs.version }}"
+          git push origin "v${{ needs.bump-version.outputs.version }}"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ needs.bump-version.outputs.version }}" \
+            --title "v${{ needs.bump-version.outputs.version }}" \
+            --generate-notes
