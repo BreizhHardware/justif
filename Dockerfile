@@ -8,7 +8,7 @@ WORKDIR /app/backend
 RUN apt-get update && apt-get install -y --no-install-recommends openssl \
     && rm -rf /var/lib/apt/lists/*
 
-RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
+RUN corepack enable && corepack prepare pnpm@11.10.0 --activate
 
 COPY apps/backend/package.json ./
 COPY apps/backend/prisma ./prisma
@@ -22,7 +22,7 @@ RUN pnpm run db:generate && pnpm run build && pnpm prune --prod
 FROM node:24-bookworm-slim AS frontend-build
 WORKDIR /app/frontend
 
-RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
+RUN corepack enable && corepack prepare pnpm@11.10.0 --activate
 
 COPY apps/frontend/package.json ./
 RUN pnpm install --prod=false
@@ -43,7 +43,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends openssl \
     && rm -rf /var/lib/apt/lists/*
 
-RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
+RUN corepack enable && corepack prepare pnpm@11.10.0 --activate
 
 COPY --from=backend-build /app/backend ./backend
 COPY --from=frontend-build /app/frontend ./frontend
