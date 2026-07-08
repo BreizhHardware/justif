@@ -23,7 +23,7 @@ RUN pnpm --filter backend run db:generate && pnpm --filter backend run build
 
 # pnpm deploy crée un répertoire autoportant : node_modules à plat, sans symlinks.
 # Le champ "files" dans package.json permet d'inclure dist/ et prisma/ malgré .gitignore.
-RUN pnpm deploy --filter backend --prod /deploy/backend
+RUN pnpm deploy --filter backend --prod --legacy /deploy/backend
 
 # ---------- Frontend build ----------
 FROM node:24-bookworm-slim AS frontend-build
@@ -43,7 +43,7 @@ ENV NEXT_PUBLIC_API_URL=
 RUN pnpm --filter frontend run build
 
 # Sans --prod : vinext est une devDependency requise au runtime pour `vinext start`.
-RUN pnpm deploy --filter frontend /deploy/frontend
+RUN pnpm deploy --filter frontend --legacy /deploy/frontend
 
 # ---------- Runtime ----------
 FROM node:24-bookworm-slim AS runtime
