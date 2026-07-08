@@ -2,39 +2,48 @@
 
 # ---------- Backend build ----------
 FROM node:24-bookworm-slim AS backend-build
-WORKDIR /app/backend
+WORKDIR /app
 
-# sharp requires build deps for native bindings on some platforms
 RUN apt-get update && apt-get install -y --no-install-recommends openssl \
     && rm -rf /var/lib/apt/lists/*
 
 RUN corepack enable && corepack prepare pnpm@11.10.0 --activate
 
-COPY apps/backend/package.json ./
-COPY apps/backend/prisma ./prisma
-RUN pnpm install --prod=false
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/backend/package.json ./apps/backend/
+COPY apps/frontend/package.json ./apps/frontend/
+COPY apps/backend/prisma ./apps/backend/prisma/
 
-COPY apps/backend/tsconfig.json ./
-COPY apps/backend/src ./src
-RUN pnpm run db:generate && pnpm run build && pnpm prune --prod
+RUN pnpm install --filter backend --frozen-lockfile --prod=false
+
+COPY apps/backend/tsconfig.json ./apps/backend/
+COPY apps/backend/src ./apps/backend/src/
+
+RUN pnpm --filter backend run db:generate && pnpm --filter backend run build
+
+# pnpm deploy crée un répertoire autoportant : node_modules à plat, sans symlinks.
+# Le champ "files" dans package.json permet d'inclure dist/ et prisma/ malgré .gitignore.
+RUN pnpm deploy --filter backend --prod /deploy/backend
 
 # ---------- Frontend build ----------
 FROM node:24-bookworm-slim AS frontend-build
-WORKDIR /app/frontend
+WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@11.10.0 --activate
 
-COPY apps/frontend/package.json ./
-RUN pnpm install --prod=false
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/backend/package.json ./apps/backend/
+COPY apps/frontend/package.json ./apps/frontend/
 
-COPY apps/frontend/. .
+RUN pnpm install --filter frontend --frozen-lockfile --prod=false
 
-# Le frontend est servi derrière le même proxy que le backend (même origine) :
-# les appels API restent toujours relatifs, pas besoin d'URL backend distincte.
+COPY apps/frontend/. ./apps/frontend/
+
 ENV NEXT_PUBLIC_API_URL=
-RUN pnpm run build
-# vinext (CLI utilisée par `pnpm run start`) est une devDependency : pas de
-# `pnpm prune --prod` ici, contrairement au backend.
+RUN pnpm --filter frontend run build
+
+# Sans --prod : vinext est une devDependency requise au runtime pour `vinext start`.
+RUN pnpm deploy --filter frontend /deploy/frontend
 
 # ---------- Runtime ----------
 FROM node:24-bookworm-slim AS runtime
@@ -45,8 +54,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl \
 
 RUN corepack enable && corepack prepare pnpm@11.10.0 --activate
 
-COPY --from=backend-build /app/backend ./backend
-COPY --from=frontend-build /app/frontend ./frontend
+COPY --from=backend-build /deploy/backend ./backend
+COPY --from=frontend-build /deploy/frontend ./frontend
 
 COPY docker/entrypoint.sh ./entrypoint.sh
 COPY docker/proxy.mjs ./proxy.mjs
@@ -54,8 +63,7 @@ RUN chmod +x ./entrypoint.sh
 
 RUN mkdir -p /app/backend/uploads /app/backend/db
 
-# Port public unique. BACKEND_PORT/FRONTEND_PORT sont des ports internes au
-# conteneur (proxy <-> process), à ne pas exposer/mapper depuis l'hôte.
+# Port public unique. BACKEND_PORT/FRONTEND_PORT sont des ports internes.
 ENV PORT=3000
 ENV BACKEND_PORT=3001
 ENV FRONTEND_PORT=3002
