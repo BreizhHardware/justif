@@ -1,5 +1,5 @@
-// Sous-ensemble de devises ISO 4217 courantes pour pré-remplir les selects
-// avant que la liste complète Frankfurter ne soit chargée.
+// Common ISO 4217 currency subset used to pre-populate selects
+// before a full Frankfurter currency list is loaded.
 export const COMMON_CURRENCIES = [
   "EUR",
   "USD",

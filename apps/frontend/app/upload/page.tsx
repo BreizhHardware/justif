@@ -2,10 +2,11 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { AlertTriangle, FileImage, Loader2, UploadCloud, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { apiFetch } from "@/lib/api";
-import { t } from "@/lib/i18n";
+import { CATEGORY_VALUES } from "@/lib/i18n";
 import { COMMON_CURRENCIES } from "@/lib/currencies";
 import { Button, Card, Input, Label, PageHeader, Select } from "@/components/ui";
 
@@ -23,7 +24,7 @@ interface OcrResult {
 }
 
 export default function UploadPage() {
-  const i18n = t();
+  const { t } = useTranslation();
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -61,7 +62,7 @@ export default function UploadPage() {
       });
       setForm(result);
     } catch (err) {
-      setOcrError(err instanceof Error ? err.message : i18n.upload.ocrError);
+      setOcrError(err instanceof Error ? err.message : t("upload.ocrError"));
     } finally {
       setAnalyzing(false);
     }
@@ -81,8 +82,7 @@ export default function UploadPage() {
     setOcrError(null);
   }
 
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSave() {
     if (!form) return;
     setSaving(true);
     try {
@@ -108,7 +108,7 @@ export default function UploadPage() {
 
   return (
     <AppShell>
-      <PageHeader title={i18n.upload.title} />
+      <PageHeader title={t("upload.title")} />
 
       <div className="max-w-2xl">
         {!form && (
@@ -125,7 +125,7 @@ export default function UploadPage() {
             }`}
           >
             <UploadCloud className={dragOver ? "text-brand-600" : "text-slate-400"} size={32} />
-            <span className="text-slate-500">{i18n.upload.dropzone}</span>
+            <span className="text-slate-500">{t("upload.dropzone")}</span>
             <input
               ref={inputRef}
               type="file"
@@ -142,7 +142,7 @@ export default function UploadPage() {
         {analyzing && (
           <div className="mt-4 flex items-center gap-2 text-sm text-slate-500">
             <Loader2 className="animate-spin" size={16} />
-            {i18n.upload.analyzing}
+            {t("upload.analyzing")}
           </div>
         )}
         {ocrError && (
@@ -154,12 +154,18 @@ export default function UploadPage() {
 
         {form && (
           <Card className="mt-6 p-6">
-            <form onSubmit={handleSave} className="space-y-5">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void handleSave();
+              }}
+              className="space-y-5"
+            >
               {previewUrl && (
                 <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
                   <img
                     src={previewUrl}
-                    alt="Aperçu du justificatif"
+                    alt={t("expenses.previewAlt")}
                     className="h-20 w-20 rounded-lg border object-cover"
                   />
                   <div className="flex items-center gap-1.5 text-sm text-slate-500">
@@ -178,7 +184,7 @@ export default function UploadPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="date">{i18n.expenses.date}</Label>
+                  <Label htmlFor="date">{t("expenses.date")}</Label>
                   <Input
                     id="date"
                     type="date"
@@ -187,21 +193,21 @@ export default function UploadPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="categorie">{i18n.expenses.categorie}</Label>
+                  <Label htmlFor="categorie">{t("expenses.categorie")}</Label>
                   <Select
                     id="categorie"
                     value={form.categorie}
                     onChange={(e) => setForm({ ...form, categorie: e.target.value })}
                   >
-                    {i18n.categories.map((c) => (
+                    {CATEGORY_VALUES.map((c) => (
                       <option key={c} value={c}>
-                        {c}
+                        {t(`categories.${c}` as never)}
                       </option>
                     ))}
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="fournisseur">{i18n.expenses.fournisseur}</Label>
+                  <Label htmlFor="fournisseur">{t("expenses.fournisseur")}</Label>
                   <Input
                     id="fournisseur"
                     value={form.fournisseur ?? ""}
@@ -209,7 +215,7 @@ export default function UploadPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="devise">{i18n.expenses.devise}</Label>
+                  <Label htmlFor="devise">{t("expenses.devise")}</Label>
                   <Select
                     id="devise"
                     value={form.devise ?? "EUR"}
@@ -223,7 +229,7 @@ export default function UploadPage() {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="montantTtc">Montant TTC</Label>
+                  <Label htmlFor="montantTtc">{t("expenses.montantTtc")}</Label>
                   <Input
                     id="montantTtc"
                     type="number"
@@ -238,7 +244,7 @@ export default function UploadPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="montantHt">Montant HT</Label>
+                  <Label htmlFor="montantHt">{t("expenses.montantHt")}</Label>
                   <Input
                     id="montantHt"
                     type="number"
@@ -253,7 +259,7 @@ export default function UploadPage() {
                   />
                 </div>
                 <div className="col-span-2">
-                  <Label htmlFor="description">{i18n.expenses.description}</Label>
+                  <Label htmlFor="description">{t("expenses.description")}</Label>
                   <Input
                     id="description"
                     value={form.description ?? ""}
@@ -264,10 +270,10 @@ export default function UploadPage() {
 
               <div className="flex gap-3 border-t border-slate-100 pt-5">
                 <Button type="submit" disabled={saving}>
-                  {i18n.upload.save}
+                  {t("upload.save")}
                 </Button>
                 <Button type="button" variant="secondary" onClick={reset}>
-                  Annuler
+                  {t("expenses.cancel")}
                 </Button>
               </div>
             </form>

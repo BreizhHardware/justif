@@ -1,6 +1,8 @@
 // In dev, Vite proxies /api/* to the backend (no CORS needed).
 // In production, set NEXT_PUBLIC_API_URL to the backend origin if frontend and
 // backend are on different hosts; leave unset if they share the same origin.
+import i18next from "@/lib/i18n";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 export class ApiError extends Error {
@@ -16,6 +18,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     ...init,
     credentials: "include",
     headers: {
+      "Accept-Language": i18next.language ?? "en",
       ...(init?.body && !(init.body instanceof FormData)
         ? { "Content-Type": "application/json" }
         : {}),

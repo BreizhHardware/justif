@@ -9,13 +9,13 @@ const COOKIE_OPTS = { httpOnly: true, sameSite: "lax" as const, maxAge: 30 * 24 
 router.post("/setup", async (req, res) => {
   const existing = await prisma.user.findFirst();
   if (existing) {
-    res.status(403).json({ error: "Un compte existe déjà" });
+    res.status(403).json({ error: "An account already exists" });
     return;
   }
 
   const { email, password } = req.body as { email?: string; password?: string };
   if (!email || !password || password.length < 8) {
-    res.status(400).json({ error: "Email et mot de passe (8 caractères min.) requis" });
+    res.status(400).json({ error: "Email and password (min. 8 characters) required" });
     return;
   }
 
@@ -30,17 +30,17 @@ router.post("/setup", async (req, res) => {
 router.post("/login", async (req, res) => {
   const { email, password } = req.body as { email?: string; password?: string };
   if (!email || !password) {
-    res.status(400).json({ error: "Email et mot de passe requis" });
+    res.status(400).json({ error: "Email and password required" });
     return;
   }
 
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-    res.status(401).json({ error: "Identifiants invalides" });
+    res.status(401).json({ error: "Invalid credentials" });
     return;
   }
   if (!user.active) {
-    res.status(403).json({ error: "Ce compte a été désactivé" });
+    res.status(403).json({ error: "This account has been disabled" });
     return;
   }
 

@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ShieldCheck, UserMinus, UserPlus } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { apiFetch, ApiError } from "@/lib/api";
-import { t } from "@/lib/i18n";
 import { Badge, Button, Card, Input, Label, PageHeader, Select } from "@/components/ui";
 
 interface User {
@@ -16,7 +16,7 @@ interface User {
 }
 
 export default function UsersPage() {
-  const i18n = t();
+  const { t } = useTranslation();
   const [users, setUsers] = useState<User[] | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,8 +38,7 @@ export default function UsersPage() {
     load();
   }, []);
 
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleCreate() {
     setError(null);
     setCreating(true);
     try {
@@ -52,7 +51,7 @@ export default function UsersPage() {
       setRole("user");
       await load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Erreur lors de la création");
+      setError(err instanceof ApiError ? err.message : t("users.createError"));
     } finally {
       setCreating(false);
     }
@@ -76,15 +75,21 @@ export default function UsersPage() {
 
   return (
     <AppShell>
-      <PageHeader title={i18n.users.title} />
+      <PageHeader title={t("users.title")} />
 
       <Card className="mb-6 max-w-xl p-6">
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
-          {i18n.users.newUserTitle}
+          {t("users.newUserTitle")}
         </h2>
-        <form onSubmit={handleCreate} className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void handleCreate();
+          }}
+          className="space-y-4"
+        >
           <div>
-            <Label htmlFor="newEmail">{i18n.users.email}</Label>
+            <Label htmlFor="newEmail">{t("users.email")}</Label>
             <Input
               id="newEmail"
               type="email"
@@ -94,7 +99,7 @@ export default function UsersPage() {
             />
           </div>
           <div>
-            <Label htmlFor="newPassword">{i18n.users.password}</Label>
+            <Label htmlFor="newPassword">{t("users.password")}</Label>
             <Input
               id="newPassword"
               type="password"
@@ -105,21 +110,21 @@ export default function UsersPage() {
             />
           </div>
           <div>
-            <Label htmlFor="newRole">{i18n.users.role}</Label>
+            <Label htmlFor="newRole">{t("users.role")}</Label>
             <Select
               id="newRole"
               value={role}
               onChange={(e) => setRole(e.target.value as "admin" | "user")}
               className="max-w-xs"
             >
-              <option value="user">{i18n.users.user}</option>
-              <option value="admin">{i18n.users.admin}</option>
+              <option value="user">{t("users.user")}</option>
+              <option value="admin">{t("users.admin")}</option>
             </Select>
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
           <Button type="submit" disabled={creating}>
             <UserPlus size={16} />
-            {i18n.users.create}
+            {t("users.create")}
           </Button>
         </form>
       </Card>
@@ -129,13 +134,13 @@ export default function UsersPage() {
           <thead>
             <tr className="border-b border-slate-100 text-left">
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                {i18n.users.email}
+                {t("users.email")}
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                {i18n.users.role}
+                {t("users.role")}
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                {i18n.users.active}
+                {t("users.active")}
               </th>
               <th className="px-4 py-3"></th>
             </tr>
@@ -148,17 +153,17 @@ export default function UsersPage() {
                   <td className="px-4 py-3">
                     {user.email}
                     {isSelf && (
-                      <span className="ml-2 text-xs text-slate-400">({i18n.users.you})</span>
+                      <span className="ml-2 text-xs text-slate-400">({t("users.you")})</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
                     <Badge tone={user.role === "admin" ? "brand" : "slate"}>
-                      {user.role === "admin" ? i18n.users.admin : i18n.users.user}
+                      {user.role === "admin" ? t("users.admin") : t("users.user")}
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
                     <Badge tone={user.active ? "brand" : "amber"}>
-                      {user.active ? i18n.users.active : i18n.users.inactive}
+                      {user.active ? t("users.active") : t("users.inactive")}
                     </Badge>
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -167,7 +172,7 @@ export default function UsersPage() {
                         onClick={() => toggleRole(user)}
                         disabled={isSelf}
                         className="flex items-center gap-1 text-slate-500 transition hover:text-brand-600 disabled:cursor-not-allowed disabled:opacity-40"
-                        title={user.role === "admin" ? i18n.users.makeUser : i18n.users.makeAdmin}
+                        title={user.role === "admin" ? t("users.makeUser") : t("users.makeAdmin")}
                       >
                         <ShieldCheck size={16} />
                       </button>
@@ -175,7 +180,7 @@ export default function UsersPage() {
                         onClick={() => toggleActive(user)}
                         disabled={isSelf}
                         className="flex items-center gap-1 text-slate-500 transition hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
-                        title={user.active ? i18n.users.deactivate : i18n.users.activate}
+                        title={user.active ? t("users.deactivate") : t("users.activate")}
                       >
                         <UserMinus size={16} />
                       </button>

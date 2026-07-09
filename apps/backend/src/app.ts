@@ -22,7 +22,11 @@ export function createApp() {
         ? true
         : (origin, cb) => {
             // Allow localhost (any port) and GitHub Codespaces forwarded URLs
-            if (!origin || /^https?:\/\/localhost(:\d+)?$/.test(origin) || origin.endsWith(".app.github.dev")) {
+            if (
+              !origin ||
+              /^https?:\/\/localhost(:\d+)?$/.test(origin) ||
+              origin.endsWith(".app.github.dev")
+            ) {
               cb(null, true);
             } else {
               cb(new Error("Not allowed by CORS"));
@@ -33,7 +37,7 @@ export function createApp() {
   );
   app.use(cookieParser());
   app.use(express.json());
-  // Les justificatifs contiennent des données privées par utilisateur : authentification requise.
+  // Receipts contain private per-user data: authentication required.
   app.use("/uploads", requireAuth, express.static(path.resolve(UPLOAD_DIR)));
 
   app.use("/api/auth", authRoutes);

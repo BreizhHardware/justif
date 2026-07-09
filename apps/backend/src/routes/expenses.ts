@@ -65,20 +65,20 @@ function parseExpenseBody(body: Record<string, string>) {
   };
 }
 
-// Détermine de quel utilisateur on consulte les dépenses : soi-même, ou,
-// pour un admin, un autre utilisateur via ?userId= (vue globale par onglet).
+// Resolves whose expenses to display: the caller themselves, or,
+// for an admin, another user via ?userId= (global view by tab).
 async function resolveTargetUserId(req: Request, res: Response): Promise<string | null> {
   const requestedUserId = req.query.userId as string | undefined;
   if (!requestedUserId || requestedUserId === req.user!.id) {
     return req.user!.id;
   }
   if (req.user!.role !== "admin") {
-    res.status(403).json({ error: "Accès non autorisé aux dépenses d'un autre utilisateur" });
+    res.status(403).json({ error: "Access denied to another user's expenses" });
     return null;
   }
   const target = await prisma.user.findUnique({ where: { id: requestedUserId } });
   if (!target) {
-    res.status(404).json({ error: "Utilisateur introuvable" });
+    res.status(404).json({ error: "User not found" });
     return null;
   }
   return target.id;
@@ -166,7 +166,7 @@ router.post("/", upload.single("fichier"), async (req, res) => {
   try {
     const parsed = parseExpenseBody(req.body);
     if (!parsed.date) {
-      res.status(400).json({ error: "Date requise" });
+      res.status(400).json({ error: "Date required" });
       return;
     }
 
@@ -206,8 +206,8 @@ router.post("/", upload.single("fichier"), async (req, res) => {
 
     res.status(201).json(expense);
   } catch (err) {
-    console.error("[expenses] Erreur création:", err);
-    res.status(500).json({ error: "Erreur lors de la création de la dépense" });
+    console.error("[expenses] Creation error:", err);
+    res.status(500).json({ error: "Error creating expense" });
   }
 });
 
@@ -215,11 +215,11 @@ router.patch("/:id", async (req, res) => {
   try {
     const existing = await prisma.expense.findUnique({ where: { id: req.params.id } });
     if (!existing) {
-      res.status(404).json({ error: "Dépense introuvable" });
+      res.status(404).json({ error: "Expense not found" });
       return;
     }
     if (!canEdit(req, existing.userId)) {
-      res.status(403).json({ error: "Accès non autorisé" });
+      res.status(403).json({ error: "Access denied" });
       return;
     }
 
@@ -262,19 +262,19 @@ router.patch("/:id", async (req, res) => {
 
     res.json(expense);
   } catch (err) {
-    console.error("[expenses] Erreur mise à jour:", err);
-    res.status(500).json({ error: "Erreur lors de la mise à jour de la dépense" });
+    console.error("[expenses] Update error:", err);
+    res.status(500).json({ error: "Error updating expense" });
   }
 });
 
 router.post("/:id/recalculate", async (req, res) => {
   const existing = await prisma.expense.findUnique({ where: { id: req.params.id } });
   if (!existing) {
-    res.status(404).json({ error: "Dépense introuvable" });
+    res.status(404).json({ error: "Expense not found" });
     return;
   }
   if (!canEdit(req, existing.userId)) {
-    res.status(403).json({ error: "Accès non autorisé" });
+    res.status(403).json({ error: "Access denied" });
     return;
   }
   const defaultCurrency = await getDefaultCurrency();
@@ -292,20 +292,20 @@ router.post("/:id/recalculate", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   const existing = await prisma.expense.findUnique({ where: { id: req.params.id } });
   if (!existing) {
-    res.status(404).json({ error: "Dépense introuvable" });
+    res.status(404).json({ error: "Expense not found" });
     return;
   }
   if (!canEdit(req, existing.userId)) {
-    res.status(403).json({ error: "Accès non autorisé" });
+    res.status(403).json({ error: "Access denied" });
     return;
   }
-  // Le fichier justificatif original n'est jamais supprimé du disque, même si la dépense l'est
+  // The original receipt file is never deleted from disk, even when the expense is deleted.
   await prisma.expense.delete({ where: { id: req.params.id } });
   res.status(204).end();
 });
 
-// Avant de (re)générer un export, indique quelles dépenses du filtre actuel ont déjà
-// été incluses dans une note de frais précédente, pour proposer de les ré-inclure ou non.
+// Before generating an export, returns which expenses in the current filter have already
+// been included in a previous report, so the user can choose to re-include them or not.
 router.get("/export-overlap", async (req, res) => {
   const targetUserId = await resolveTargetUserId(req, res);
   if (!targetUserId) return;
