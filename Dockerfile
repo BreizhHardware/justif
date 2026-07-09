@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl python3
     && rm -rf /var/lib/apt/lists/*
 
 RUN corepack enable && corepack prepare pnpm@11.10.0 --activate
+ENV PNPM_CONFIG_VERIFY_DEPS_BEFORE_RUN=false
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/backend/package.json ./apps/backend/
@@ -17,8 +18,10 @@ COPY apps/backend/prisma ./apps/backend/prisma/
 RUN pnpm install --filter backend --frozen-lockfile --prod=false
 
 COPY apps/backend/tsconfig.json ./apps/backend/
+COPY apps/backend/prisma.config.ts ./apps/backend/
 COPY apps/backend/src ./apps/backend/src/
 
+ENV DATABASE_URL=file:./db/justif.db
 RUN pnpm --filter backend run db:generate && pnpm --filter backend run build
 
 # pnpm deploy crée un répertoire autoportant : node_modules à plat, sans symlinks.
@@ -30,6 +33,7 @@ FROM node:24-bookworm-slim AS frontend-build
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@11.10.0 --activate
+ENV PNPM_CONFIG_VERIFY_DEPS_BEFORE_RUN=false
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/backend/package.json ./apps/backend/
@@ -53,6 +57,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl \
     && rm -rf /var/lib/apt/lists/*
 
 RUN corepack enable && corepack prepare pnpm@11.10.0 --activate
+ENV PNPM_CONFIG_VERIFY_DEPS_BEFORE_RUN=false
 
 COPY --from=backend-build /deploy/backend ./backend
 COPY --from=frontend-build /deploy/frontend ./frontend
