@@ -29,7 +29,7 @@ router.get("/", async (_req, res) => {
   for (const key of PUBLIC_KEYS) {
     result[key] = map.get(key) ?? DEFAULTS[key] ?? "";
   }
-  // indique si une clé Mistral est configurée, sans jamais la renvoyer
+  // Indicate whether a Mistral key is configured without ever returning its value.
   const mistralRow = await prisma.setting.findUnique({ where: { key: "mistral_api_key" } });
   result.mistral_api_key_set = String(Boolean(mistralRow?.value ?? DEFAULTS.mistral_api_key));
   res.json(result);

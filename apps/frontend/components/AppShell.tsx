@@ -3,9 +3,19 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart2, LayoutGrid, LogOut, Menu, Receipt, Settings, UploadCloud, Users, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import {
+  BarChart2,
+  LayoutGrid,
+  LogOut,
+  Menu,
+  Receipt,
+  Settings,
+  UploadCloud,
+  Users,
+  X,
+} from "lucide-react";
 import { apiFetch } from "@/lib/api";
-import { t } from "@/lib/i18n";
 
 const links = [
   { href: "/dashboard", icon: BarChart2, key: "dashboard" as const, adminOnly: false },
@@ -18,7 +28,7 @@ const links = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const i18n = t();
+  const { t } = useTranslation();
   const [email, setEmail] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -46,7 +56,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500">
           <LayoutGrid className="h-4.5 w-4.5 text-white" size={18} />
         </div>
-        <span className="text-lg font-semibold text-white">{i18n.appName}</span>
+        <span className="text-lg font-semibold text-white">{t("appName")}</span>
       </div>
 
       <nav className="flex-1 space-y-1 px-3">
@@ -64,7 +74,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               }`}
             >
               <Icon size={18} />
-              {i18n.nav[key]}
+              {t(`nav.${key}`)}
             </Link>
           );
         })}
@@ -77,7 +87,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
         >
           <LogOut size={18} />
-          {i18n.nav.logout}
+          {t("nav.logout")}
         </button>
       </div>
     </div>
@@ -112,7 +122,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           >
             <Menu size={22} />
           </button>
-          <span className="text-base font-semibold text-slate-900">{i18n.appName}</span>
+          <span className="text-base font-semibold text-slate-900">{t("appName")}</span>
         </header>
 
         <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>

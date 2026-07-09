@@ -28,7 +28,7 @@ export function signToken(userId: string): string {
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   const token = req.cookies?.token as string | undefined;
   if (!token) {
-    res.status(401).json({ error: "Non authentifié" });
+    res.status(401).json({ error: "Unauthenticated" });
     return;
   }
 
@@ -36,7 +36,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     const payload = jwt.verify(token, JWT_SECRET) as AuthTokenPayload;
     const user = await prisma.user.findUnique({ where: { id: payload.sub } });
     if (!user || !user.active) {
-      res.status(401).json({ error: "Compte désactivé ou introuvable" });
+      res.status(401).json({ error: "Account disabled or not found" });
       return;
     }
     req.user = { id: user.id, email: user.email, role: user.role };
@@ -53,13 +53,13 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 
     next();
   } catch {
-    res.status(401).json({ error: "Session invalide ou expirée" });
+    res.status(401).json({ error: "Invalid or expired session" });
   }
 }
 
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
   if (req.user?.role !== "admin") {
-    res.status(403).json({ error: "Accès réservé à l'administrateur" });
+    res.status(403).json({ error: "Admin access required" });
     return;
   }
   next();

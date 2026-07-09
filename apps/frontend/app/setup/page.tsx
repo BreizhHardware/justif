@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { Check, Cloud, HardDrive, LayoutGrid } from "lucide-react";
 import { apiFetch } from "@/lib/api";
-import { t } from "@/lib/i18n";
 import { SESSION_KEY } from "@/app/page";
 import { Button, Card, Input, Label } from "@/components/ui";
 
@@ -12,7 +12,7 @@ type Step = 1 | 2;
 
 export default function SetupPage() {
   const router = useRouter();
-  const i18n = t();
+  const { t } = useTranslation();
   const [step, setStep] = useState<Step>(1);
 
   // Step 1
@@ -31,7 +31,9 @@ export default function SetupPage() {
 
   useEffect(() => {
     apiFetch<{ setupComplete: boolean }>("/api/auth/status")
-      .then((s) => { if (s.setupComplete) router.replace("/"); })
+      .then((s) => {
+        if (s.setupComplete) router.replace("/");
+      })
       .catch(() => {});
   }, [router]);
 
@@ -46,7 +48,7 @@ export default function SetupPage() {
       localStorage.setItem(SESSION_KEY, "1");
       setStep(2);
     } catch (err) {
-      setStep1Error(err instanceof Error ? err.message : "Erreur");
+      setStep1Error(err instanceof Error ? err.message : t("settings.error"));
     } finally {
       setStep1Loading(false);
     }
@@ -73,7 +75,7 @@ export default function SetupPage() {
     try {
       await saveOcrConfig();
     } catch {
-      // non-bloquant : configurable depuis les paramètres
+      // Non-blocking: OCR can be configured later in settings.
     } finally {
       setStep2Loading(false);
     }
@@ -88,7 +90,7 @@ export default function SetupPage() {
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500">
             <LayoutGrid className="text-white" size={22} />
           </div>
-          <span className="text-xl font-semibold text-slate-900">{i18n.appName}</span>
+          <span className="text-xl font-semibold text-slate-900">{t("appName")}</span>
         </div>
 
         {/* Step indicator */}
@@ -107,15 +109,13 @@ export default function SetupPage() {
             <span
               className={`text-xs font-medium ${step === 1 ? "text-brand-600" : "text-slate-500"}`}
             >
-              Compte
+              {t("setup.stepAccount")}
             </span>
           </div>
 
           {/* Connector */}
           <div className="mx-3 mt-3.5 w-16 shrink-0">
-            <div
-              className={`h-0.5 transition-all ${step > 1 ? "bg-brand-500" : "bg-slate-200"}`}
-            />
+            <div className={`h-0.5 transition-all ${step > 1 ? "bg-brand-500" : "bg-slate-200"}`} />
           </div>
 
           {/* Step 2 */}
@@ -132,21 +132,27 @@ export default function SetupPage() {
             <span
               className={`text-xs font-medium ${step === 2 ? "text-brand-600" : "text-slate-400"}`}
             >
-              Configuration
+              {t("setup.stepConfig")}
             </span>
           </div>
         </div>
 
-        {/* Step 1 — Création du compte */}
+        {/* Step 1 — Account creation */}
         {step === 1 && (
           <Card className="p-6">
-            <form onSubmit={(e) => { e.preventDefault(); void handleStep1(); }} className="space-y-4">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void handleStep1();
+              }}
+              className="space-y-4"
+            >
               <div>
-                <h1 className="text-lg font-semibold text-slate-900">{i18n.setup.title}</h1>
-                <p className="text-sm text-slate-500">{i18n.setup.subtitle}</p>
+                <h1 className="text-lg font-semibold text-slate-900">{t("setup.title")}</h1>
+                <p className="text-sm text-slate-500">{t("setup.subtitle")}</p>
               </div>
               <div>
-                <Label htmlFor="email">{i18n.login.email}</Label>
+                <Label htmlFor="email">{t("login.email")}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -157,7 +163,7 @@ export default function SetupPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="password">{i18n.login.password}</Label>
+                <Label htmlFor="password">{t("login.password")}</Label>
                 <Input
                   id="password"
                   type="password"
@@ -166,25 +172,29 @@ export default function SetupPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
-                <p className="mt-1 text-xs text-slate-400">8 caractères minimum</p>
+                <p className="mt-1 text-xs text-slate-400">{t("setup.minPassword")}</p>
               </div>
               {step1Error && <p className="text-sm text-red-600">{step1Error}</p>}
               <Button type="submit" disabled={step1Loading} className="w-full">
-                {step1Loading ? "Création…" : i18n.setup.submit}
+                {step1Loading ? t("setup.creating") : t("setup.submit")}
               </Button>
             </form>
           </Card>
         )}
 
-        {/* Step 2 — Configuration OCR */}
+        {/* Step 2 — OCR configuration */}
         {step === 2 && (
           <Card className="p-6">
-            <form onSubmit={(e) => { e.preventDefault(); void handleStep2(); }} className="space-y-4">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void handleStep2();
+              }}
+              className="space-y-4"
+            >
               <div>
-                <h1 className="text-lg font-semibold text-slate-900">Configuration OCR</h1>
-                <p className="text-sm text-slate-500">
-                  Choisissez comment analyser vos justificatifs.
-                </p>
+                <h1 className="text-lg font-semibold text-slate-900">{t("setup.ocrTitle")}</h1>
+                <p className="text-sm text-slate-500">{t("setup.ocrDescription")}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -201,7 +211,7 @@ export default function SetupPage() {
                     className={ocrProvider === "cloud" ? "text-brand-600" : "text-slate-400"}
                     size={20}
                   />
-                  <span className="text-xs font-medium text-slate-700">Cloud (Mistral)</span>
+                  <span className="text-xs font-medium text-slate-700">{t("settings.cloud")}</span>
                 </button>
                 <button
                   type="button"
@@ -216,14 +226,14 @@ export default function SetupPage() {
                     className={ocrProvider === "local" ? "text-brand-600" : "text-slate-400"}
                     size={20}
                   />
-                  <span className="text-xs font-medium text-slate-700">Local (Ollama)</span>
+                  <span className="text-xs font-medium text-slate-700">{t("settings.local")}</span>
                 </button>
               </div>
 
               {ocrProvider === "cloud" ? (
                 <div className="space-y-3">
                   <div>
-                    <Label htmlFor="mistralKey">Clé API Mistral</Label>
+                    <Label htmlFor="mistralKey">{t("setup.mistralKey")}</Label>
                     <Input
                       id="mistralKey"
                       type="password"
@@ -233,7 +243,7 @@ export default function SetupPage() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="mistralModel">Modèle</Label>
+                    <Label htmlFor="mistralModel">{t("setup.model")}</Label>
                     <Input
                       id="mistralModel"
                       value={mistralModel}
@@ -244,7 +254,7 @@ export default function SetupPage() {
               ) : (
                 <div className="space-y-3">
                   <div>
-                    <Label htmlFor="ollamaUrl">URL Ollama</Label>
+                    <Label htmlFor="ollamaUrl">{t("setup.ollamaUrl")}</Label>
                     <Input
                       id="ollamaUrl"
                       value={ollamaUrl}
@@ -252,7 +262,7 @@ export default function SetupPage() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="ollamaModel">Modèle</Label>
+                    <Label htmlFor="ollamaModel">{t("setup.model")}</Label>
                     <Input
                       id="ollamaModel"
                       value={ollamaModel}
@@ -264,14 +274,14 @@ export default function SetupPage() {
 
               <div className="flex flex-col gap-2 pt-1">
                 <Button type="submit" disabled={step2Loading} className="w-full">
-                  {step2Loading ? "Enregistrement…" : "Terminer la configuration"}
+                  {step2Loading ? t("setup.saving") : t("setup.finish")}
                 </Button>
                 <button
                   type="button"
                   onClick={() => router.push("/expenses")}
                   className="py-1 text-center text-sm text-slate-400 transition hover:text-slate-600"
                 >
-                  Passer cette étape
+                  {t("setup.skip")}
                 </button>
               </div>
             </form>

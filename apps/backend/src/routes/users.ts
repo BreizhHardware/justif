@@ -22,17 +22,17 @@ router.post("/", async (req, res) => {
     role?: string;
   };
   if (!email || !password || password.length < 8) {
-    res.status(400).json({ error: "Email et mot de passe (8 caractères min.) requis" });
+    res.status(400).json({ error: "Email and password (min. 8 characters) required" });
     return;
   }
   if (role && role !== "admin" && role !== "user") {
-    res.status(400).json({ error: "Rôle invalide" });
+    res.status(400).json({ error: "Invalid role" });
     return;
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
-    res.status(409).json({ error: "Un compte avec cet email existe déjà" });
+    res.status(409).json({ error: "An account with this email already exists" });
     return;
   }
 
@@ -52,12 +52,12 @@ router.patch("/:id", async (req, res) => {
   };
 
   if (role && role !== "admin" && role !== "user") {
-    res.status(400).json({ error: "Rôle invalide" });
+    res.status(400).json({ error: "Invalid role" });
     return;
   }
 
   if (req.params.id === req.user!.id && (role === "user" || active === false)) {
-    res.status(400).json({ error: "Vous ne pouvez pas vous rétrograder ou désactiver vous-même" });
+    res.status(400).json({ error: "You cannot demote or disable your own account" });
     return;
   }
 
@@ -66,7 +66,7 @@ router.patch("/:id", async (req, res) => {
   if (active !== undefined) data.active = active;
   if (password) {
     if (password.length < 8) {
-      res.status(400).json({ error: "Mot de passe trop court (8 caractères min.)" });
+      res.status(400).json({ error: "Password too short (min. 8 characters)" });
       return;
     }
     data.passwordHash = await bcrypt.hash(password, 12);

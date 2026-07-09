@@ -23,7 +23,7 @@ async function getRate(from: string, to: string, date: string): Promise<RateResu
   const data = (await res.json()) as FrankfurterResponse;
   const rate = data.rates[to];
   if (rate === undefined) {
-    throw new Error(`Frankfurter: devise ${to} non trouvée dans la réponse`);
+    throw new Error(`Frankfurter: currency ${to} not found in response`);
   }
   return { rate, date: data.date };
 }
@@ -80,7 +80,7 @@ export async function convertExpenseAmounts(params: {
       taux_change_date: rateDate,
     };
   } catch (err) {
-    console.error("[currencyService] Conversion échouée:", err);
+    console.error("[currencyService] Conversion failed:", err);
     return {
       montant_ttc_eur: null,
       montant_ht_eur: null,

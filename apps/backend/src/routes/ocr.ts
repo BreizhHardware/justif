@@ -10,7 +10,7 @@ const upload = multer({
   fileFilter: (_req, file, cb) => {
     const allowed = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
     if (!allowed.includes(file.mimetype)) {
-      cb(new Error("Format non supporté. Utilisez JPEG, PNG, WebP ou PDF."));
+      cb(new Error("Unsupported format. Use JPEG, PNG, WebP or PDF."));
       return;
     }
     cb(null, true);
@@ -19,15 +19,16 @@ const upload = multer({
 
 router.post("/analyze", upload.single("fichier"), async (req, res) => {
   if (!req.file) {
-    res.status(400).json({ error: "Aucun fichier fourni" });
+    res.status(400).json({ error: "No file provided" });
     return;
   }
+  const locale = (req.headers["accept-language"] ?? "en").split(",")[0]?.trim() ?? "en";
   try {
-    const result = await analyzeReceipt(req.file.buffer, req.file.mimetype);
+    const result = await analyzeReceipt(req.file.buffer, req.file.mimetype, locale);
     res.json(result);
   } catch (err) {
-    console.error("[ocr] Erreur d'analyse:", err);
-    res.status(502).json({ error: err instanceof Error ? err.message : "Erreur OCR inconnue" });
+    console.error("[ocr] Analysis error:", err);
+    res.status(502).json({ error: err instanceof Error ? err.message : "OCR error" });
   }
 });
 

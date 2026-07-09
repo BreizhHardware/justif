@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { CheckCircle2, Cloud, HardDrive, XCircle } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { apiFetch } from "@/lib/api";
-import { t } from "@/lib/i18n";
 import { COMMON_CURRENCIES } from "@/lib/currencies";
 import { Button, Card, Input, Label, PageHeader, Select } from "@/components/ui";
 
@@ -19,7 +19,7 @@ interface Settings {
 }
 
 export default function SettingsPage() {
-  const i18n = t();
+  const { t } = useTranslation();
   const router = useRouter();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [mistralApiKey, setMistralApiKey] = useState("");
@@ -35,8 +35,7 @@ export default function SettingsPage() {
 
   if (!settings) return null;
 
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSave() {
     setSaved(false);
     const payload: Record<string, string> = {
       ocr_provider: settings!.ocr_provider,
@@ -64,7 +63,10 @@ export default function SettingsPage() {
       });
       setTestResult(result);
     } catch (err) {
-      setTestResult({ success: false, message: err instanceof Error ? err.message : "Erreur" });
+      setTestResult({
+        success: false,
+        message: err instanceof Error ? err.message : t("settings.error"),
+      });
     } finally {
       setTesting(false);
     }
@@ -72,12 +74,18 @@ export default function SettingsPage() {
 
   return (
     <AppShell>
-      <PageHeader title={i18n.settings.title} />
+      <PageHeader title={t("settings.title")} />
 
-      <form onSubmit={handleSave} className="max-w-2xl space-y-6">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void handleSave();
+        }}
+        className="max-w-2xl space-y-6"
+      >
         <Card className="p-6">
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
-            {i18n.settings.ocrProvider}
+            {t("settings.ocrProvider")}
           </h2>
 
           <div className="mb-5 grid grid-cols-2 gap-3">
@@ -94,7 +102,7 @@ export default function SettingsPage() {
                 className={settings.ocr_provider === "cloud" ? "text-brand-600" : "text-slate-400"}
                 size={22}
               />
-              <span className="text-sm font-medium text-slate-700">{i18n.settings.cloud}</span>
+              <span className="text-sm font-medium text-slate-700">{t("settings.cloud")}</span>
             </button>
             <button
               type="button"
@@ -109,14 +117,14 @@ export default function SettingsPage() {
                 className={settings.ocr_provider === "local" ? "text-brand-600" : "text-slate-400"}
                 size={22}
               />
-              <span className="text-sm font-medium text-slate-700">{i18n.settings.local}</span>
+              <span className="text-sm font-medium text-slate-700">{t("settings.local")}</span>
             </button>
           </div>
 
           {settings.ocr_provider === "cloud" ? (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="apiKey">{i18n.settings.apiKey}</Label>
+                <Label htmlFor="apiKey">{t("settings.apiKey")}</Label>
                 <Input
                   id="apiKey"
                   type="password"
@@ -126,7 +134,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="mistralModel">{i18n.settings.model}</Label>
+                <Label htmlFor="mistralModel">{t("settings.model")}</Label>
                 <Input
                   id="mistralModel"
                   value={settings.mistral_model}
@@ -137,7 +145,7 @@ export default function SettingsPage() {
           ) : (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="ollamaUrl">{i18n.settings.ollamaUrl}</Label>
+                <Label htmlFor="ollamaUrl">{t("settings.ollamaUrl")}</Label>
                 <Input
                   id="ollamaUrl"
                   value={settings.ollama_url}
@@ -145,7 +153,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="ollamaModel">{i18n.settings.model}</Label>
+                <Label htmlFor="ollamaModel">{t("settings.model")}</Label>
                 <Input
                   id="ollamaModel"
                   value={settings.ollama_model}
@@ -157,7 +165,7 @@ export default function SettingsPage() {
 
           <div className="mt-5 flex items-center gap-3">
             <Button type="button" variant="secondary" onClick={handleTest} disabled={testing}>
-              {i18n.settings.testConnection}
+              {t("settings.testConnection")}
             </Button>
             {testResult && (
               <span
@@ -172,7 +180,7 @@ export default function SettingsPage() {
 
         <Card className="p-6">
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
-            {i18n.settings.defaultCurrency}
+            {t("settings.defaultCurrency")}
           </h2>
           <Select
             value={settings.default_currency}
@@ -188,8 +196,8 @@ export default function SettingsPage() {
         </Card>
 
         <div className="flex items-center gap-3">
-          <Button type="submit">{i18n.settings.save}</Button>
-          {saved && <span className="text-sm text-brand-600">{i18n.settings.saved}</span>}
+          <Button type="submit">{t("settings.save")}</Button>
+          {saved && <span className="text-sm text-brand-600">{t("settings.saved")}</span>}
         </div>
       </form>
     </AppShell>

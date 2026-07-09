@@ -1,107 +1,60 @@
-// Chaînes UI centralisées pour faciliter les futures contributions i18n.
-// Seul le français est fourni au lancement ; ajouter une clé de langue
-// supplémentaire ici suffit pour proposer une nouvelle traduction.
+// Centralized i18n configuration using react-i18next.
+// Language is auto-detected from navigator.language and falls back to English.
+// To add a new language: add a JSON file in locales/ and register it below.
 
-export const messages = {
-  fr: {
-    appName: "Justif",
-    nav: {
-      dashboard: "Tableau de bord",
-      expenses: "Dépenses",
-      upload: "Importer",
-      settings: "Paramètres",
-      users: "Utilisateurs",
-      logout: "Déconnexion",
-    },
-    login: {
-      title: "Connexion",
-      email: "Email",
-      password: "Mot de passe",
-      submit: "Se connecter",
-      error: "Identifiants invalides",
-    },
-    setup: {
-      title: "Bienvenue sur Justif",
-      subtitle: "Créez votre compte administrateur pour démarrer",
-      submit: "Créer le compte",
-    },
-    expenses: {
-      title: "Dépenses",
-      date: "Date",
-      fournisseur: "Fournisseur",
-      categorie: "Catégorie",
-      description: "Description",
-      montantOriginal: "Montant original",
-      devise: "Devise",
-      montantEur: "Montant TTC",
-      justificatif: "Justificatif",
-      export: "Exporter",
-      delete: "Supprimer",
-      deleteConfirm: "Confirmer la suppression de cette dépense ?",
-      recalculate: "Recalculer",
-      conversionFailed: "Conversion devise échouée",
-      noResults: "Aucune dépense trouvée",
-      filters: {
-        from: "Du",
-        to: "Au",
-        categorie: "Catégorie",
-        devise: "Devise",
-        search: "Rechercher...",
-      },
-      myExpenses: "Mes dépenses",
-      exportDialog: {
-        title: "Des dépenses ont déjà été exportées",
-        description:
-          "Certaines dépenses de cette sélection ont déjà été incluses dans une note de frais précédente. Choisissez celles à inclure à nouveau dans cet export :",
-        freshLabel: "dépense(s) jamais exportée(s) — toujours incluse(s)",
-        confirm: "Exporter",
-        cancel: "Annuler",
-      },
-    },
-    upload: {
-      title: "Importer un justificatif",
-      dropzone: "Glissez un fichier ici ou cliquez pour sélectionner",
-      analyzing: "Analyse en cours...",
-      save: "Enregistrer",
-      ocrError: "Erreur d'analyse OCR — vous pouvez saisir les champs manuellement",
-    },
-    settings: {
-      title: "Paramètres",
-      ocrProvider: "Fournisseur OCR",
-      cloud: "Cloud (Mistral)",
-      local: "Local (Ollama)",
-      apiKey: "Clé API Mistral",
-      model: "Modèle",
-      ollamaUrl: "URL Ollama",
-      defaultCurrency: "Devise par défaut",
-      testConnection: "Tester la connexion",
-      save: "Enregistrer",
-      saved: "Paramètres enregistrés",
-    },
-    users: {
-      title: "Utilisateurs",
-      email: "Email",
-      password: "Mot de passe",
-      role: "Rôle",
-      admin: "Administrateur",
-      user: "Utilisateur",
-      active: "Actif",
-      inactive: "Désactivé",
-      create: "Créer un utilisateur",
-      newUserTitle: "Nouvel utilisateur",
-      deactivate: "Désactiver",
-      activate: "Réactiver",
-      makeAdmin: "Promouvoir admin",
-      makeUser: "Rétrograder utilisateur",
-      you: "vous",
-    },
-    categories: ["Repas", "Transport", "Hébergement", "Matériel", "Logiciel", "Formation", "Autre"],
-  },
-} as const;
+import i18next from "i18next";
+import { initReactI18next } from "react-i18next";
+import en from "../locales/en.json";
+import fr from "../locales/fr.json";
 
-export type Locale = keyof typeof messages;
-export const defaultLocale: Locale = "fr";
+const SUPPORTED = ["en", "fr"] as const;
 
-export function t() {
-  return messages[defaultLocale];
+function detectLanguage(): (typeof SUPPORTED)[number] {
+  if (typeof navigator === "undefined") return "en";
+  const lang = navigator.language.split("-")[0];
+  return (SUPPORTED as readonly string[]).includes(lang)
+    ? (lang as (typeof SUPPORTED)[number])
+    : "en";
 }
+
+void i18next.use(initReactI18next).init({
+  lng: detectLanguage(),
+  resources: {
+    en: { translation: en },
+    fr: { translation: fr },
+  },
+  supportedLngs: [...SUPPORTED],
+  fallbackLng: "en",
+  interpolation: { escapeValue: false },
+});
+
+export default i18next;
+
+/** BCP 47 locale tag for use with toLocaleString() and toLocaleDateString(). */
+export function getLocaleTag(): string {
+  return i18next.language === "fr" ? "fr-FR" : "en-US";
+}
+
+/**
+ * Canonical DB values for expense categories.
+ * These are always stored as French strings in the database regardless of UI locale.
+ * Use t('categories.<value>') to get the localized display name.
+ */
+export type CategoryValue =
+  | "Repas"
+  | "Transport"
+  | "Hébergement"
+  | "Matériel"
+  | "Logiciel"
+  | "Formation"
+  | "Autre";
+
+export const CATEGORY_VALUES: readonly CategoryValue[] = [
+  "Repas",
+  "Transport",
+  "Hébergement",
+  "Matériel",
+  "Logiciel",
+  "Formation",
+  "Autre",
+];
