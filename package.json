@@ -9,6 +9,7 @@
     "build": "pnpm -r run build",
     "lint": "oxlint . && oxfmt .",
     "format": "oxfmt .",
+    "test": "pnpm --parallel -r run test",
     "db:migrate": "pnpm --filter backend run db:migrate",
     "db:generate": "pnpm --filter backend run db:generate"
   },
