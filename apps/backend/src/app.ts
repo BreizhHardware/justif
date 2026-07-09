@@ -18,7 +18,16 @@ export function createApp() {
 
   app.use(
     cors({
-      origin: process.env.NEXT_PUBLIC_API_URL ? true : "http://localhost:3000",
+      origin: process.env.NEXT_PUBLIC_API_URL
+        ? true
+        : (origin, cb) => {
+            // Allow localhost (any port) and GitHub Codespaces forwarded URLs
+            if (!origin || /^https?:\/\/localhost(:\d+)?$/.test(origin) || origin.endsWith(".app.github.dev")) {
+              cb(null, true);
+            } else {
+              cb(new Error("Not allowed by CORS"));
+            }
+          },
       credentials: true,
     }),
   );

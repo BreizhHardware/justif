@@ -5,8 +5,8 @@
   "description": "Justif — gestion de notes de frais open source et auto-hébergeable",
   "license": "MIT",
   "scripts": {
-    "dev": "pnpm --parallel --filter ./apps/* run dev",
-    "build": "pnpm --filter ./apps/* run build",
+    "dev": "pnpm --parallel -r run dev",
+    "build": "pnpm -r run build",
     "lint": "oxlint . && oxfmt .",
     "format": "oxfmt .",
     "db:migrate": "pnpm --filter backend run db:migrate",

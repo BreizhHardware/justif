@@ -1,4 +1,7 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+// In dev, Vite proxies /api/* to the backend (no CORS needed).
+// In production, set NEXT_PUBLIC_API_URL to the backend origin if frontend and
+// backend are on different hosts; leave unset if they share the same origin.
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 export class ApiError extends Error {
   status: number;

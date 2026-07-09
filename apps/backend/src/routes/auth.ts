@@ -59,8 +59,12 @@ router.get("/me", requireAuth, (req, res) => {
 });
 
 router.get("/status", async (_req, res) => {
-  const existing = await prisma.user.findFirst();
-  res.json({ setupComplete: Boolean(existing) });
+  try {
+    const existing = await prisma.user.findFirst();
+    res.json({ setupComplete: Boolean(existing) });
+  } catch {
+    res.json({ setupComplete: false });
+  }
 });
 
 export default router;

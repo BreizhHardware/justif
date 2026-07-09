@@ -15,8 +15,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit() {
     setError(null);
     setLoading(true);
     try {
@@ -24,6 +23,7 @@ export default function LoginPage() {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
+      localStorage.setItem("justif_had_session", "1");
       router.push("/dashboard");
     } catch {
       setError(i18n.login.error);
@@ -43,7 +43,7 @@ export default function LoginPage() {
         </div>
 
         <Card className="p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={(e) => { e.preventDefault(); void handleSubmit(); }} className="space-y-4">
             <h1 className="text-lg font-semibold text-slate-900">{i18n.login.title}</h1>
             <div>
               <Label htmlFor="email">{i18n.login.email}</Label>
