@@ -11,9 +11,10 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { AppShell } from "@/components/AppShell";
 import { apiFetch, apiUrl } from "@/lib/api";
-import { t } from "@/lib/i18n";
+import { CATEGORY_VALUES, getLocaleTag } from "@/lib/i18n";
 import { COMMON_CURRENCIES } from "@/lib/currencies";
 import { Badge, Button, Card, Input, PageHeader, Select } from "@/components/ui";
 
@@ -58,7 +59,7 @@ interface OverlapReport {
 const LIMIT = 20;
 
 export default function ExpensesPage() {
-  const i18n = t();
+  const { t } = useTranslation();
   const [response, setResponse] = useState<ExpensesResponse | null>(null);
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState("date");
@@ -201,22 +202,22 @@ export default function ExpensesPage() {
   }
 
   const columns: { key: string; label: string }[] = [
-    { key: "date", label: i18n.expenses.date },
-    { key: "fournisseur", label: i18n.expenses.fournisseur },
-    { key: "categorie", label: i18n.expenses.categorie },
-    { key: "description", label: i18n.expenses.description },
-    { key: "montant_ttc", label: i18n.expenses.montantOriginal },
-    { key: "devise", label: i18n.expenses.devise },
-    { key: "montant_ttc_eur", label: i18n.expenses.montantEur },
-    { key: "fichier", label: i18n.expenses.justificatif },
+    { key: "date", label: t("expenses.date") },
+    { key: "fournisseur", label: t("expenses.fournisseur") },
+    { key: "categorie", label: t("expenses.categorie") },
+    { key: "description", label: t("expenses.description") },
+    { key: "montant_ttc", label: t("expenses.montantOriginal") },
+    { key: "devise", label: t("expenses.devise") },
+    { key: "montant_ttc_eur", label: t("expenses.montantEur") },
+    { key: "fichier", label: t("expenses.justificatif") },
   ];
 
   return (
     <AppShell>
-      <PageHeader title={i18n.expenses.title}>
+      <PageHeader title={t("expenses.title")}>
         <Button onClick={handleExportClick}>
           <Download size={16} />
-          {i18n.expenses.export}
+          {t("expenses.export")}
         </Button>
       </PageHeader>
 
@@ -235,7 +236,7 @@ export default function ExpensesPage() {
                   : "bg-white text-slate-600 hover:bg-slate-100"
               }`}
             >
-              {user.id === currentUserId ? i18n.expenses.myExpenses : user.email}
+              {user.id === currentUserId ? t("expenses.myExpenses") : user.email}
             </button>
           ))}
         </div>
@@ -244,7 +245,7 @@ export default function ExpensesPage() {
       <Card className="mb-5 grid grid-cols-2 gap-3 p-4 sm:grid-cols-5">
         <div>
           <span className="mb-1 block text-xs font-medium text-slate-500">
-            {i18n.expenses.filters.from}
+            {t("expenses.filters.from")}
           </span>
           <Input
             type="date"
@@ -257,7 +258,7 @@ export default function ExpensesPage() {
         </div>
         <div>
           <span className="mb-1 block text-xs font-medium text-slate-500">
-            {i18n.expenses.filters.to}
+            {t("expenses.filters.to")}
           </span>
           <Input
             type="date"
@@ -270,7 +271,7 @@ export default function ExpensesPage() {
         </div>
         <div>
           <span className="mb-1 block text-xs font-medium text-slate-500">
-            {i18n.expenses.filters.categorie}
+            {t("expenses.filters.categorie")}
           </span>
           <Select
             value={filters.categorie}
@@ -280,16 +281,16 @@ export default function ExpensesPage() {
             }}
           >
             <option value="">—</option>
-            {i18n.categories.map((c) => (
+            {CATEGORY_VALUES.map((c) => (
               <option key={c} value={c}>
-                {c}
+                {t(`categories.${c}` as never)}
               </option>
             ))}
           </Select>
         </div>
         <div>
           <span className="mb-1 block text-xs font-medium text-slate-500">
-            {i18n.expenses.filters.devise}
+            {t("expenses.filters.devise")}
           </span>
           <Select
             value={filters.devise}
@@ -308,7 +309,7 @@ export default function ExpensesPage() {
         </div>
         <div className="relative">
           <span className="mb-1 block text-xs font-medium text-slate-500">
-            {i18n.expenses.filters.search}
+            {t("expenses.filters.search")}
           </span>
           <Search
             className="pointer-events-none absolute left-2.5 top-[34px] text-slate-400"
@@ -320,7 +321,7 @@ export default function ExpensesPage() {
               setFilters({ ...filters, q: e.target.value });
               setPage(1);
             }}
-            placeholder={i18n.expenses.filters.search}
+            placeholder={t("expenses.filters.search")}
             className="pl-8"
           />
         </div>
@@ -347,7 +348,7 @@ export default function ExpensesPage() {
             {response?.data.length === 0 && (
               <tr>
                 <td colSpan={columns.length + 1} className="px-4 py-10 text-center text-slate-400">
-                  {i18n.expenses.noResults}
+                  {t("expenses.noResults")}
                 </td>
               </tr>
             )}
@@ -367,7 +368,7 @@ export default function ExpensesPage() {
                         className="w-36"
                       />
                     ) : (
-                      new Date(expense.date).toLocaleDateString("fr-FR")
+                      new Date(expense.date).toLocaleDateString(getLocaleTag())
                     )}
                   </td>
                   <td className="px-4 py-3" onClick={() => !isEditing && startEdit(expense)}>
@@ -392,14 +393,14 @@ export default function ExpensesPage() {
                         }
                         className="w-32"
                       >
-                        {i18n.categories.map((c) => (
+                        {CATEGORY_VALUES.map((c) => (
                           <option key={c} value={c}>
-                            {c}
+                            {t(`categories.${c}` as never)}
                           </option>
                         ))}
                       </Select>
                     ) : (
-                      <Badge tone="slate">{expense.categorie}</Badge>
+                      <Badge tone="slate">{t(`categories.${expense.categorie}` as never)}</Badge>
                     )}
                   </td>
                   <td
@@ -446,7 +447,13 @@ export default function ExpensesPage() {
                       <span
                         title={
                           expense.taux_change && expense.taux_change_date
-                            ? `1 ${expense.devise} = ${expense.taux_change.toFixed(4)} EUR — taux BCE du ${new Date(expense.taux_change_date).toLocaleDateString("fr-FR")}`
+                            ? t("expenses.rateTooltip", {
+                                devise: expense.devise,
+                                rate: expense.taux_change.toFixed(4),
+                                date: new Date(expense.taux_change_date).toLocaleDateString(
+                                  getLocaleTag(),
+                                ),
+                              })
                             : undefined
                         }
                       >
@@ -455,7 +462,7 @@ export default function ExpensesPage() {
                     ) : (
                       <span
                         className="flex items-center gap-1.5 text-amber-600"
-                        title={i18n.expenses.conversionFailed}
+                        title={t("expenses.conversionFailed")}
                       >
                         <AlertTriangle size={14} />
                         <button
@@ -463,7 +470,7 @@ export default function ExpensesPage() {
                           className="flex items-center gap-1 underline"
                         >
                           <RotateCw size={12} />
-                          {i18n.expenses.recalculate}
+                          {t("expenses.recalculate")}
                         </button>
                       </span>
                     )}
@@ -472,7 +479,7 @@ export default function ExpensesPage() {
                     {expense.fichier ? (
                       <img
                         src={apiUrl(`/uploads/${expense.fichier}`)}
-                        alt="Justificatif"
+                        alt={t("expenses.justificatif")}
                         onClick={() => setModalImage(apiUrl(`/uploads/${expense.fichier}`))}
                         className="h-10 w-10 cursor-pointer rounded-lg border border-slate-200 object-cover transition hover:opacity-80"
                       />
@@ -533,17 +540,17 @@ export default function ExpensesPage() {
       {confirmDeleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <Card className="w-full max-w-sm p-6">
-            <p className="mb-4 text-sm text-slate-700">{i18n.expenses.deleteConfirm}</p>
+            <p className="mb-4 text-sm text-slate-700">{t("expenses.deleteConfirm")}</p>
             <div className="flex justify-end gap-3">
               <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>
-                Annuler
+                {t("expenses.cancel")}
               </Button>
               <Button
                 variant="danger"
                 className="bg-red-600 text-white hover:bg-red-700"
                 onClick={() => handleDelete(confirmDeleteId)}
               >
-                {i18n.expenses.delete}
+                {t("expenses.delete")}
               </Button>
             </div>
           </Card>
@@ -557,7 +564,7 @@ export default function ExpensesPage() {
         >
           <img
             src={modalImage}
-            alt="Justificatif"
+            alt={t("expenses.justificatif")}
             className="max-h-[90vh] max-w-[90vw] rounded-xl shadow-2xl"
           />
         </div>
@@ -567,13 +574,13 @@ export default function ExpensesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <Card className="w-full max-w-md p-6">
             <h2 className="mb-2 text-base font-semibold text-slate-900">
-              {i18n.expenses.exportDialog.title}
+              {t("expenses.exportDialog.title")}
             </h2>
-            <p className="mb-4 text-sm text-slate-600">{i18n.expenses.exportDialog.description}</p>
+            <p className="mb-4 text-sm text-slate-600">{t("expenses.exportDialog.description")}</p>
 
             {exportDialog.freshCount > 0 && (
               <p className="mb-3 text-sm text-brand-600">
-                {exportDialog.freshCount} {i18n.expenses.exportDialog.freshLabel}
+                {exportDialog.freshCount} {t("expenses.exportDialog.freshLabel")}
               </p>
             )}
 
@@ -591,7 +598,7 @@ export default function ExpensesPage() {
                   />
                   <span className="flex-1">{report.name}</span>
                   <span className="text-xs text-slate-400">
-                    {report.count} · {new Date(report.createdAt).toLocaleDateString("fr-FR")}
+                    {report.count} · {new Date(report.createdAt).toLocaleDateString(getLocaleTag())}
                   </span>
                 </label>
               ))}
@@ -599,11 +606,11 @@ export default function ExpensesPage() {
 
             <div className="flex justify-end gap-3">
               <Button variant="secondary" onClick={() => setExportDialog(null)}>
-                {i18n.expenses.exportDialog.cancel}
+                {t("expenses.exportDialog.cancel")}
               </Button>
               <Button onClick={() => runExport(Array.from(exportDialog.selected))}>
                 <Download size={16} />
-                {i18n.expenses.exportDialog.confirm}
+                {t("expenses.exportDialog.confirm")}
               </Button>
             </div>
           </Card>

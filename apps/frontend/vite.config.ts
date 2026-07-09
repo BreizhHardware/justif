@@ -4,8 +4,8 @@ import vinext from "vinext";
 export default defineConfig({
   plugins: [
     vinext(),
-    // vinext auto-détecte app/ et next.config.ts
-    // Pas besoin de @vitejs/plugin-rsc explicite pour déploiement Node.js
+    // vinext auto-detects app/ and next.config.ts
+    // No need for @vitejs/plugin-rsc for Node.js deployment
   ],
   server: {
     proxy: {

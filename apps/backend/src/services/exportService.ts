@@ -71,7 +71,7 @@ export async function ensureConvertedAmounts(
           taux_change_date: date,
         };
       } catch (err) {
-        console.error("[exportService] Reconversion échouée:", err);
+        console.error("[exportService] Reconversion failed:", err);
         return e;
       }
     }),
@@ -93,19 +93,19 @@ function buildExpensesSheet(
   expenses: Expense[],
   defaultCurrency: string,
 ) {
-  const sheet = workbook.addWorksheet("Dépenses");
+  const sheet = workbook.addWorksheet("Expenses");
 
   const headerRow = sheet.addRow([
     "Date",
-    "Fournisseur",
-    "Catégorie",
+    "Vendor",
+    "Category",
     "Description",
-    "Montant original",
-    "Devise",
-    `Taux de change (${defaultCurrency})`,
-    "Date du taux BCE",
-    `Montant HT (${defaultCurrency})`,
-    `Montant TTC (${defaultCurrency})`,
+    "Original amount",
+    "Currency",
+    `Exchange rate (${defaultCurrency})`,
+    "ECB rate date",
+    `Amount excl. tax (${defaultCurrency})`,
+    `Amount incl. tax (${defaultCurrency})`,
   ]);
   styleHeaderRow(headerRow);
 
@@ -182,7 +182,7 @@ function buildSummarySheet(
   expenses: Expense[],
   defaultCurrency: string,
 ) {
-  const sheet = workbook.addWorksheet("Résumé");
+  const sheet = workbook.addWorksheet("Summary");
 
   const byCategorie = new Map<string, { count: number; total: number }>();
   for (const e of expenses) {
@@ -192,7 +192,7 @@ function buildSummarySheet(
     byCategorie.set(e.categorie, entry);
   }
 
-  const headerA = sheet.addRow(["Catégorie", "Nb dépenses", `Total TTC (${defaultCurrency})`]);
+  const headerA = sheet.addRow(["Category", "# expenses", `Total incl. tax (${defaultCurrency})`]);
   styleHeaderRow(headerA);
   let rowIndex = 0;
   for (const [categorie, { count, total }] of byCategorie) {
@@ -219,10 +219,10 @@ function buildSummarySheet(
   }
 
   const headerB = sheet.addRow([
-    "Devise",
-    "Nb dépenses",
-    "Total original",
-    "Taux moyen",
+    "Currency",
+    "# expenses",
+    "Original total",
+    "Avg. rate",
     `Total (${defaultCurrency})`,
   ]);
   styleHeaderRow(headerB);

@@ -2,6 +2,12 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "files": [
+    ".next",
+    "dist",
+    "public",
+    "next.config.ts"
+  ],
   "type": "module",
   "scripts": {
     "dev": "vinext dev",
@@ -13,9 +19,11 @@
     "@nivo/core": "^0.99.0",
     "@nivo/line": "^0.99.0",
     "@nivo/pie": "^0.99.0",
+    "i18next": "^26.3.5",
     "lucide-react": "^1.0.0",
     "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react-dom": "^19.2.6",
+    "react-i18next": "^17.0.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.2",
@@ -33,11 +41,5 @@
   },
   "engines": {
     "node": ">=22"
-  },
-  "files": [
-    ".next",
-    "dist",
-    "public",
-    "next.config.ts"
-  ]
+  }
 }

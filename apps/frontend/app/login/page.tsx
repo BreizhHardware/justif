@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { LayoutGrid } from "lucide-react";
 import { apiFetch } from "@/lib/api";
-import { t } from "@/lib/i18n";
 import { Button, Card, Input, Label } from "@/components/ui";
 
 export default function LoginPage() {
   const router = useRouter();
-  const i18n = t();
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +26,7 @@ export default function LoginPage() {
       localStorage.setItem("justif_had_session", "1");
       router.push("/dashboard");
     } catch {
-      setError(i18n.login.error);
+      setError(t("login.error"));
     } finally {
       setLoading(false);
     }
@@ -39,14 +39,20 @@ export default function LoginPage() {
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500">
             <LayoutGrid className="text-white" size={22} />
           </div>
-          <span className="text-xl font-semibold text-slate-900">{i18n.appName}</span>
+          <span className="text-xl font-semibold text-slate-900">{t("appName")}</span>
         </div>
 
         <Card className="p-6">
-          <form onSubmit={(e) => { e.preventDefault(); void handleSubmit(); }} className="space-y-4">
-            <h1 className="text-lg font-semibold text-slate-900">{i18n.login.title}</h1>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleSubmit();
+            }}
+            className="space-y-4"
+          >
+            <h1 className="text-lg font-semibold text-slate-900">{t("login.title")}</h1>
             <div>
-              <Label htmlFor="email">{i18n.login.email}</Label>
+              <Label htmlFor="email">{t("login.email")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -56,7 +62,7 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <Label htmlFor="password">{i18n.login.password}</Label>
+              <Label htmlFor="password">{t("login.password")}</Label>
               <Input
                 id="password"
                 type="password"
@@ -67,7 +73,7 @@ export default function LoginPage() {
             </div>
             {error && <p className="text-sm text-red-600">{error}</p>}
             <Button type="submit" disabled={loading} className="w-full">
-              {i18n.login.submit}
+              {t("login.submit")}
             </Button>
           </form>
         </Card>

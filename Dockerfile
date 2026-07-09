@@ -1,4 +1,4 @@
-# Image unique : backend + frontend + proxy interne, un seul port exposé.
+# Single image: backend + frontend + internal proxy, one exposed port.
 
 # ---------- Backend build ----------
 FROM node:24-bookworm-slim AS backend-build
@@ -24,8 +24,8 @@ COPY apps/backend/src ./apps/backend/src/
 ENV DATABASE_URL=file:./db/justif.db
 RUN pnpm --filter backend run db:generate && pnpm --filter backend run build
 
-# pnpm deploy crée un répertoire autoportant : node_modules à plat, sans symlinks.
-# Le champ "files" dans package.json permet d'inclure dist/ et prisma/ malgré .gitignore.
+# pnpm deploy creates a self-contained directory: flat node_modules, no symlinks.
+# The "files" field in package.json includes dist/ and prisma/ despite .gitignore.
 RUN pnpm deploy --filter backend --prod --legacy /deploy/backend
 
 # ---------- Frontend build ----------
@@ -46,7 +46,7 @@ COPY apps/frontend/. ./apps/frontend/
 ENV NEXT_PUBLIC_API_URL=
 RUN pnpm --filter frontend run build
 
-# Sans --prod : vinext est une devDependency requise au runtime pour `vinext start`.
+# Without --prod: vinext is a devDependency required at runtime for `vinext start`.
 RUN pnpm deploy --filter frontend --legacy /deploy/frontend
 
 # ---------- Runtime ----------
@@ -68,7 +68,7 @@ RUN chmod +x ./entrypoint.sh
 
 RUN mkdir -p /app/backend/uploads /app/backend/db
 
-# Port public unique. BACKEND_PORT/FRONTEND_PORT sont des ports internes.
+# Single public port. BACKEND_PORT/FRONTEND_PORT are internal ports.
 ENV PORT=3000
 ENV BACKEND_PORT=3001
 ENV FRONTEND_PORT=3002

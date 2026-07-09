@@ -4,9 +4,9 @@ const PORT = Number(process.env.PORT ?? 3000);
 const BACKEND_PORT = Number(process.env.BACKEND_PORT ?? 3001);
 const FRONTEND_PORT = Number(process.env.FRONTEND_PORT ?? 3002);
 
-// Le frontend et le backend tournent dans le même conteneur derrière ce
-// proxy : un seul port public, même origine pour le navigateur (cookies et
-// CORS deviennent non-problématiques), routage par préfixe de chemin.
+// The frontend and backend run in the same container behind this proxy:
+// one public port, same origin for the browser (cookies and CORS are
+// non-issues), routing by path prefix.
 function targetPortFor(pathname) {
   return pathname.startsWith("/api/") || pathname.startsWith("/uploads/")
     ? BACKEND_PORT
@@ -26,7 +26,7 @@ const server = http.createServer((req, res) => {
   );
 
   proxyReq.on("error", (err) => {
-    console.error("[proxy] erreur en amont:", err);
+    console.error("[proxy] upstream error:", err);
     if (!res.headersSent) res.writeHead(502);
     res.end("Bad gateway");
   });
@@ -35,5 +35,5 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Justif démarré sur http://localhost:${PORT}`);
+  console.log(`Justif started on http://localhost:${PORT}`);
 });

@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { AppShell } from "@/components/AppShell";
 import { Card, Input, Label, PageHeader } from "@/components/ui";
 import { apiFetch, ApiError } from "@/lib/api";
+import { getLocaleTag } from "@/lib/i18n";
 import { ResponsivePie } from "@nivo/pie";
 import { ResponsiveLine } from "@nivo/line";
 
@@ -17,18 +19,10 @@ type DashboardSummary = {
   recentReports: { id: string; name: string; createdAt: string; count: number }[];
 };
 
-const BRAND_COLORS = [
-  "#2D6A4F",
-  "#40916C",
-  "#52B788",
-  "#74C69D",
-  "#95D5B2",
-  "#B7E4C7",
-  "#D8F3DC",
-];
+const BRAND_COLORS = ["#2D6A4F", "#40916C", "#52B788", "#74C69D", "#95D5B2", "#B7E4C7", "#D8F3DC"];
 
 function fmt(n: number) {
-  return n.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return n.toLocaleString(getLocaleTag(), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function StatCard({ label, value }: { label: string; value: string }) {
@@ -42,6 +36,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [from, setFrom] = useState("");
@@ -71,7 +66,7 @@ export default function DashboardPage() {
   const pieData =
     summary?.byCategory.map((c, i) => ({
       id: c.categorie,
-      label: c.categorie,
+      label: t(`categories.${c.categorie}` as never),
       value: c.sum,
       color: BRAND_COLORS[i % BRAND_COLORS.length],
     })) ?? [];
@@ -80,7 +75,7 @@ export default function DashboardPage() {
     summary && summary.byMonth.length > 0
       ? [
           {
-            id: "Dépenses",
+            id: t("dashboard.expenseSeries"),
             color: "#2D6A4F",
             data: summary.byMonth.map((m) => ({ x: m.month, y: m.sum })),
           },
@@ -92,12 +87,12 @@ export default function DashboardPage() {
 
   return (
     <AppShell>
-      <PageHeader title="Tableau de bord" />
+      <PageHeader title={t("nav.dashboard")} />
 
-      {/* Filtres */}
+      {/* Date filters */}
       <div className="mb-6 flex flex-wrap items-end gap-4">
         <div>
-          <Label htmlFor="from">Du</Label>
+          <Label htmlFor="from">{t("expenses.filters.from")}</Label>
           <Input
             id="from"
             type="date"
@@ -107,7 +102,7 @@ export default function DashboardPage() {
           />
         </div>
         <div>
-          <Label htmlFor="to">Au</Label>
+          <Label htmlFor="to">{t("expenses.filters.to")}</Label>
           <Input
             id="to"
             type="date"
@@ -118,42 +113,45 @@ export default function DashboardPage() {
         </div>
         {(from || to) && (
           <button
-            onClick={() => { setFrom(""); setTo(""); }}
+            onClick={() => {
+              setFrom("");
+              setTo("");
+            }}
             className="text-sm text-slate-500 hover:text-slate-800 underline"
           >
-            Réinitialiser
+            {t("dashboard.reset")}
           </button>
         )}
       </div>
 
       {loading ? (
         <div className="flex h-48 items-center justify-center text-slate-400 text-sm">
-          Chargement…
+          {t("dashboard.loading")}
         </div>
       ) : (
         <>
-          {/* Cartes synthèse */}
+          {/* Summary cards */}
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <StatCard
-              label="Total TTC (€)"
+              label={t("dashboard.totalLabel")}
               value={summary ? `${fmt(summary.total)} €` : "—"}
             />
             <StatCard
-              label="Nombre de dépenses"
+              label={t("dashboard.countLabel")}
               value={summary ? String(summary.count) : "—"}
             />
             <StatCard
-              label="Moyenne par dépense"
+              label={t("dashboard.averageLabel")}
               value={summary && summary.count > 0 ? `${fmt(summary.average)} €` : "—"}
             />
           </div>
 
-          {/* Graphiques */}
+          {/* Charts */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {/* Répartition par catégorie */}
+            {/* By category */}
             <Card className="p-5">
               <h2 className="mb-4 text-sm font-semibold text-slate-700">
-                Répartition par catégorie
+                {t("dashboard.byCategory")}
               </h2>
               {hasBar ? (
                 <div style={{ height: 280 }}>
@@ -192,15 +190,15 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <p className="flex h-48 items-center justify-center text-sm text-slate-400">
-                  Aucune donnée
+                  {t("dashboard.noData")}
                 </p>
               )}
             </Card>
 
-            {/* Évolution mensuelle */}
+            {/* Monthly trend */}
             <Card className="p-5">
               <h2 className="mb-4 text-sm font-semibold text-slate-700">
-                Évolution mensuelle
+                {t("dashboard.monthlyTrend")}
               </h2>
               {hasLine ? (
                 <div style={{ height: 280 }}>
@@ -245,24 +243,26 @@ export default function DashboardPage() {
               ) : (
                 <p className="flex h-48 items-center justify-center text-sm text-slate-400">
                   {summary && summary.byMonth.length === 1
-                    ? "Un seul mois — le graphique nécessite au moins 2 points"
-                    : "Aucune donnée"}
+                    ? t("dashboard.singleMonth")
+                    : t("dashboard.noData")}
                 </p>
               )}
             </Card>
           </div>
 
-          {/* Exports récents */}
+          {/* Recent exports */}
           {summary && summary.recentReports.length > 0 && (
             <Card className="mt-6 p-5">
-              <h2 className="mb-3 text-sm font-semibold text-slate-700">Exports récents</h2>
+              <h2 className="mb-3 text-sm font-semibold text-slate-700">
+                {t("dashboard.recentExports")}
+              </h2>
               <ul className="divide-y divide-slate-100">
                 {summary.recentReports.map((r) => (
                   <li key={r.id} className="flex items-center justify-between py-2.5">
                     <span className="text-sm text-slate-700">{r.name}</span>
                     <span className="text-xs text-slate-400">
-                      {r.count} dépense{r.count > 1 ? "s" : ""} ·{" "}
-                      {new Date(r.createdAt).toLocaleDateString("fr-FR")}
+                      {t("dashboard.expenseCount", { count: r.count })} ·{" "}
+                      {new Date(r.createdAt).toLocaleDateString(getLocaleTag())}
                     </span>
                   </li>
                 ))}
