@@ -7,4 +7,6 @@ services:
       - ./data/uploads:/app/backend/uploads
       - ./data/db:/app/backend/db
     env_file: .env
+    environment:
+      - PORT=3000
     restart: unless-stopped
