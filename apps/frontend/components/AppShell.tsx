@@ -34,7 +34,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   async function handleLogout() {
     await apiFetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
+    localStorage.removeItem("justif_had_session");
+    router.push("/");
   }
 
   const visibleLinks = links.filter((link) => !link.adminOnly || role === "admin");

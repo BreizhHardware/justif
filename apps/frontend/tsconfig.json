@@ -13,7 +13,9 @@
     "isolatedModules": true,
     "incremental": true,
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "next/navigation": ["./node_modules/vinext/dist/shims/navigation"],
+      "next/link": ["./node_modules/vinext/dist/shims/link"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
