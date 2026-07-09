@@ -12,7 +12,8 @@
   "scripts": {
     "dev": "vinext dev",
     "build": "vinext build",
-    "start": "vinext start"
+    "start": "vinext start",
+    "test": "echo \"No test for the moment\" && exit 0"
   },
   "dependencies": {
     "@nivo/bar": "^0.99.0",

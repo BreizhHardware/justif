@@ -37,7 +37,7 @@ jobs:
         run: pnpm --filter backend run db:generate
 
       - name: Run backend tests
-        run: pnpm --filter backend run test
+        run: pnpm run test
 
   publish:
     needs: test
