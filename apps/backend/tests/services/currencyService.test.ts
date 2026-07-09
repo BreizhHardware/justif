@@ -61,7 +61,7 @@ describe("getRateCached", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(getRateCached("GBP", "JPY", "2026-03-03")).rejects.toThrow(
-      "Frankfurter: devise JPY non trouvée dans la réponse",
+      "Frankfurter: currency JPY not found in response",
     );
   });
 });

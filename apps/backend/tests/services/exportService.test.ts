@@ -87,14 +87,14 @@ describe("ensureConvertedAmounts", () => {
 });
 
 describe("buildExpensesWorkbook", () => {
-  it("builds a Dépenses sheet with header, data rows and a TOTAL row", async () => {
+  it("builds an Expenses sheet with header, data rows and a TOTAL row", async () => {
     const expenses = [
       fakeExpense({ id: "e1", montant_ttc: 100, montant_ht_eur: 80, montant_ttc_eur: 100 }),
       fakeExpense({ id: "e2", montant_ttc_eur: null, montant_ht_eur: null }),
     ];
 
     const workbook = await buildExpensesWorkbook(expenses, "EUR");
-    const sheet = workbook.getWorksheet("Dépenses")!;
+    const sheet = workbook.getWorksheet("Expenses")!;
 
     expect(sheet.getRow(1).getCell(1).value).toBe("Date");
     expect(sheet.getRow(2).getCell(9).value).toBe(80);
@@ -108,7 +108,7 @@ describe("buildExpensesWorkbook", () => {
     expect(totalRow.getCell(10).value).toBe(100);
   });
 
-  it("builds a Résumé sheet grouping by catégorie and by devise", async () => {
+  it("builds a Summary sheet grouping by category and by currency", async () => {
     const expenses = [
       fakeExpense({
         id: "e1",
@@ -137,17 +137,17 @@ describe("buildExpensesWorkbook", () => {
     ];
 
     const workbook = await buildExpensesWorkbook(expenses, "EUR");
-    const sheet = workbook.getWorksheet("Résumé")!;
+    const sheet = workbook.getWorksheet("Summary")!;
 
     const rowValues = (rowNumber: number, lastColumn: number) =>
       Array.from({ length: lastColumn }, (_, i) => sheet.getRow(rowNumber).getCell(i + 1).value);
 
-    expect(rowValues(1, 3)).toEqual(["Catégorie", "Nb dépenses", "Total TTC (EUR)"]);
+    expect(rowValues(1, 3)).toEqual(["Category", "# expenses", "Total incl. tax (EUR)"]);
     expect(rowValues(2, 3)).toEqual(["Repas", 2, 80]);
     expect(rowValues(3, 3)).toEqual(["Transport", 1, 18]);
 
     const deviseHeaderRow = sheet.getRow(6);
-    expect(deviseHeaderRow.getCell(1).value).toBe("Devise");
+    expect(deviseHeaderRow.getCell(1).value).toBe("Currency");
     expect(rowValues(7, 5)).toEqual(["EUR", 2, 80, 1, 80]);
     expect(rowValues(8, 5)).toEqual(["USD", 1, 20, 0.9, 18]);
   });
