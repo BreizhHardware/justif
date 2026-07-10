@@ -15,6 +15,7 @@ License: [MIT](./LICENSE)
 3. [OCR configuration](#3-ocr-configuration)
 4. [Currency configuration](#4-currency-configuration)
 5. [Migrating vinext → standard Next.js](#5-migrating-vinext--standard-nextjs)
+6. [Data & privacy](#6-data--privacy)
 
 ## 1. Docker deployment (production)
 
@@ -113,6 +114,49 @@ is straightforward:
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+## 6. Data & privacy
+
+### Audit log and IP address collection
+
+Every sensitive action (sign-in, expense creation/deletion, data export,
+user management, settings changes) is recorded in an `AuditLog` table with
+the following fields: action type, timestamp, affected entity, actor, and the
+**client IP address**.
+
+IP addresses are collected for three reasons:
+
+1. **Brute-force detection** — repeated failed login attempts from the same IP can be spotted and blocked at the infrastructure level.
+2. **Compliance traceability** — administrative actions (role changes, bulk exports, account deletion) can be traced back to a network origin.
+3. **Audit investigations** — internal or external auditors can correlate events across time and origin.
+
+The legal basis is the operator's legitimate interest in maintaining the
+security and integrity of the application and its data (GDPR Art. 6(1)(f)).
+
+### GDPR compliance built in
+
+- **Pseudonymisation on account deletion**: when a user account is deleted,
+  the `userId` foreign key in existing audit log entries is set to `NULL`
+  (`onDelete: SetNull`) — the log entries are preserved (audit trail
+  integrity) but the actor is no longer identifiable.
+- **No secrets in metadata**: audit metadata stores only field names and
+  safe snapshots (e.g. `passwordChanged: true`, never the password value;
+  key names only for settings, never values).
+- **In-app privacy policy**: the app ships a `/privacy` page that discloses
+  what data is collected, why, and how users can exercise their GDPR rights.
+  It is linked from the login page.
+
+### Operator responsibilities
+
+As a self-hosted application, **you** are the data controller. You should:
+
+- Reference the `/privacy` page (or adapt its text) in your own privacy
+  notice and make it accessible to users.
+- Define a log retention policy appropriate for your compliance obligations
+  and purge old entries accordingly — the app does not enforce a TTL.
+- If you sit behind a reverse proxy (nginx, Caddy, Traefik…), ensure the
+  `X-Forwarded-For` header is set correctly so the recorded IP belongs to
+  the actual client and not the proxy.
 
 ## File cleanup
 

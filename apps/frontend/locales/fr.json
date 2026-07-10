@@ -35,12 +35,50 @@
     "reconnect": "Se reconnecter",
     "redirecting": "Redirection…"
   },
+  "privacy": {
+    "title": "Politique de confidentialité",
+    "backToLogin": "Retour à la connexion",
+    "controller": {
+      "title": "Responsable du traitement",
+      "body": "Cette application est auto-hébergée. Le responsable du traitement est la personne ou l'organisation qui exploite cette instance de Justif, et non le projet open source Justif. Contactez votre administrateur pour toute demande relative à la protection des données."
+    },
+    "collected": {
+      "title": "Données collectées",
+      "intro": "Cette application enregistre les données suivantes :",
+      "credentials": "Identifiants de compte (adresse e-mail et mot de passe haché)",
+      "expenses": "Dépenses saisies par les utilisateurs (montants, dates, catégories, noms de fournisseurs)",
+      "receipts": "Justificatifs téléversés (reçus et factures)",
+      "auditLogs": "Entrées du journal d'audit : type d'action, horodatage, entité concernée et adresse IP de la requête (voir ci-dessous)"
+    },
+    "ip": {
+      "title": "Collecte de l'adresse IP",
+      "body": "Chaque action sensible effectuée dans l'application (connexion, création ou suppression de dépense, export de données, modifications d'utilisateurs ou de paramètres) enregistre l'adresse IP du client dans le journal d'audit. Cette collecte est réalisée pour les raisons suivantes :",
+      "reason1": "Détecter les tentatives d'accès non autorisées et les attaques par force brute",
+      "reason2": "Associer les actions administratives à une origine réseau à des fins de conformité",
+      "reason3": "Faciliter les enquêtes d'audit internes et externes",
+      "basis": "La base juridique de ce traitement est l'intérêt légitime de l'opérateur à maintenir la sécurité et l'intégrité de l'application et de ses données."
+    },
+    "retention": {
+      "title": "Durée de conservation",
+      "body": "Les entrées du journal d'audit sont conservées aussi longtemps que l'administrateur de l'instance le configure. Lors de la suppression d'un compte utilisateur, l'identifiant de l'utilisateur est retiré des entrées d'audit existantes (pseudonymisation), mais les entrées elles-mêmes sont conservées pour maintenir l'intégrité de la piste d'audit conformément aux obligations légales."
+    },
+    "rights": {
+      "title": "Vos droits",
+      "intro": "En vertu du RGPD, vous disposez des droits suivants concernant vos données personnelles :",
+      "access": "Droit d'accès — vous pouvez demander une copie des données vous concernant",
+      "erasure": "Droit à l'effacement — vous pouvez demander la suppression de votre compte et des données personnelles associées",
+      "erasureNote": "Remarque : les entrées du journal d'audit sont pseudonymisées plutôt que supprimées lors de l'effacement du compte, car elles peuvent être requises à des fins légales ou de conformité",
+      "portability": "Droit à la portabilité — vous pouvez demander vos données dans un format structuré et lisible par machine",
+      "contact": "Pour exercer l'un de ces droits, contactez directement l'administrateur de cette instance Justif."
+    }
+  },
   "login": {
     "title": "Connexion",
     "email": "Email",
     "password": "Mot de passe",
     "submit": "Se connecter",
-    "error": "Identifiants invalides"
+    "error": "Identifiants invalides",
+    "privacy": "Politique de confidentialité"
   },
   "setup": {
     "title": "Bienvenue sur Justif",

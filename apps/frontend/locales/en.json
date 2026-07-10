@@ -35,10 +35,48 @@
     "reconnect": "Sign in again",
     "redirecting": "Redirecting…"
   },
+  "privacy": {
+    "title": "Privacy policy",
+    "backToLogin": "Back to sign in",
+    "controller": {
+      "title": "Data controller",
+      "body": "This application is self-hosted. The data controller is the person or organisation that operates this Justif instance, not the Justif open-source project. Please contact your administrator for any privacy-related request."
+    },
+    "collected": {
+      "title": "Data collected",
+      "intro": "This application stores the following data:",
+      "credentials": "Account credentials (email address and hashed password)",
+      "expenses": "Expense records entered by users (amounts, dates, categories, vendor names)",
+      "receipts": "Uploaded supporting documents (receipts and invoices)",
+      "auditLogs": "Audit log entries: action type, timestamp, affected entity, and the IP address of the request (see below)"
+    },
+    "ip": {
+      "title": "IP address collection",
+      "body": "Every sensitive action performed in the application (sign-in, expense creation or deletion, data export, user or settings changes) records the client IP address in the audit log. This is done for the following reasons:",
+      "reason1": "Detect unauthorised access attempts and brute-force attacks",
+      "reason2": "Trace administrative actions to a network origin for compliance purposes",
+      "reason3": "Support internal and external audit investigations",
+      "basis": "The legal basis for this processing is the legitimate interest of the operator in maintaining the security and integrity of the application and its data."
+    },
+    "retention": {
+      "title": "Data retention",
+      "body": "Audit log entries are retained for as long as the administrator of this instance configures. When a user account is deleted, the user identifier in existing audit log entries is removed (pseudonymisation), but the log entries themselves are preserved to maintain audit trail integrity as required by compliance obligations."
+    },
+    "rights": {
+      "title": "Your rights",
+      "intro": "Under the GDPR you have the following rights regarding your personal data:",
+      "access": "Right of access — you may request a copy of the data held about you",
+      "erasure": "Right to erasure — you may request deletion of your account and associated personal data",
+      "erasureNote": "Note: audit log entries are pseudonymised rather than fully deleted upon account erasure, as they may be required for legal or compliance purposes",
+      "portability": "Right to data portability — you may request your data in a structured, machine-readable format",
+      "contact": "To exercise any of these rights, contact the administrator of this Justif instance directly."
+    }
+  },
   "login": {
     "title": "Sign in",
     "email": "Email",
     "password": "Password",
+    "privacy": "Privacy policy",
     "submit": "Sign in",
     "error": "Invalid credentials"
   },
