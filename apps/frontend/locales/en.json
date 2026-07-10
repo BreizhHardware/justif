@@ -16,6 +16,7 @@
     "upload": "Import",
     "settings": "Settings",
     "users": "Users",
+    "audit": "Audit log",
     "logout": "Sign out"
   },
   "home": {
@@ -137,6 +138,26 @@
     "save": "Save",
     "saved": "Settings saved",
     "error": "Error"
+  },
+  "audit": {
+    "title": "Audit log",
+    "noResults": "No audit events found",
+    "deletedUser": "Deleted user",
+    "filters": {
+      "from": "From",
+      "to": "To",
+      "action": "Action",
+      "user": "User",
+      "allActions": "All actions",
+      "allUsers": "All users"
+    },
+    "columns": {
+      "timestamp": "Timestamp",
+      "actor": "Actor",
+      "action": "Action",
+      "entity": "Entity",
+      "details": "Details"
+    }
   },
   "users": {
     "title": "Users",

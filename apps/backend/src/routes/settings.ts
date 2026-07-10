@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
+import { audit, ipFromReq } from "../services/auditService.js";
 
 const router = Router();
 
@@ -52,6 +53,14 @@ router.patch("/", async (req, res) => {
       }),
     ),
   );
+
+  // Log key names only — never values (secret keys must not appear in audit metadata).
+  await audit({
+    userId: req.user!.id,
+    action: "settings.update",
+    metadata: { keys: updates.map(([key]) => key) },
+    ip: ipFromReq(req),
+  });
 
   const rows = await prisma.setting.findMany({ where: { key: { in: PUBLIC_KEYS } } });
   const map = new Map(rows.map((r) => [r.key, r.value]));

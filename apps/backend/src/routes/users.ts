@@ -2,6 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcrypt";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
+import { audit, ipFromReq } from "../services/auditService.js";
 
 const router = Router();
 
@@ -41,6 +42,14 @@ router.post("/", async (req, res) => {
     data: { email, passwordHash, role: role ?? "user" },
     select: { id: true, email: true, role: true, active: true, createdAt: true },
   });
+  await audit({
+    userId: req.user!.id,
+    action: "user.create",
+    entityType: "User",
+    entityId: user.id,
+    metadata: { email: user.email, role: user.role },
+    ip: ipFromReq(req),
+  });
   res.status(201).json(user);
 });
 
@@ -76,6 +85,18 @@ router.patch("/:id", async (req, res) => {
     where: { id: req.params.id },
     data,
     select: { id: true, email: true, role: true, active: true, createdAt: true },
+  });
+  const changes: Record<string, unknown> = {};
+  if (role) changes.role = role;
+  if (active !== undefined) changes.active = active;
+  if (password) changes.passwordChanged = true;
+  await audit({
+    userId: req.user!.id,
+    action: "user.update",
+    entityType: "User",
+    entityId: user.id,
+    metadata: { changes },
+    ip: ipFromReq(req),
   });
   res.json(user);
 });
