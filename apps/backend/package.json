@@ -16,7 +16,8 @@
     "test:watch": "vitest",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:deploy": "prisma migrate deploy"
+    "db:deploy": "prisma migrate deploy",
+    "seed:e2e": "tsx src/scripts/seed-e2e.ts"
   },
   "dependencies": {
     "@archiver/archiver": "^0.1.0",

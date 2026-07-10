@@ -34,7 +34,11 @@ Backend tests use [Vitest](https://vitest.dev/) and run against a real SQLite da
 pnpm --filter backend run test
 ```
 
-Frontend tests don't exist yet — contributions to set up a testing strategy (component tests, e2e, etc.) are very welcome.
+Frontend tests use [Vitest](https://vitest.dev/) and playwright for end-to-end testing:
+
+```bash
+pnpm --filter frontend run test
+```
 
 If your PR adds or changes behaviour, please include or update the relevant tests. If you genuinely can't write a test for something, explain why in the PR description — that's fine, but skipping tests without a reason is not.
 
