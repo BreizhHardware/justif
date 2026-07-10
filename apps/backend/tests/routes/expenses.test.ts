@@ -84,6 +84,16 @@ describe("POST /api/expenses", () => {
     const res = await client.post("/api/expenses", expensePayload({ date: undefined }));
     expect(res.status).toBe(400);
   });
+
+  it("persists the optional reference number", async () => {
+    const { client } = await loginAs({ email: "reference@justif.test" });
+    const res = await client.post(
+      "/api/expenses",
+      expensePayload({ numero_reference: "REF-1234" }),
+    );
+    expect(res.status).toBe(201);
+    expect((await res.json()).numero_reference).toBe("REF-1234");
+  });
 });
 
 describe("PATCH /api/expenses/:id", () => {
@@ -93,9 +103,12 @@ describe("PATCH /api/expenses/:id", () => {
 
     const res = await client.patch(`/api/expenses/${created.id}`, {
       fournisseur: "Nouveau fournisseur",
+      numero_reference: "REF-9999",
     });
     expect(res.status).toBe(200);
-    expect((await res.json()).fournisseur).toBe("Nouveau fournisseur");
+    const body = await res.json();
+    expect(body.fournisseur).toBe("Nouveau fournisseur");
+    expect(body.numero_reference).toBe("REF-9999");
   });
 
   it("forbids another non-admin user from updating someone else's expense", async () => {

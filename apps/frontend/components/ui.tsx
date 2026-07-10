@@ -5,6 +5,7 @@ import type {
   InputHTMLAttributes,
   LabelHTMLAttributes,
   SelectHTMLAttributes,
+  TextareaHTMLAttributes,
 } from "react";
 
 export function Card({ className = "", ...props }: React.HTMLAttributes<HTMLDivElement>) {
@@ -31,6 +32,13 @@ export function Input({ className = "", ...props }: InputHTMLAttributes<HTMLInpu
 
 export function Select({ className = "", ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
   return <select className={`${fieldClass} ${className}`} {...props} />;
+}
+
+export function Textarea({
+  className = "",
+  ...props
+}: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return <textarea className={`${fieldClass} ${className}`} {...props} />;
 }
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

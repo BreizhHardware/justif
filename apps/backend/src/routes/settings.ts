@@ -9,6 +9,8 @@ const PUBLIC_KEYS = [
   "ollama_url",
   "ollama_model",
   "default_currency",
+  "ocr_prompt_override",
+  "ocr_extract_reference_number",
 ];
 const SECRET_KEYS = ["mistral_api_key"];
 const ALL_KEYS = [...PUBLIC_KEYS, ...SECRET_KEYS];
@@ -20,6 +22,8 @@ const DEFAULTS: Record<string, string> = {
   ollama_url: process.env.OLLAMA_URL ?? "http://localhost:11434",
   ollama_model: process.env.OLLAMA_MODEL ?? "llava",
   default_currency: process.env.DEFAULT_CURRENCY ?? "EUR",
+  ocr_prompt_override: "",
+  ocr_extract_reference_number: "false",
 };
 
 router.get("/", async (_req, res) => {
