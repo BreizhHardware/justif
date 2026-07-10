@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   AlertTriangle,
+  Archive,
   ChevronLeft,
   ChevronRight,
   Download,
@@ -80,6 +81,7 @@ export default function ExpensesPage() {
     freshCount: number;
     reports: OverlapReport[];
     selected: Set<string>;
+    format: "xlsx" | "zip";
   } | null>(null);
 
   useEffect(() => {
@@ -169,14 +171,15 @@ export default function ExpensesPage() {
     };
   }
 
-  function runExport(includeReportIds: string[] = []) {
+  function runExport(includeReportIds: string[] = [], format: "xlsx" | "zip" = "xlsx") {
     const params = new URLSearchParams(filterParams());
     if (includeReportIds.length > 0) params.set("includeReportIds", includeReportIds.join(","));
+    if (format === "zip") params.set("format", "zip");
     window.location.href = apiUrl(`/api/expenses/export?${params}`);
     setExportDialog(null);
   }
 
-  async function handleExportClick() {
+  async function handleExportClick(format: "xlsx" | "zip" = "xlsx") {
     const params = new URLSearchParams(filterParams());
     const overlap = await apiFetch<{
       total: number;
@@ -184,13 +187,14 @@ export default function ExpensesPage() {
       previousReports: OverlapReport[];
     }>(`/api/expenses/export-overlap?${params}`);
     if (overlap.previousReports.length === 0) {
-      runExport();
+      runExport([], format);
       return;
     }
     setExportDialog({
       freshCount: overlap.freshCount,
       reports: overlap.previousReports,
       selected: new Set(),
+      format,
     });
   }
 
@@ -217,7 +221,11 @@ export default function ExpensesPage() {
   return (
     <AppShell>
       <PageHeader title={t("expenses.title")}>
-        <Button onClick={handleExportClick}>
+        <Button variant="secondary" onClick={() => handleExportClick("zip")}>
+          <Archive size={16} />
+          {t("expenses.exportZip")}
+        </Button>
+        <Button onClick={() => handleExportClick("xlsx")}>
           <Download size={16} />
           {t("expenses.export")}
         </Button>
@@ -623,8 +631,10 @@ export default function ExpensesPage() {
               <Button variant="secondary" onClick={() => setExportDialog(null)}>
                 {t("expenses.exportDialog.cancel")}
               </Button>
-              <Button onClick={() => runExport(Array.from(exportDialog.selected))}>
-                <Download size={16} />
+              <Button
+                onClick={() => runExport(Array.from(exportDialog.selected), exportDialog.format)}
+              >
+                {exportDialog.format === "zip" ? <Archive size={16} /> : <Download size={16} />}
                 {t("expenses.exportDialog.confirm")}
               </Button>
             </div>
