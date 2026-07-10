@@ -17,6 +17,7 @@ interface Settings {
   default_currency: string;
   ocr_prompt_override: string;
   ocr_extract_reference_number: string;
+  require_validation: string;
   mistral_api_key_set: string;
 }
 
@@ -47,6 +48,7 @@ export default function SettingsPage() {
       default_currency: settings!.default_currency,
       ocr_prompt_override: settings!.ocr_prompt_override,
       ocr_extract_reference_number: settings!.ocr_extract_reference_number,
+      require_validation: settings!.require_validation,
     };
     if (mistralApiKey) payload.mistral_api_key = mistralApiKey;
     const updated = await apiFetch<Settings>("/api/settings", {
@@ -228,6 +230,27 @@ export default function SettingsPage() {
               </option>
             ))}
           </Select>
+        </Card>
+
+        <Card className="p-6">
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            {t("settings.requireValidation")}
+          </h2>
+          <p className="mb-4 text-sm text-slate-500">{t("settings.requireValidationHelp")}</p>
+          <label className="flex items-center gap-2.5 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={settings.require_validation === "true"}
+              onChange={(e) =>
+                setSettings({
+                  ...settings,
+                  require_validation: e.target.checked ? "true" : "false",
+                })
+              }
+              className="rounded border-slate-300 text-brand-500 focus:ring-brand-200"
+            />
+            {t("settings.requireValidation")}
+          </label>
         </Card>
 
         <div className="flex items-center gap-3">

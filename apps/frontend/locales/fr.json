@@ -126,6 +126,7 @@
     "montantHt": "Montant HT",
     "previewAlt": "Aperçu du justificatif",
     "justificatif": "Justificatif",
+    "status": "Statut",
     "cancel": "Annuler",
     "export": "Exporter",
     "exportZip": "Exporter avec justificatifs (.zip)",
@@ -135,11 +136,17 @@
     "conversionFailed": "Conversion devise échouée",
     "noResults": "Aucune dépense trouvée",
     "rateTooltip": "1 {{devise}} = {{rate}} EUR — taux BCE du {{date}}",
+    "submitForReview": "Soumettre pour validation",
+    "validate": "Valider",
+    "reject": "Rejeter",
+    "archive": "Archiver",
     "filters": {
       "from": "Du",
       "to": "Au",
       "categorie": "Catégorie",
       "devise": "Devise",
+      "status": "Statut",
+      "allStatuses": "Tous les statuts",
       "search": "Rechercher..."
     },
     "myExpenses": "Mes dépenses",
@@ -149,6 +156,13 @@
       "freshLabel": "dépense(s) jamais exportée(s) — toujours incluse(s)",
       "confirm": "Exporter",
       "cancel": "Annuler"
+    },
+    "statuses": {
+      "draft": "Brouillon",
+      "pending_review": "En attente",
+      "validated": "Validée",
+      "exported": "Exportée",
+      "archived": "Archivée"
     }
   },
   "upload": {
@@ -175,7 +189,9 @@
     "extractReferenceNumberHelp": "Une fois activé, l'OCR recherche activement un numéro de référence ou de ticket mis en évidence (encadré, entouré en rouge) et remplit le champ Référence. Le champ reste modifiable dans tous les cas.",
     "save": "Enregistrer",
     "saved": "Paramètres enregistrés",
-    "error": "Erreur"
+    "error": "Erreur",
+    "requireValidation": "Activer le circuit de validation",
+    "requireValidationHelp": "Lorsqu'il est activé, les dépenses doivent être soumises pour validation et approuvées par un administrateur avant d'être exportées."
   },
   "audit": {
     "title": "Journal d'audit",

@@ -126,6 +126,7 @@
     "montantHt": "Amount excl. tax",
     "previewAlt": "Receipt preview",
     "justificatif": "Receipt",
+    "status": "Status",
     "cancel": "Cancel",
     "export": "Export",
     "exportZip": "Export with receipts (.zip)",
@@ -135,11 +136,17 @@
     "conversionFailed": "Currency conversion failed",
     "noResults": "No expenses found",
     "rateTooltip": "1 {{devise}} = {{rate}} EUR — ECB rate from {{date}}",
+    "submitForReview": "Submit for review",
+    "validate": "Validate",
+    "reject": "Reject",
+    "archive": "Archive",
     "filters": {
       "from": "From",
       "to": "To",
       "categorie": "Category",
       "devise": "Currency",
+      "status": "Status",
+      "allStatuses": "All statuses",
       "search": "Search…"
     },
     "myExpenses": "My expenses",
@@ -149,6 +156,13 @@
       "freshLabel": "expense(s) never exported — always included",
       "confirm": "Export",
       "cancel": "Cancel"
+    },
+    "statuses": {
+      "draft": "Draft",
+      "pending_review": "Pending Review",
+      "validated": "Validated",
+      "exported": "Exported",
+      "archived": "Archived"
     }
   },
   "upload": {
@@ -175,7 +189,9 @@
     "extractReferenceNumberHelp": "When enabled, OCR actively looks for a highlighted reference or ticket number (e.g. boxed, circled in red) and fills the Reference field. The field stays editable either way.",
     "save": "Save",
     "saved": "Settings saved",
-    "error": "Error"
+    "error": "Error",
+    "requireValidation": "Enable validation workflow",
+    "requireValidationHelp": "When enabled, expenses must be submitted for review and approved by an administrator before they can be exported."
   },
   "audit": {
     "title": "Audit log",
