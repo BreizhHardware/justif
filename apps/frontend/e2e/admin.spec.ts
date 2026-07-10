@@ -76,4 +76,8 @@ test.describe("Settings page (admin)", () => {
   test("shows the save button", async ({ page }) => {
     await expect(page.getByRole("button", { name: /^save$|^enregistrer$/i })).toBeVisible();
   });
+
+  test("shows the validation workflow toggle", async ({ page }) => {
+    await expect(page.getByText(/validation workflow|circuit de validation/i)).toBeVisible();
+  });
 });

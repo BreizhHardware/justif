@@ -14,8 +14,9 @@ import {
   exportFileName,
   getAttachmentFilename,
 } from "../services/exportService.js";
-import { getDefaultCurrency } from "./settings.js";
+import { getDefaultCurrency, getRequireValidation } from "./settings.js";
 import { audit, ipFromReq } from "../services/auditService.js";
+import { canTransition, isValidStatus, type ExpenseStatus } from "../lib/expenseStatus.js";
 
 const router = Router();
 const UPLOAD_DIR = process.env.UPLOAD_DIR ?? "./uploads";
@@ -94,7 +95,7 @@ function canEdit(req: Request, expenseUserId: string): boolean {
 }
 
 function buildWhere(query: Record<string, string | undefined>, userId: string) {
-  const { from, to, categorie, devise, q } = query;
+  const { from, to, categorie, devise, q, status } = query;
   const where: Record<string, unknown> = { userId };
   if (from || to) {
     where.date = {
@@ -104,6 +105,7 @@ function buildWhere(query: Record<string, string | undefined>, userId: string) {
   }
   if (categorie) where.categorie = categorie;
   if (devise) where.devise = devise;
+  if (status) where.status = status;
   if (q) {
     where.OR = [
       { fournisseur: { contains: q } },
@@ -138,11 +140,12 @@ router.get("/", async (req, res) => {
     categorie,
     devise,
     q,
+    status,
     sort = "date",
     order = "desc",
   } = req.query as Record<string, string>;
 
-  const where = buildWhere({ from, to, categorie, devise, q }, targetUserId);
+  const where = buildWhere({ from, to, categorie, devise, q, status }, targetUserId);
 
   const pageNum = Math.max(1, Number(page));
   const limitNum = Math.max(1, Number(limit));
@@ -154,6 +157,7 @@ router.get("/", async (req, res) => {
     "montant_ttc",
     "devise",
     "montant_ttc_eur",
+    "status",
   ];
   const orderBy = {
     [allowedSort.includes(sort) ? sort : "date"]: order === "asc" ? "asc" : "desc",
@@ -323,6 +327,53 @@ router.post("/:id/recalculate", async (req, res) => {
   res.json(expense);
 });
 
+router.patch("/:id/status", async (req, res) => {
+  const existing = await prisma.expense.findUnique({ where: { id: req.params.id } });
+  if (!existing) {
+    res.status(404).json({ error: "Expense not found" });
+    return;
+  }
+
+  const newStatus = req.body.status as unknown;
+  if (!isValidStatus(newStatus)) {
+    res.status(400).json({ error: "Invalid status" });
+    return;
+  }
+
+  const isAdmin = req.user!.role === "admin";
+  const isOwner = existing.userId === req.user!.id;
+  if (!isOwner && !isAdmin) {
+    res.status(403).json({ error: "Access denied" });
+    return;
+  }
+
+  const requireValidation = await getRequireValidation();
+  const check = canTransition(existing.status as ExpenseStatus, newStatus, {
+    isAdmin,
+    isOwner,
+    requireValidation,
+  });
+  if (!check.allowed) {
+    res.status(400).json({ error: check.reason ?? "Transition not allowed" });
+    return;
+  }
+
+  const expense = await prisma.expense.update({
+    where: { id: req.params.id },
+    data: { status: newStatus },
+  });
+  await audit({
+    userId: req.user!.id,
+    action: "expense.status",
+    entityType: "Expense",
+    entityId: expense.id,
+    targetUserId: existing.userId !== req.user!.id ? existing.userId : null,
+    metadata: { from: existing.status, to: newStatus },
+    ip: ipFromReq(req),
+  });
+  res.json(expense);
+});
+
 router.delete("/:id", async (req, res) => {
   const existing = await prisma.expense.findUnique({ where: { id: req.params.id } });
   if (!existing) {
@@ -360,8 +411,8 @@ router.get("/export-overlap", async (req, res) => {
   const targetUserId = await resolveTargetUserId(req, res);
   if (!targetUserId) return;
 
-  const { from, to, categorie, devise, q } = req.query as Record<string, string>;
-  const where = buildWhere({ from, to, categorie, devise, q }, targetUserId);
+  const { from, to, categorie, devise, q, status } = req.query as Record<string, string>;
+  const where = buildWhere({ from, to, categorie, devise, q, status }, targetUserId);
 
   const expenses = await prisma.expense.findMany({
     where,
@@ -398,11 +449,11 @@ router.get("/export", async (req, res) => {
   const targetUserId = await resolveTargetUserId(req, res);
   if (!targetUserId) return;
 
-  const { from, to, categorie, devise, q, includeReportIds, format } = req.query as Record<
+  const { from, to, categorie, devise, q, status, includeReportIds, format } = req.query as Record<
     string,
     string
   >;
-  const where = buildWhere({ from, to, categorie, devise, q }, targetUserId);
+  const where = buildWhere({ from, to, categorie, devise, q, status }, targetUserId);
   const includeSet = new Set((includeReportIds ?? "").split(",").filter(Boolean));
 
   const matching = await prisma.expense.findMany({
@@ -422,7 +473,7 @@ router.get("/export", async (req, res) => {
 
   const registerReport = async () => {
     if (finalExpenses.length === 0) return null;
-    return prisma.expenseReport.create({
+    const report = await prisma.expenseReport.create({
       data: {
         name: reportName(from, to),
         periodFrom: from ?? null,
@@ -431,6 +482,12 @@ router.get("/export", async (req, res) => {
         items: { create: finalExpenses.map((expense) => ({ expenseId: expense.id })) },
       },
     });
+    // Mark all exported expenses as "exported"
+    await prisma.expense.updateMany({
+      where: { id: { in: finalExpenses.map((e) => e.id) } },
+      data: { status: "exported" },
+    });
+    return report;
   };
 
   if (format === "zip") {

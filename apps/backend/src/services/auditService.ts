@@ -10,6 +10,7 @@ export type AuditAction =
   | "expense.update"
   | "expense.delete"
   | "expense.recalculate"
+  | "expense.status"
   | "export.xlsx"
   | "export.zip"
   | "settings.update";

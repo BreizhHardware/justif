@@ -28,6 +28,7 @@ export default function SetupPage() {
   const [ollamaUrl, setOllamaUrl] = useState("http://localhost:11434");
   const [ollamaModel, setOllamaModel] = useState("llava");
   const [extractReferenceNumber, setExtractReferenceNumber] = useState(false);
+  const [requireValidation, setRequireValidation] = useState(false);
   const [step2Loading, setStep2Loading] = useState(false);
 
   useEffect(() => {
@@ -62,6 +63,7 @@ export default function SetupPage() {
       ollama_url: ollamaUrl,
       ollama_model: ollamaModel,
       ocr_extract_reference_number: extractReferenceNumber ? "true" : "false",
+      require_validation: requireValidation ? "true" : "false",
     };
     if (ocrProvider === "cloud" && mistralApiKey) {
       payload.mistral_api_key = mistralApiKey;
@@ -283,6 +285,17 @@ export default function SetupPage() {
                 />
                 {t("settings.extractReferenceNumber")}
               </label>
+
+              <label className="flex items-center gap-2.5 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={requireValidation}
+                  onChange={(e) => setRequireValidation(e.target.checked)}
+                  className="rounded border-slate-300 text-brand-500 focus:ring-brand-200"
+                />
+                {t("settings.requireValidation")}
+              </label>
+              <p className="text-xs text-slate-400">{t("settings.requireValidationHelp")}</p>
 
               <div className="flex flex-col gap-2 pt-1">
                 <Button type="submit" disabled={step2Loading} className="w-full">

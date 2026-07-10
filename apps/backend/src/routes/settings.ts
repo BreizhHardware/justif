@@ -12,6 +12,7 @@ const PUBLIC_KEYS = [
   "default_currency",
   "ocr_prompt_override",
   "ocr_extract_reference_number",
+  "require_validation",
 ];
 const SECRET_KEYS = ["mistral_api_key"];
 const ALL_KEYS = [...PUBLIC_KEYS, ...SECRET_KEYS];
@@ -25,6 +26,7 @@ const DEFAULTS: Record<string, string> = {
   default_currency: process.env.DEFAULT_CURRENCY ?? "EUR",
   ocr_prompt_override: "",
   ocr_extract_reference_number: "false",
+  require_validation: "false",
 };
 
 router.get("/", async (_req, res) => {
@@ -74,6 +76,11 @@ router.patch("/", async (req, res) => {
 export async function getDefaultCurrency(): Promise<string> {
   const row = await prisma.setting.findUnique({ where: { key: "default_currency" } });
   return row?.value ?? DEFAULTS.default_currency ?? "EUR";
+}
+
+export async function getRequireValidation(): Promise<boolean> {
+  const row = await prisma.setting.findUnique({ where: { key: "require_validation" } });
+  return (row?.value ?? DEFAULTS.require_validation) === "true";
 }
 
 export default router;
