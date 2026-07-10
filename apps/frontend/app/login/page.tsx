@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { LayoutGrid } from "lucide-react";
@@ -77,6 +78,11 @@ export default function LoginPage() {
             </Button>
           </form>
         </Card>
+        <p className="mt-4 text-center text-xs text-slate-400">
+          <Link href="/privacy" className="underline hover:text-slate-600">
+            {t("login.privacy")}
+          </Link>
+        </p>
       </div>
     </main>
   );
