@@ -16,6 +16,7 @@
     "upload": "Importer",
     "settings": "Paramètres",
     "users": "Utilisateurs",
+    "audit": "Journal d'audit",
     "logout": "Déconnexion"
   },
   "home": {
@@ -137,6 +138,26 @@
     "save": "Enregistrer",
     "saved": "Paramètres enregistrés",
     "error": "Erreur"
+  },
+  "audit": {
+    "title": "Journal d'audit",
+    "noResults": "Aucun événement trouvé",
+    "deletedUser": "Utilisateur supprimé",
+    "filters": {
+      "from": "Du",
+      "to": "Au",
+      "action": "Action",
+      "user": "Utilisateur",
+      "allActions": "Toutes les actions",
+      "allUsers": "Tous les utilisateurs"
+    },
+    "columns": {
+      "timestamp": "Horodatage",
+      "actor": "Acteur",
+      "action": "Action",
+      "entity": "Entité",
+      "details": "Détails"
+    }
   },
   "users": {
     "title": "Utilisateurs",

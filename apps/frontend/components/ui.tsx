@@ -85,7 +85,7 @@ export function Badge({
   tone = "slate",
   children,
 }: {
-  tone?: "slate" | "brand" | "blue" | "amber";
+  tone?: "slate" | "brand" | "blue" | "amber" | "red";
   children: React.ReactNode;
 }) {
   const tones: Record<string, string> = {
@@ -93,6 +93,7 @@ export function Badge({
     brand: "bg-brand-100 text-brand-700",
     blue: "bg-blue-100 text-blue-700",
     amber: "bg-amber-100 text-amber-700",
+    red: "bg-red-100 text-red-700",
   };
   return (
     <span
