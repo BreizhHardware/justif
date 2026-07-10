@@ -19,6 +19,16 @@ import { CATEGORY_VALUES, getLocaleTag } from "@/lib/i18n";
 import { COMMON_CURRENCIES } from "@/lib/currencies";
 import { Badge, Button, Card, Input, PageHeader, Select } from "@/components/ui";
 
+type ExpenseStatus = "draft" | "pending_review" | "validated" | "exported" | "archived";
+
+const EXPENSE_STATUSES: ExpenseStatus[] = [
+  "draft",
+  "pending_review",
+  "validated",
+  "exported",
+  "archived",
+];
+
 interface Expense {
   id: string;
   date: string;
@@ -35,6 +45,8 @@ interface Expense {
   taux_change: number | null;
   taux_change_date: string | null;
   fichier: string | null;
+  status: ExpenseStatus;
+  userId: string;
 }
 
 interface ExpensesResponse {
@@ -66,7 +78,8 @@ export default function ExpensesPage() {
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState("date");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
-  const [filters, setFilters] = useState({ from: "", to: "", categorie: "", devise: "", q: "" });
+  const [filters, setFilters] = useState({ from: "", to: "", categorie: "", devise: "", q: "", status: "" });
+  const [requireValidation, setRequireValidation] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [modalImage, setModalImage] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -98,6 +111,9 @@ export default function ExpensesPage() {
         });
       }
     });
+    apiFetch<{ require_validation: string }>("/api/settings").then((s) => {
+      setRequireValidation(s.require_validation === "true");
+    });
   }, []);
 
   const userScopeParam: Record<string, string> =
@@ -114,6 +130,7 @@ export default function ExpensesPage() {
       ...(filters.categorie ? { categorie: filters.categorie } : {}),
       ...(filters.devise ? { devise: filters.devise } : {}),
       ...(filters.q ? { q: filters.q } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
       ...userScopeParam,
     });
     const result = await apiFetch<ExpensesResponse>(`/api/expenses?${params}`);
@@ -167,8 +184,27 @@ export default function ExpensesPage() {
       ...(filters.categorie ? { categorie: filters.categorie } : {}),
       ...(filters.devise ? { devise: filters.devise } : {}),
       ...(filters.q ? { q: filters.q } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
       ...userScopeParam,
     };
+  }
+
+  async function handleStatusTransition(expense: Expense, newStatus: ExpenseStatus) {
+    await apiFetch(`/api/expenses/${expense.id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: newStatus }),
+    });
+    loadExpenses();
+  }
+
+  function statusTone(status: ExpenseStatus): "slate" | "amber" | "brand" | "blue" {
+    switch (status) {
+      case "draft": return "slate";
+      case "pending_review": return "amber";
+      case "validated": return "brand";
+      case "exported": return "blue";
+      case "archived": return "slate";
+    }
   }
 
   function runExport(includeReportIds: string[] = [], format: "xlsx" | "zip" = "xlsx") {
@@ -215,6 +251,7 @@ export default function ExpensesPage() {
     { key: "montant_ttc", label: t("expenses.montantOriginal") },
     { key: "devise", label: t("expenses.devise") },
     { key: "montant_ttc_eur", label: t("expenses.montantEur") },
+    { key: "status", label: t("expenses.status") },
     { key: "fichier", label: t("expenses.justificatif") },
   ];
 
@@ -252,7 +289,7 @@ export default function ExpensesPage() {
         </div>
       )}
 
-      <Card className="mb-5 grid grid-cols-2 gap-3 p-4 sm:grid-cols-5">
+      <Card className="mb-5 grid grid-cols-2 gap-3 p-4 sm:grid-cols-6">
         <div>
           <span className="mb-1 block text-xs font-medium text-slate-500">
             {t("expenses.filters.from")}
@@ -313,6 +350,25 @@ export default function ExpensesPage() {
             {COMMON_CURRENCIES.map((code) => (
               <option key={code} value={code}>
                 {code}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <div>
+          <span className="mb-1 block text-xs font-medium text-slate-500">
+            {t("expenses.filters.status")}
+          </span>
+          <Select
+            value={filters.status}
+            onChange={(e) => {
+              setFilters({ ...filters, status: e.target.value });
+              setPage(1);
+            }}
+          >
+            <option value="">{t("expenses.filters.allStatuses")}</option>
+            {EXPENSE_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {t(`expenses.statuses.${s}` as never)}
               </option>
             ))}
           </Select>
@@ -498,6 +554,11 @@ export default function ExpensesPage() {
                       </span>
                     )}
                   </td>
+                  <td className="whitespace-nowrap px-4 py-3">
+                    <Badge tone={statusTone(expense.status)}>
+                      {t(`expenses.statuses.${expense.status}` as never)}
+                    </Badge>
+                  </td>
                   <td className="px-4 py-3">
                     {expense.fichier ? (
                       <img
@@ -521,12 +582,51 @@ export default function ExpensesPage() {
                         </Button>
                       </div>
                     ) : (
-                      <button
-                        onClick={() => setConfirmDeleteId(expense.id)}
-                        className="text-slate-400 transition hover:text-red-600"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        {/* Workflow transition buttons */}
+                        {requireValidation && expense.status === "draft" && (
+                          <button
+                            onClick={() => handleStatusTransition(expense, "pending_review")}
+                            className="text-xs text-amber-600 underline transition hover:text-amber-800"
+                            title={t("expenses.submitForReview")}
+                          >
+                            {t("expenses.submitForReview")}
+                          </button>
+                        )}
+                        {isAdmin && expense.status === "pending_review" && (
+                          <>
+                            <button
+                              onClick={() => handleStatusTransition(expense, "validated")}
+                              className="text-xs text-brand-600 underline transition hover:text-brand-800"
+                              title={t("expenses.validate")}
+                            >
+                              {t("expenses.validate")}
+                            </button>
+                            <button
+                              onClick={() => handleStatusTransition(expense, "draft")}
+                              className="text-xs text-slate-500 underline transition hover:text-slate-700"
+                              title={t("expenses.reject")}
+                            >
+                              {t("expenses.reject")}
+                            </button>
+                          </>
+                        )}
+                        {isAdmin && (expense.status === "validated" || expense.status === "exported") && (
+                          <button
+                            onClick={() => handleStatusTransition(expense, "archived")}
+                            className="text-xs text-slate-400 underline transition hover:text-slate-600"
+                            title={t("expenses.archive")}
+                          >
+                            {t("expenses.archive")}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setConfirmDeleteId(expense.id)}
+                          className="text-slate-400 transition hover:text-red-600"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>

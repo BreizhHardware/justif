@@ -28,5 +28,11 @@ test.describe("Expenses page", () => {
     await expect(page.getByRole("columnheader", { name: /date/i })).toBeVisible();
     await expect(page.getByRole("columnheader", { name: /vendor|fournisseur/i })).toBeVisible();
     await expect(page.getByRole("columnheader", { name: /category|catégorie/i })).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: /status|statut/i })).toBeVisible();
+  });
+
+  test("shows a status filter dropdown", async ({ page }) => {
+    // The status filter is a <select> with the "All statuses" default option
+    await expect(page.getByText(/all statuses|tous les statuts/i)).toBeVisible();
   });
 });
