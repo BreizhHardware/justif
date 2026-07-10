@@ -20,6 +20,9 @@ importers:
 
   apps/backend:
     dependencies:
+      '@archiver/archiver':
+        specifier: ^0.1.0
+        version: 0.1.0
       '@prisma/adapter-better-sqlite3':
         specifier: ^7.0.0
         version: 7.8.0
@@ -166,6 +169,22 @@ packages:
   '@alloc/quick-lru@5.2.0':
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
     engines: {node: '>=10'}
+
+  '@archiver/archiver@0.1.0':
+    resolution: {integrity: sha512-VvP/r/oK5c1W2LoEVS0LbR0JS784ZVEd4QMCbF2dzKIeDwahPccNEGb9ZV0v0qRM2ehUErFxJTlZrgfqSi2rxQ==}
+    engines: {node: '>=24'}
+
+  '@archiver/readdir-glob@0.1.0':
+    resolution: {integrity: sha512-CAQHHXguRdktCtKOAMyM1tHEyoAEk8aL4BPeXMPqB/d/pDYk2Xd20bCI+cwOzlN3vEw0ka+1mktIwNjVAnb5wA==}
+    engines: {node: '>=24'}
+
+  '@archiver/tar-stream@0.1.0':
+    resolution: {integrity: sha512-/E2ZXMzjzUVl4XheGWCUkCDbAUASmB5ZCZ5L743gpyhnZMYTA3/W1FWDi8/FOhaMu7Zm2GeIdv8CxY5ogEMByA==}
+    engines: {node: '>=24'}
+
+  '@archiver/zip-stream@0.1.0':
+    resolution: {integrity: sha512-78CFASy4E1TaVTC7aw0knChR8/HoqfmEXogUfX6CGuMLHdOBPmhvyP7/T74PDZ/T/pvLCjAX9MBdEasbjc9Ijg==}
+    engines: {node: '>=24'}
 
   '@babel/runtime@7.29.7':
     resolution: {integrity: sha512-Nq8OhGWiZIZGV6hLHoyAKLLcJihP/xFeBMGJoUrxTX2psI8dCifzLhZISFb+VWS3wFMRDmCGw5R+dOySCqPLhw==}
@@ -3194,6 +3213,20 @@ packages:
 snapshots:
 
   '@alloc/quick-lru@5.2.0': {}
+
+  '@archiver/archiver@0.1.0':
+    dependencies:
+      '@archiver/readdir-glob': 0.1.0
+      '@archiver/tar-stream': 0.1.0
+      '@archiver/zip-stream': 0.1.0
+
+  '@archiver/readdir-glob@0.1.0':
+    dependencies:
+      picomatch: 4.0.5
+
+  '@archiver/tar-stream@0.1.0': {}
+
+  '@archiver/zip-stream@0.1.0': {}
 
   '@babel/runtime@7.29.7': {}
 

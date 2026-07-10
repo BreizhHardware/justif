@@ -89,6 +89,7 @@
     "justificatif": "Justificatif",
     "cancel": "Annuler",
     "export": "Exporter",
+    "exportZip": "Exporter avec justificatifs (.zip)",
     "delete": "Supprimer",
     "deleteConfirm": "Confirmer la suppression de cette dépense ?",
     "recalculate": "Recalculer",

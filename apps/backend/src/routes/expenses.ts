@@ -3,13 +3,16 @@ import multer from "multer";
 import sharp from "sharp";
 import path from "node:path";
 import fs from "node:fs/promises";
+import fsSync from "node:fs";
 import { randomUUID } from "node:crypto";
+import { ZipArchive } from "@archiver/archiver";
 import { prisma } from "../lib/prisma.js";
 import { convertExpenseAmounts } from "../services/currencyService.js";
 import {
   buildExpensesWorkbook,
   ensureConvertedAmounts,
   exportFileName,
+  getAttachmentFilename,
 } from "../services/exportService.js";
 import { getDefaultCurrency } from "./settings.js";
 
@@ -355,7 +358,10 @@ router.get("/export", async (req, res) => {
   const targetUserId = await resolveTargetUserId(req, res);
   if (!targetUserId) return;
 
-  const { from, to, categorie, devise, q, includeReportIds } = req.query as Record<string, string>;
+  const { from, to, categorie, devise, q, includeReportIds, format } = req.query as Record<
+    string,
+    string
+  >;
   const where = buildWhere({ from, to, categorie, devise, q }, targetUserId);
   const includeSet = new Set((includeReportIds ?? "").split(",").filter(Boolean));
 
@@ -374,20 +380,60 @@ router.get("/export", async (req, res) => {
   const defaultCurrency = await getDefaultCurrency();
   const converted = await ensureConvertedAmounts(finalExpenses, defaultCurrency);
 
+  const registerReport = async () => {
+    if (finalExpenses.length > 0) {
+      await prisma.expenseReport.create({
+        data: {
+          name: reportName(from, to),
+          periodFrom: from ?? null,
+          periodTo: to ?? null,
+          userId: targetUserId,
+          items: { create: finalExpenses.map((expense) => ({ expenseId: expense.id })) },
+        },
+      });
+    }
+  };
+
+  if (format === "zip") {
+    const attachmentMap = new Map<string, string>();
+    for (const expense of converted) {
+      const filename = getAttachmentFilename(expense);
+      if (filename) attachmentMap.set(expense.id, filename);
+    }
+
+    const workbook = await buildExpensesWorkbook(converted, defaultCurrency, attachmentMap);
+    const xlsxFilename = exportFileName(from);
+    const zipFilename = xlsxFilename.replace(".xlsx", ".zip");
+
+    await registerReport();
+
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader("Content-Disposition", `attachment; filename="${zipFilename}"`);
+
+    const archive = new ZipArchive({ zlib: { level: 6 } });
+    archive.pipe(res);
+
+    const excelBuffer = Buffer.from(await workbook.xlsx.writeBuffer());
+    archive.append(excelBuffer, { name: xlsxFilename });
+
+    for (const expense of converted) {
+      const attachmentFilename = attachmentMap.get(expense.id);
+      if (attachmentFilename && expense.fichier) {
+        const filePath = path.resolve(UPLOAD_DIR, expense.fichier);
+        if (fsSync.existsSync(filePath)) {
+          archive.file(filePath, { name: `attachments/${attachmentFilename}` });
+        }
+      }
+    }
+
+    await archive.finalize();
+    return;
+  }
+
   const workbook = await buildExpensesWorkbook(converted, defaultCurrency);
   const filename = exportFileName(from);
 
-  if (finalExpenses.length > 0) {
-    await prisma.expenseReport.create({
-      data: {
-        name: reportName(from, to),
-        periodFrom: from ?? null,
-        periodTo: to ?? null,
-        userId: targetUserId,
-        items: { create: finalExpenses.map((expense) => ({ expenseId: expense.id })) },
-      },
-    });
-  }
+  await registerReport();
 
   res.setHeader(
     "Content-Type",
