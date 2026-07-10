@@ -13,7 +13,10 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "vinext start",
-    "test": "echo \"No test for the moment\" && exit 0"
+    "test": "vitest run && playwright install --with-deps chromium && playwright test",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@nivo/bar": "^0.99.0",
@@ -27,18 +30,25 @@
     "react-i18next": "^17.0.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4.3.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^24.0.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.3",
     "@vitejs/plugin-rsc": "^0.5.26",
+    "@vitest/coverage-v8": "^4.1.10",
     "autoprefixer": "^10.4.20",
+    "jsdom": "^29.1.1",
     "postcss": "^8.4.47",
     "tailwindcss": "^4.0.0",
     "typescript": "^7.0.0",
     "vinext": "^0.2.0",
-    "vite": "^8.0.0"
+    "vite": "^8.0.0",
+    "vitest": "^4.1.10"
   },
   "engines": {
     "node": ">=22"

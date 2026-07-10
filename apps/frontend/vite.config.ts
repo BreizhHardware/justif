@@ -8,6 +8,7 @@ export default defineConfig({
     // No need for @vitejs/plugin-rsc for Node.js deployment
   ],
   server: {
+    port: 3001,
     proxy: {
       "/api": "http://localhost:3000",
       "/uploads": "http://localhost:3000",
