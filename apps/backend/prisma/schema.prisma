@@ -13,6 +13,7 @@ model Expense {
   id               String   @id @default(cuid())
   date             DateTime
   fournisseur      String?
+  numero_reference String?
   categorie        String   @default("Autre")
   description      String?
   devise           String   @default("EUR")

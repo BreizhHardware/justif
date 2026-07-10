@@ -106,6 +106,7 @@ function buildExpensesSheet(
     "ECB rate date",
     `Amount excl. tax (${defaultCurrency})`,
     `Amount incl. tax (${defaultCurrency})`,
+    "Reference",
   ]);
   styleHeaderRow(headerRow);
 
@@ -124,6 +125,7 @@ function buildExpensesSheet(
       expense.taux_change_date ? new Date(expense.taux_change_date) : null,
       expense.montant_ht_eur,
       expense.montant_ttc_eur,
+      expense.numero_reference ?? "",
     ]);
 
     if (index % 2 === 1) {
@@ -166,7 +168,7 @@ function buildExpensesSheet(
     }
   });
 
-  const totalRow = sheet.addRow(["TOTAL", "", "", "", "", "", "", "", totalHt, totalTtc]);
+  const totalRow = sheet.addRow(["TOTAL", "", "", "", "", "", "", "", totalHt, totalTtc, ""]);
   totalRow.eachCell((cell) => {
     cell.fill = TOTAL_FILL;
     cell.font = TOTAL_FONT;

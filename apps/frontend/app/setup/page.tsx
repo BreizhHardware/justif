@@ -27,6 +27,7 @@ export default function SetupPage() {
   const [mistralModel, setMistralModel] = useState("pixtral-12b-2409");
   const [ollamaUrl, setOllamaUrl] = useState("http://localhost:11434");
   const [ollamaModel, setOllamaModel] = useState("llava");
+  const [extractReferenceNumber, setExtractReferenceNumber] = useState(false);
   const [step2Loading, setStep2Loading] = useState(false);
 
   useEffect(() => {
@@ -60,6 +61,7 @@ export default function SetupPage() {
       mistral_model: mistralModel,
       ollama_url: ollamaUrl,
       ollama_model: ollamaModel,
+      ocr_extract_reference_number: extractReferenceNumber ? "true" : "false",
     };
     if (ocrProvider === "cloud" && mistralApiKey) {
       payload.mistral_api_key = mistralApiKey;
@@ -271,6 +273,16 @@ export default function SetupPage() {
                   </div>
                 </div>
               )}
+
+              <label className="flex items-center gap-2.5 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={extractReferenceNumber}
+                  onChange={(e) => setExtractReferenceNumber(e.target.checked)}
+                  className="rounded border-slate-300 text-brand-500 focus:ring-brand-200"
+                />
+                {t("settings.extractReferenceNumber")}
+              </label>
 
               <div className="flex flex-col gap-2 pt-1">
                 <Button type="submit" disabled={step2Loading} className="w-full">

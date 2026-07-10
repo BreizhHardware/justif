@@ -54,6 +54,7 @@ function parseExpenseBody(body: Record<string, string>) {
   return {
     date: body.date ? new Date(body.date) : undefined,
     fournisseur: body.fournisseur ?? undefined,
+    numero_reference: body.numero_reference ?? undefined,
     categorie: body.categorie ?? undefined,
     description: body.description ?? undefined,
     devise: body.devise ?? undefined,
@@ -100,7 +101,11 @@ function buildWhere(query: Record<string, string | undefined>, userId: string) {
   if (categorie) where.categorie = categorie;
   if (devise) where.devise = devise;
   if (q) {
-    where.OR = [{ fournisseur: { contains: q } }, { description: { contains: q } }];
+    where.OR = [
+      { fournisseur: { contains: q } },
+      { numero_reference: { contains: q } },
+      { description: { contains: q } },
+    ];
   }
   return where;
 }
@@ -140,6 +145,7 @@ router.get("/", async (req, res) => {
   const allowedSort = [
     "date",
     "fournisseur",
+    "numero_reference",
     "categorie",
     "montant_ttc",
     "devise",
@@ -190,6 +196,7 @@ router.post("/", upload.single("fichier"), async (req, res) => {
       data: {
         date: parsed.date,
         fournisseur: parsed.fournisseur,
+        numero_reference: parsed.numero_reference,
         categorie: parsed.categorie ?? "Autre",
         description: parsed.description,
         devise,

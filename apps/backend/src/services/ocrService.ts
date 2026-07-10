@@ -18,6 +18,7 @@ Analyse l'image fournie et retourne UNIQUEMENT un objet JSON valide
   "tva":         nombre ou null,
   "devise":      "code ISO 4217 (ex: EUR, USD, GBP, CHF, JPY...) ou null",
   "fournisseur": "string ou null",
+  "numero_reference": "string ou null",
   "pays":        "code ISO 3166-1 alpha-2 ou null",
   "categorie":   "string parmi : ${CATEGORIES}",
   "description": "string court ou null",
@@ -40,6 +41,7 @@ Analyze the provided image and return ONLY a valid JSON object
   "tva":         number or null,
   "devise":      "ISO 4217 code (e.g. EUR, USD, GBP, CHF, JPY...) or null",
   "fournisseur": "string or null",
+  "numero_reference": "string or null",
   "pays":        "ISO 3166-1 alpha-2 code or null",
   "categorie":   "one of: ${CATEGORIES}",
   "description": "short string or null",
@@ -52,9 +54,35 @@ Important rules:
 - If a field is unreadable or missing, set it to null.`,
 };
 
-function getSystemPrompt(locale: string): string {
+const REFERENCE_NUMBER_INSTRUCTIONS = {
+  fr: "Repère aussi un numéro de référence ou de ticket s'il est mis en évidence (encadré, entouré en rouge, surligné) et indique-le dans numero_reference.",
+  en: "Also look for a reference or ticket number if it is highlighted (boxed, circled in red, underlined) and put it in numero_reference.",
+};
+
+const OVERRIDE_HEADERS = {
+  fr: "--- Instructions supplémentaires de l'administrateur ---\nApplique les règles suivantes sans changer la langue de réponse ni le format JSON défini ci-dessus :",
+  en: "--- Additional administrator instructions ---\nApply the following rules without changing the response language or the JSON format defined above:",
+};
+
+export function getSystemPrompt(
+  locale: string,
+  override?: string,
+  extractReferenceNumber?: boolean,
+): string {
   const lang = (locale.split("-")[0] ?? locale).toLowerCase() as keyof typeof SYSTEM_PROMPTS;
-  return SYSTEM_PROMPTS[lang] ?? SYSTEM_PROMPTS.en;
+  const resolvedLang = SYSTEM_PROMPTS[lang] ? lang : "en";
+  let prompt = SYSTEM_PROMPTS[resolvedLang];
+
+  if (extractReferenceNumber) {
+    prompt += `\n${REFERENCE_NUMBER_INSTRUCTIONS[resolvedLang]}`;
+  }
+
+  const trimmedOverride = override?.trim();
+  if (trimmedOverride) {
+    prompt += `\n\n${OVERRIDE_HEADERS[resolvedLang]}\n${trimmedOverride}`;
+  }
+
+  return prompt;
 }
 
 export interface OcrResult {
@@ -64,6 +92,7 @@ export interface OcrResult {
   tva: number | null;
   devise: string | null;
   fournisseur: string | null;
+  numero_reference: string | null;
   pays: string | null;
   categorie: string;
   description: string | null;
@@ -76,6 +105,8 @@ interface OcrSettings {
   mistral_model: string;
   ollama_url: string;
   ollama_model: string;
+  ocr_prompt_override: string;
+  ocr_extract_reference_number: boolean;
 }
 
 export async function loadOcrSettings(): Promise<OcrSettings> {
@@ -90,6 +121,8 @@ export async function loadOcrSettings(): Promise<OcrSettings> {
     mistral_model: map.get("mistral_model") ?? process.env.MISTRAL_MODEL ?? "pixtral-12b-2409",
     ollama_url: map.get("ollama_url") ?? process.env.OLLAMA_URL ?? "http://localhost:11434",
     ollama_model: map.get("ollama_model") ?? process.env.OLLAMA_MODEL ?? "llava",
+    ocr_prompt_override: map.get("ocr_prompt_override") ?? "",
+    ocr_extract_reference_number: map.get("ocr_extract_reference_number") === "true",
   };
 }
 
@@ -122,6 +155,7 @@ function parseOcrJson(content: string): OcrResult {
     tva: parsed.tva ?? null,
     devise: parsed.devise ?? null,
     fournisseur: parsed.fournisseur ?? null,
+    numero_reference: parsed.numero_reference ?? null,
     pays: parsed.pays ?? null,
     categorie: parsed.categorie ?? "Autre",
     description: parsed.description ?? null,
@@ -138,7 +172,11 @@ async function analyzeWithMistral(
   if (!settings.mistral_api_key) {
     throw new Error("Mistral API key not configured");
   }
-  const systemPrompt = getSystemPrompt(locale);
+  const systemPrompt = getSystemPrompt(
+    locale,
+    settings.ocr_prompt_override,
+    settings.ocr_extract_reference_number,
+  );
   const userText = locale.startsWith("fr") ? "Analyse ce justificatif." : "Analyze this receipt.";
   const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
     method: "POST",
@@ -176,7 +214,11 @@ async function analyzeWithOllama(
   settings: OcrSettings,
   locale: string,
 ): Promise<OcrResult> {
-  const systemPrompt = getSystemPrompt(locale);
+  const systemPrompt = getSystemPrompt(
+    locale,
+    settings.ocr_prompt_override,
+    settings.ocr_extract_reference_number,
+  );
   const userText = locale.startsWith("fr") ? "Analyse ce justificatif." : "Analyze this receipt.";
   const res = await fetch(`${settings.ollama_url}/api/chat`, {
     method: "POST",
