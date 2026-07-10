@@ -89,6 +89,7 @@
     "justificatif": "Receipt",
     "cancel": "Cancel",
     "export": "Export",
+    "exportZip": "Export with receipts (.zip)",
     "delete": "Delete",
     "deleteConfirm": "Confirm deletion of this expense?",
     "recalculate": "Recalculate",

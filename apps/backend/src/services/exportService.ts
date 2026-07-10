@@ -81,17 +81,26 @@ export async function ensureConvertedAmounts(
 export async function buildExpensesWorkbook(
   expenses: Expense[],
   defaultCurrency: string,
+  attachmentMap?: Map<string, string>,
 ): Promise<ExcelJS.Workbook> {
   const workbook = new ExcelJS.Workbook();
-  buildExpensesSheet(workbook, expenses, defaultCurrency);
+  buildExpensesSheet(workbook, expenses, defaultCurrency, attachmentMap);
   buildSummarySheet(workbook, expenses, defaultCurrency);
   return workbook;
+}
+
+export function getAttachmentFilename(expense: Expense): string | null {
+  if (!expense.fichier) return null;
+  const lastDot = expense.fichier.lastIndexOf(".");
+  const ext = lastDot !== -1 ? expense.fichier.slice(lastDot) : "";
+  return `${expense.id}${ext}`;
 }
 
 function buildExpensesSheet(
   workbook: ExcelJS.Workbook,
   expenses: Expense[],
   defaultCurrency: string,
+  attachmentMap?: Map<string, string>,
 ) {
   const sheet = workbook.addWorksheet("Expenses");
 
@@ -107,6 +116,7 @@ function buildExpensesSheet(
     `Amount excl. tax (${defaultCurrency})`,
     `Amount incl. tax (${defaultCurrency})`,
     "Reference",
+    ...(attachmentMap ? ["Attachment"] : []),
   ]);
   styleHeaderRow(headerRow);
 
@@ -126,6 +136,7 @@ function buildExpensesSheet(
       expense.montant_ht_eur,
       expense.montant_ttc_eur,
       expense.numero_reference ?? "",
+      ...(attachmentMap ? [attachmentMap.get(expense.id) ?? ""] : []),
     ]);
 
     if (index % 2 === 1) {

@@ -19,6 +19,7 @@
     "db:deploy": "prisma migrate deploy"
   },
   "dependencies": {
+    "@archiver/archiver": "^0.1.0",
     "@prisma/adapter-better-sqlite3": "^7.0.0",
     "@prisma/client": "^7.0.0",
     "bcrypt": "^6.0.0",
