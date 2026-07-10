@@ -15,6 +15,7 @@ import {
   getAttachmentFilename,
 } from "../services/exportService.js";
 import { getDefaultCurrency } from "./settings.js";
+import { audit, ipFromReq } from "../services/auditService.js";
 
 const router = Router();
 const UPLOAD_DIR = process.env.UPLOAD_DIR ?? "./uploads";
@@ -213,7 +214,14 @@ router.post("/", upload.single("fichier"), async (req, res) => {
         ...conversion,
       },
     });
-
+    await audit({
+      userId: req.user!.id,
+      action: "expense.create",
+      entityType: "Expense",
+      entityId: expense.id,
+      metadata: { categorie: expense.categorie, devise: expense.devise },
+      ip: ipFromReq(req),
+    });
     res.status(201).json(expense);
   } catch (err) {
     console.error("[expenses] Creation error:", err);
@@ -269,7 +277,15 @@ router.patch("/:id", async (req, res) => {
         ...conversion,
       },
     });
-
+    await audit({
+      userId: req.user!.id,
+      action: "expense.update",
+      entityType: "Expense",
+      entityId: expense.id,
+      targetUserId: existing.userId !== req.user!.id ? existing.userId : null,
+      metadata: { fields: Object.keys(req.body as Record<string, unknown>) },
+      ip: ipFromReq(req),
+    });
     res.json(expense);
   } catch (err) {
     console.error("[expenses] Update error:", err);
@@ -296,6 +312,14 @@ router.post("/:id/recalculate", async (req, res) => {
     defaultCurrency,
   });
   const expense = await prisma.expense.update({ where: { id: req.params.id }, data: conversion });
+  await audit({
+    userId: req.user!.id,
+    action: "expense.recalculate",
+    entityType: "Expense",
+    entityId: existing.id,
+    targetUserId: existing.userId !== req.user!.id ? existing.userId : null,
+    ip: ipFromReq(req),
+  });
   res.json(expense);
 });
 
@@ -311,6 +335,22 @@ router.delete("/:id", async (req, res) => {
   }
   // The original receipt file is never deleted from disk, even when the expense is deleted.
   await prisma.expense.delete({ where: { id: req.params.id } });
+  await audit({
+    userId: req.user!.id,
+    action: "expense.delete",
+    entityType: "Expense",
+    entityId: existing.id,
+    targetUserId: existing.userId !== req.user!.id ? existing.userId : null,
+    // Snapshot key fields: entity no longer exists after deletion.
+    metadata: {
+      date: existing.date.toISOString().slice(0, 10),
+      fournisseur: existing.fournisseur,
+      montant_ttc: existing.montant_ttc,
+      devise: existing.devise,
+      categorie: existing.categorie,
+    },
+    ip: ipFromReq(req),
+  });
   res.status(204).end();
 });
 
@@ -381,17 +421,16 @@ router.get("/export", async (req, res) => {
   const converted = await ensureConvertedAmounts(finalExpenses, defaultCurrency);
 
   const registerReport = async () => {
-    if (finalExpenses.length > 0) {
-      await prisma.expenseReport.create({
-        data: {
-          name: reportName(from, to),
-          periodFrom: from ?? null,
-          periodTo: to ?? null,
-          userId: targetUserId,
-          items: { create: finalExpenses.map((expense) => ({ expenseId: expense.id })) },
-        },
-      });
-    }
+    if (finalExpenses.length === 0) return null;
+    return prisma.expenseReport.create({
+      data: {
+        name: reportName(from, to),
+        periodFrom: from ?? null,
+        periodTo: to ?? null,
+        userId: targetUserId,
+        items: { create: finalExpenses.map((expense) => ({ expenseId: expense.id })) },
+      },
+    });
   };
 
   if (format === "zip") {
@@ -405,7 +444,16 @@ router.get("/export", async (req, res) => {
     const xlsxFilename = exportFileName(from);
     const zipFilename = xlsxFilename.replace(".xlsx", ".zip");
 
-    await registerReport();
+    const report = await registerReport();
+    await audit({
+      userId: req.user!.id,
+      action: "export.zip",
+      entityType: "ExpenseReport",
+      entityId: report?.id,
+      targetUserId: targetUserId !== req.user!.id ? targetUserId : null,
+      metadata: { count: finalExpenses.length, periodFrom: from ?? null, periodTo: to ?? null },
+      ip: ipFromReq(req),
+    });
 
     res.setHeader("Content-Type", "application/zip");
     res.setHeader("Content-Disposition", `attachment; filename="${zipFilename}"`);
@@ -433,7 +481,16 @@ router.get("/export", async (req, res) => {
   const workbook = await buildExpensesWorkbook(converted, defaultCurrency);
   const filename = exportFileName(from);
 
-  await registerReport();
+  const report = await registerReport();
+  await audit({
+    userId: req.user!.id,
+    action: "export.xlsx",
+    entityType: "ExpenseReport",
+    entityId: report?.id,
+    targetUserId: targetUserId !== req.user!.id ? targetUserId : null,
+    metadata: { count: finalExpenses.length, periodFrom: from ?? null, periodTo: to ?? null },
+    ip: ipFromReq(req),
+  });
 
   res.setHeader(
     "Content-Type",

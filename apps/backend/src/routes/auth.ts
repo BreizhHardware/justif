@@ -2,6 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcrypt";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth, signToken } from "../middleware/auth.js";
+import { audit, ipFromReq } from "../services/auditService.js";
 
 const router = Router();
 const COOKIE_OPTS = { httpOnly: true, sameSite: "lax" as const, maxAge: 30 * 24 * 60 * 60 * 1000 };
@@ -34,18 +35,22 @@ router.post("/login", async (req, res) => {
     return;
   }
 
+  const ip = ipFromReq(req);
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+    await audit({ action: "auth.login_failed", metadata: { reason: "invalid_credentials" }, ip });
     res.status(401).json({ error: "Invalid credentials" });
     return;
   }
   if (!user.active) {
+    await audit({ userId: user.id, action: "auth.login_failed", metadata: { reason: "account_disabled" }, ip });
     res.status(403).json({ error: "This account has been disabled" });
     return;
   }
 
   const token = signToken(user.id);
   res.cookie("token", token, COOKIE_OPTS);
+  await audit({ userId: user.id, action: "auth.login", ip });
   res.json({ token });
 });
 

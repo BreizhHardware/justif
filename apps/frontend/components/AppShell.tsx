@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import {
   BarChart2,
+  ClipboardList,
   LayoutGrid,
   LogOut,
   Menu,
@@ -22,6 +23,7 @@ const links = [
   { href: "/expenses", icon: Receipt, key: "expenses" as const, adminOnly: false },
   { href: "/upload", icon: UploadCloud, key: "upload" as const, adminOnly: false },
   { href: "/users", icon: Users, key: "users" as const, adminOnly: true },
+  { href: "/audit", icon: ClipboardList, key: "audit" as const, adminOnly: true },
   { href: "/settings", icon: Settings, key: "settings" as const, adminOnly: true },
 ];
 
