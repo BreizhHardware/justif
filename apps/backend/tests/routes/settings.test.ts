@@ -40,6 +40,8 @@ describe("GET /api/settings", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.default_currency).toBe("EUR");
+    expect(body.ocr_prompt_override).toBe("");
+    expect(body.ocr_extract_reference_number).toBe("false");
     expect(body.mistral_api_key).toBeUndefined();
     expect(body.mistral_api_key_set).toBeDefined();
   });
@@ -60,5 +62,24 @@ describe("PATCH /api/settings", () => {
 
     const after = await admin.get("/api/settings");
     expect((await after.json()).default_currency).toBe("USD");
+  });
+
+  it("round-trips the OCR prompt override", async () => {
+    const admin = await loginAs({ email: "admin3@justif.test", role: "admin" });
+
+    const res = await admin.patch("/api/settings", {
+      ocr_prompt_override: "Always flag reference numbers circled in red.",
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.ocr_prompt_override).toBe("Always flag reference numbers circled in red.");
+  });
+
+  it("round-trips the reference-number extraction toggle", async () => {
+    const admin = await loginAs({ email: "admin4@justif.test", role: "admin" });
+
+    const res = await admin.patch("/api/settings", { ocr_extract_reference_number: "true" });
+    expect(res.status).toBe(200);
+    expect((await res.json()).ocr_extract_reference_number).toBe("true");
   });
 });

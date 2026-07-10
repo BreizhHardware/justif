@@ -22,6 +22,7 @@ interface Expense {
   id: string;
   date: string;
   fournisseur: string | null;
+  numero_reference: string | null;
   categorie: string;
   description: string | null;
   devise: string;
@@ -204,6 +205,7 @@ export default function ExpensesPage() {
   const columns: { key: string; label: string }[] = [
     { key: "date", label: t("expenses.date") },
     { key: "fournisseur", label: t("expenses.fournisseur") },
+    { key: "numero_reference", label: t("expenses.numero_reference") },
     { key: "categorie", label: t("expenses.categorie") },
     { key: "description", label: t("expenses.description") },
     { key: "montant_ttc", label: t("expenses.montantOriginal") },
@@ -382,6 +384,19 @@ export default function ExpensesPage() {
                       />
                     ) : (
                       (expense.fournisseur ?? "—")
+                    )}
+                  </td>
+                  <td className="px-4 py-3" onClick={() => !isEditing && startEdit(expense)}>
+                    {isEditing ? (
+                      <Input
+                        value={editValues.numero_reference ?? ""}
+                        onChange={(e) =>
+                          setEditValues({ ...editValues, numero_reference: e.target.value })
+                        }
+                        className="w-28"
+                      />
+                    ) : (
+                      (expense.numero_reference ?? "—")
                     )}
                   </td>
                   <td className="px-4 py-3" onClick={() => !isEditing && startEdit(expense)}>

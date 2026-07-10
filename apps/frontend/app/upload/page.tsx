@@ -17,6 +17,7 @@ interface OcrResult {
   tva: number | null;
   devise: string | null;
   fournisseur: string | null;
+  numero_reference: string | null;
   pays: string | null;
   categorie: string;
   description: string | null;
@@ -47,6 +48,7 @@ export default function UploadPage() {
       tva: null,
       devise: "EUR",
       fournisseur: null,
+      numero_reference: null,
       pays: null,
       categorie: "Autre",
       description: null,
@@ -90,6 +92,7 @@ export default function UploadPage() {
       if (file) formData.append("fichier", file);
       formData.append("date", form.date ?? new Date().toISOString().slice(0, 10));
       if (form.fournisseur) formData.append("fournisseur", form.fournisseur);
+      if (form.numero_reference) formData.append("numero_reference", form.numero_reference);
       formData.append("categorie", form.categorie);
       if (form.description) formData.append("description", form.description);
       formData.append("devise", form.devise ?? "EUR");
@@ -212,6 +215,14 @@ export default function UploadPage() {
                     id="fournisseur"
                     value={form.fournisseur ?? ""}
                     onChange={(e) => setForm({ ...form, fournisseur: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="numeroReference">{t("expenses.numero_reference")}</Label>
+                  <Input
+                    id="numeroReference"
+                    value={form.numero_reference ?? ""}
+                    onChange={(e) => setForm({ ...form, numero_reference: e.target.value })}
                   />
                 </div>
                 <div>

@@ -9,4 +9,5 @@ services:
     env_file: .env
     environment:
       - PORT=3000
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     restart: unless-stopped

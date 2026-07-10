@@ -7,7 +7,7 @@ import { CheckCircle2, Cloud, HardDrive, XCircle } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { apiFetch } from "@/lib/api";
 import { COMMON_CURRENCIES } from "@/lib/currencies";
-import { Button, Card, Input, Label, PageHeader, Select } from "@/components/ui";
+import { Button, Card, Input, Label, PageHeader, Select, Textarea } from "@/components/ui";
 
 interface Settings {
   ocr_provider: "cloud" | "local";
@@ -15,6 +15,8 @@ interface Settings {
   ollama_url: string;
   ollama_model: string;
   default_currency: string;
+  ocr_prompt_override: string;
+  ocr_extract_reference_number: string;
   mistral_api_key_set: string;
 }
 
@@ -43,6 +45,8 @@ export default function SettingsPage() {
       ollama_url: settings!.ollama_url,
       ollama_model: settings!.ollama_model,
       default_currency: settings!.default_currency,
+      ocr_prompt_override: settings!.ocr_prompt_override,
+      ocr_extract_reference_number: settings!.ocr_extract_reference_number,
     };
     if (mistralApiKey) payload.mistral_api_key = mistralApiKey;
     const updated = await apiFetch<Settings>("/api/settings", {
@@ -176,6 +180,37 @@ export default function SettingsPage() {
               </span>
             )}
           </div>
+        </Card>
+
+        <Card className="p-6">
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            {t("settings.ocrPromptOverride")}
+          </h2>
+          <p className="mb-4 text-sm text-slate-500">{t("settings.ocrPromptOverrideHelp")}</p>
+          <Textarea
+            rows={4}
+            value={settings.ocr_prompt_override}
+            onChange={(e) => setSettings({ ...settings, ocr_prompt_override: e.target.value })}
+            placeholder={t("settings.ocrPromptOverridePlaceholder")}
+          />
+
+          <label className="mt-4 flex items-center gap-2.5 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={settings.ocr_extract_reference_number === "true"}
+              onChange={(e) =>
+                setSettings({
+                  ...settings,
+                  ocr_extract_reference_number: e.target.checked ? "true" : "false",
+                })
+              }
+              className="rounded border-slate-300 text-brand-500 focus:ring-brand-200"
+            />
+            {t("settings.extractReferenceNumber")}
+          </label>
+          <p className="mt-1 text-xs text-slate-400">
+            {t("settings.extractReferenceNumberHelp")}
+          </p>
         </Card>
 
         <Card className="p-6">
