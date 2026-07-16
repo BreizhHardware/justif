@@ -11,9 +11,11 @@
     "format": "oxfmt .",
     "test": "pnpm --parallel -r run test",
     "db:migrate": "pnpm --filter backend run db:migrate",
-    "db:generate": "pnpm --filter backend run db:generate"
+    "db:generate": "pnpm --filter backend run db:generate",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
     "oxfmt": "^0.58.0",
     "oxlint": "^1.0.0",
     "typescript": "^7.0.0"

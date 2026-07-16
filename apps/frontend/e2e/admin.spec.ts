@@ -78,6 +78,7 @@ test.describe("Settings page (admin)", () => {
   });
 
   test("shows the validation workflow toggle", async ({ page }) => {
-    await expect(page.getByText(/validation workflow|circuit de validation/i)).toBeVisible();
+    // Text appears in both a heading and its label; use .first() to avoid a strict-mode violation.
+    await expect(page.getByText(/validation workflow|circuit de validation/i).first()).toBeVisible();
   });
 });
