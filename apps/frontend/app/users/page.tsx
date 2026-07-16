@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { Pencil, UserMinus, UserPlus } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
@@ -22,6 +23,7 @@ interface User {
 
 export default function UsersPage() {
   const { t } = useTranslation();
+  const router = useRouter();
   const [users, setUsers] = useState<User[] | null>(null);
   const [roles, setRoles] = useState<RoleRef[]>([]);
   const [email, setEmail] = useState("");
@@ -46,7 +48,7 @@ export default function UsersPage() {
   }
 
   useEffect(() => {
-    load();
+    load().catch(() => router.replace("/expenses"));
   }, []);
 
   async function handleCreate() {
