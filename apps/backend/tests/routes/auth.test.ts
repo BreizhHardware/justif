@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { startTestServer, TestClient, type TestServer } from "../client.js";
 import { createUser, DEFAULT_PASSWORD } from "../fixtures.js";
 import { prisma } from "../../src/lib/prisma.js";
+import { PERMISSIONS } from "../../src/lib/permissions.js";
 
 let server: TestServer;
 
@@ -38,12 +39,18 @@ describe("POST /api/auth/setup", () => {
     });
     expect(res.status).toBe(200);
 
-    const created = await prisma.user.findUnique({ where: { email: "first@justif.test" } });
-    expect(created?.role).toBe("admin");
+    const created = await prisma.user.findUnique({
+      where: { email: "first@justif.test" },
+      include: { roles: { include: { role: true } } },
+    });
+    expect(created?.roles.map((r) => r.role.name)).toEqual(["Admin"]);
 
     const me = await client.get("/api/auth/me");
     expect(me.status).toBe(200);
-    expect(await me.json()).toEqual({ email: "first@justif.test", role: "admin" });
+    const meBody = await me.json();
+    expect(meBody.email).toBe("first@justif.test");
+    expect(meBody.roles).toEqual(["Admin"]);
+    expect([...meBody.permissions].sort()).toEqual([...PERMISSIONS].sort());
   });
 
   it("refuses to set up a second account once one already exists", async () => {
@@ -78,7 +85,7 @@ describe("POST /api/auth/login", () => {
     expect(login.status).toBe(200);
 
     const me = await client.get("/api/auth/me");
-    expect(await me.json()).toEqual({ email: "user@justif.test", role: "user" });
+    expect(await me.json()).toEqual({ email: "user@justif.test", roles: ["User"], permissions: [] });
   });
 
   it("rejects an incorrect password", async () => {

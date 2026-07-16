@@ -13,7 +13,7 @@ afterAll(async () => {
   await server.close();
 });
 
-async function loginAs(opts: { email: string; role?: "admin" | "user" }) {
+async function loginAs(opts: { email: string; roleNames?: string[] }) {
   const user = await createUser(opts);
   const client = new TestClient(server.baseUrl);
   await client.post("/api/auth/login", { email: opts.email, password: DEFAULT_PASSWORD });
@@ -125,7 +125,7 @@ describe("PATCH /api/expenses/:id/status — validation workflow enabled", () =>
     await enableValidation();
     try {
       const { client: user } = await loginAs({ email: "member-validate@justif.test" });
-      const { client: admin } = await loginAs({ email: "admin-validate@justif.test", role: "admin" });
+      const { client: admin } = await loginAs({ email: "admin-validate@justif.test", roleNames: ["Admin"] });
       const expense = await (await user.post("/api/expenses", expensePayload())).json();
 
       await user.patch(`/api/expenses/${expense.id}/status`, { status: "pending_review" });
@@ -142,7 +142,7 @@ describe("PATCH /api/expenses/:id/status — validation workflow enabled", () =>
     await enableValidation();
     try {
       const { client: user } = await loginAs({ email: "member-reject@justif.test" });
-      const { client: admin } = await loginAs({ email: "admin-reject@justif.test", role: "admin" });
+      const { client: admin } = await loginAs({ email: "admin-reject@justif.test", roleNames: ["Admin"] });
       const expense = await (await user.post("/api/expenses", expensePayload())).json();
 
       await user.patch(`/api/expenses/${expense.id}/status`, { status: "pending_review" });
@@ -190,7 +190,7 @@ describe("export sets status to 'exported'", () => {
 
   it("admin can archive an exported expense", async () => {
     const { client: user, user: userRecord } = await loginAs({ email: "export-then-archive@justif.test" });
-    const { client: admin } = await loginAs({ email: "admin-archive-exported@justif.test", role: "admin" });
+    const { client: admin } = await loginAs({ email: "admin-archive-exported@justif.test", roleNames: ["Admin"] });
     const expense = await (await user.post("/api/expenses", expensePayload())).json();
 
     await user.get("/api/expenses/export");

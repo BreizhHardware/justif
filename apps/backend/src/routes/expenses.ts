@@ -17,6 +17,7 @@ import {
 import { getDefaultCurrency, getRequireValidation } from "./settings.js";
 import { audit, ipFromReq } from "../services/auditService.js";
 import { canTransition, isValidStatus, type ExpenseStatus } from "../lib/expenseStatus.js";
+import type { Permission } from "../lib/permissions.js";
 
 const router = Router();
 const UPLOAD_DIR = process.env.UPLOAD_DIR ?? "./uploads";
@@ -72,13 +73,17 @@ function parseExpenseBody(body: Record<string, string>) {
 }
 
 // Resolves whose expenses to display: the caller themselves, or,
-// for an admin, another user via ?userId= (global view by tab).
-async function resolveTargetUserId(req: Request, res: Response): Promise<string | null> {
+// for a caller holding requiredPermission, another user via ?userId= (global view by tab).
+async function resolveTargetUserId(
+  req: Request,
+  res: Response,
+  requiredPermission: Permission,
+): Promise<string | null> {
   const requestedUserId = req.query.userId as string | undefined;
   if (!requestedUserId || requestedUserId === req.user!.id) {
     return req.user!.id;
   }
-  if (req.user!.role !== "admin") {
+  if (!req.user!.permissions.includes(requiredPermission)) {
     res.status(403).json({ error: "Access denied to another user's expenses" });
     return null;
   }
@@ -91,7 +96,7 @@ async function resolveTargetUserId(req: Request, res: Response): Promise<string 
 }
 
 function canEdit(req: Request, expenseUserId: string): boolean {
-  return expenseUserId === req.user!.id || req.user!.role === "admin";
+  return expenseUserId === req.user!.id || req.user!.permissions.includes("MANAGE_USERS");
 }
 
 function buildWhere(query: Record<string, string | undefined>, userId: string) {
@@ -129,7 +134,7 @@ function reportName(from?: string, to?: string): string {
 }
 
 router.get("/", async (req, res) => {
-  const targetUserId = await resolveTargetUserId(req, res);
+  const targetUserId = await resolveTargetUserId(req, res, "MANAGE_USERS");
   if (!targetUserId) return;
 
   const {
@@ -340,7 +345,7 @@ router.patch("/:id/status", async (req, res) => {
     return;
   }
 
-  const isAdmin = req.user!.role === "admin";
+  const isAdmin = req.user!.permissions.includes("MANAGE_USERS");
   const isOwner = existing.userId === req.user!.id;
   if (!isOwner && !isAdmin) {
     res.status(403).json({ error: "Access denied" });
@@ -408,7 +413,7 @@ router.delete("/:id", async (req, res) => {
 // Before generating an export, returns which expenses in the current filter have already
 // been included in a previous report, so the user can choose to re-include them or not.
 router.get("/export-overlap", async (req, res) => {
-  const targetUserId = await resolveTargetUserId(req, res);
+  const targetUserId = await resolveTargetUserId(req, res, "EXPORT");
   if (!targetUserId) return;
 
   const { from, to, categorie, devise, q, status } = req.query as Record<string, string>;
@@ -446,7 +451,7 @@ router.get("/export-overlap", async (req, res) => {
 });
 
 router.get("/export", async (req, res) => {
-  const targetUserId = await resolveTargetUserId(req, res);
+  const targetUserId = await resolveTargetUserId(req, res, "EXPORT");
   if (!targetUserId) return;
 
   const { from, to, categorie, devise, q, status, includeReportIds, format } = req.query as Record<

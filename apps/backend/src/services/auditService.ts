@@ -13,7 +13,10 @@ export type AuditAction =
   | "expense.status"
   | "export.xlsx"
   | "export.zip"
-  | "settings.update";
+  | "settings.update"
+  | "role.create"
+  | "role.update"
+  | "role.delete";
 
 export interface AuditEntry {
   userId?: string | null;

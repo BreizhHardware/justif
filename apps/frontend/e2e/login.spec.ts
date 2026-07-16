@@ -49,7 +49,11 @@ test.describe("Login page", () => {
       route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ email: E2E_ADMIN_EMAIL, role: "admin" }),
+        body: JSON.stringify({
+          email: E2E_ADMIN_EMAIL,
+          roles: ["Admin"],
+          permissions: ["EXPORT", "CONFIG_OCR", "VIEW_DASHBOARD", "MANAGE_USERS", "MANAGE_SETTINGS", "VIEW_AUDIT_LOG"],
+        }),
       }),
     );
     await page.route("**/api/dashboard/**", (route) =>

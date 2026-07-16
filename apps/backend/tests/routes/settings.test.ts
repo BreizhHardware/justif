@@ -12,7 +12,7 @@ afterAll(async () => {
   await server.close();
 });
 
-async function loginAs(opts: { email: string; role?: "admin" | "user" }) {
+async function loginAs(opts: { email: string; roleNames?: string[] }) {
   await createUser(opts);
   const client = new TestClient(server.baseUrl);
   await client.post("/api/auth/login", { email: opts.email, password: DEFAULT_PASSWORD });
@@ -21,7 +21,7 @@ async function loginAs(opts: { email: string; role?: "admin" | "user" }) {
 
 describe("/api/settings admin guard", () => {
   it("rejects a non-admin user", async () => {
-    const client = await loginAs({ email: "plain@justif.test", role: "user" });
+    const client = await loginAs({ email: "plain@justif.test", roleNames: ["User"] });
     const res = await client.get("/api/settings");
     expect(res.status).toBe(403);
   });
@@ -35,7 +35,7 @@ describe("/api/settings admin guard", () => {
 
 describe("GET /api/settings", () => {
   it("returns defaults and never leaks the Mistral API key value", async () => {
-    const admin = await loginAs({ email: "admin@justif.test", role: "admin" });
+    const admin = await loginAs({ email: "admin@justif.test", roleNames: ["Admin"] });
     const res = await admin.get("/api/settings");
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -49,7 +49,7 @@ describe("GET /api/settings", () => {
 
 describe("PATCH /api/settings", () => {
   it("updates public settings and ignores unknown keys", async () => {
-    const admin = await loginAs({ email: "admin2@justif.test", role: "admin" });
+    const admin = await loginAs({ email: "admin2@justif.test", roleNames: ["Admin"] });
 
     const res = await admin.patch("/api/settings", {
       default_currency: "USD",
@@ -65,7 +65,7 @@ describe("PATCH /api/settings", () => {
   });
 
   it("round-trips the OCR prompt override", async () => {
-    const admin = await loginAs({ email: "admin3@justif.test", role: "admin" });
+    const admin = await loginAs({ email: "admin3@justif.test", roleNames: ["Admin"] });
 
     const res = await admin.patch("/api/settings", {
       ocr_prompt_override: "Always flag reference numbers circled in red.",
@@ -76,7 +76,7 @@ describe("PATCH /api/settings", () => {
   });
 
   it("round-trips the reference-number extraction toggle", async () => {
-    const admin = await loginAs({ email: "admin4@justif.test", role: "admin" });
+    const admin = await loginAs({ email: "admin4@justif.test", roleNames: ["Admin"] });
 
     const res = await admin.patch("/api/settings", { ocr_extract_reference_number: "true" });
     expect(res.status).toBe(200);
