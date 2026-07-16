@@ -32,7 +32,8 @@ test.describe("Expenses page", () => {
   });
 
   test("shows a status filter dropdown", async ({ page }) => {
-    // The status filter is a <select> with the "All statuses" default option
-    await expect(page.getByText(/all statuses|tous les statuts/i)).toBeVisible();
+    // The status filter is a <select> with the "All statuses" default option.
+    // <option> elements report as hidden in Playwright, so assert attachment/text instead of visibility.
+    await expect(page.getByText(/all statuses|tous les statuts/i)).toBeAttached();
   });
 });
