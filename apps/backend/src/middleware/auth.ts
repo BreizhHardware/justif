@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { prisma } from "../lib/prisma.js";
+import { getUserRolesAndPermissions, type Permission } from "../lib/permissions.js";
 
 const JWT_SECRET = process.env.JWT_SECRET ?? "change_me_in_production_min_32_chars";
 const TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
@@ -16,7 +17,7 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
-      user?: { id: string; email: string; role: string };
+      user?: { id: string; email: string; roles: string[]; permissions: Permission[] };
     }
   }
 }
@@ -39,7 +40,8 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       res.status(401).json({ error: "Account disabled or not found" });
       return;
     }
-    req.user = { id: user.id, email: user.email, role: user.role };
+    const { roles, permissions } = await getUserRolesAndPermissions(user.id);
+    req.user = { id: user.id, email: user.email, roles, permissions };
 
     const secondsLeft = payload.exp - Math.floor(Date.now() / 1000);
     if (secondsLeft < RENEW_THRESHOLD_SECONDS) {
@@ -57,10 +59,12 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   }
 }
 
-export function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  if (req.user?.role !== "admin") {
-    res.status(403).json({ error: "Admin access required" });
-    return;
-  }
-  next();
+export function requirePermission(permission: Permission) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user?.permissions.includes(permission)) {
+      res.status(403).json({ error: "Insufficient permissions" });
+      return;
+    }
+    next();
+  };
 }

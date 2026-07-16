@@ -40,13 +40,42 @@ model User {
   id           String   @id @default(cuid())
   email        String   @unique
   passwordHash String
-  role         String   @default("user") // "admin" | "user"
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
 
   expenses  Expense[]
   reports   ExpenseReport[]
   auditLogs AuditLog[]
+  roles     UserRole[]
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+
+  permissions RolePermission[]
+  users       UserRole[]
+}
+
+model RolePermission {
+  id         String @id @default(cuid())
+  roleId     String
+  role       Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission String // value from the Permission union in src/lib/permissions.ts
+
+  @@unique([roleId, permission])
+}
+
+model UserRole {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId String
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, roleId])
 }
 
 // AuditLog records sensitive actions for compliance and investigation purposes.

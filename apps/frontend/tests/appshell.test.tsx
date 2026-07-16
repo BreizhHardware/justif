@@ -14,6 +14,7 @@ vi.mock("@/lib/api", () => ({
 import { AppShell } from "@/components/AppShell";
 import { apiFetch } from "@/lib/api";
 import { mockPush, usePathname } from "./__mocks__/next-navigation";
+import { PERMISSIONS } from "@/lib/permissions";
 
 const mockedApiFetch = vi.mocked(apiFetch);
 
@@ -28,34 +29,40 @@ describe("AppShell", () => {
     localStorage.clear();
   });
 
-  it("shows admin-only nav links when the user is an admin", async () => {
-    mockedApiFetch.mockResolvedValue({ email: "admin@test.com", role: "admin" });
+  it("shows admin-only nav links when the user has all permissions", async () => {
+    mockedApiFetch.mockResolvedValue({
+      email: "admin@test.com",
+      roles: ["Admin"],
+      permissions: [...PERMISSIONS],
+    });
     renderShell();
 
     await waitFor(() => {
-      // Admin-only links: users, audit, settings
+      // Permission-gated links: users, roles, audit, settings
       expect(screen.getAllByRole("link", { name: "nav.users" }).length).toBeGreaterThan(0);
+      expect(screen.getAllByRole("link", { name: "nav.roles" }).length).toBeGreaterThan(0);
       expect(screen.getAllByRole("link", { name: "nav.audit" }).length).toBeGreaterThan(0);
       expect(screen.getAllByRole("link", { name: "nav.settings" }).length).toBeGreaterThan(0);
     });
   });
 
-  it("hides admin-only nav links when the user is not an admin", async () => {
-    mockedApiFetch.mockResolvedValue({ email: "user@test.com", role: "user" });
+  it("hides permission-gated nav links when the user has no permissions", async () => {
+    mockedApiFetch.mockResolvedValue({ email: "user@test.com", roles: ["User"], permissions: [] });
     renderShell();
 
     await waitFor(() => {
-      // Non-admin links should appear
+      // Non-gated links should appear
       expect(screen.getAllByRole("link", { name: "nav.dashboard" }).length).toBeGreaterThan(0);
     });
 
     expect(screen.queryByRole("link", { name: "nav.users" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "nav.roles" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "nav.audit" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "nav.settings" })).not.toBeInTheDocument();
   });
 
   it("displays the user's email in the sidebar", async () => {
-    mockedApiFetch.mockResolvedValue({ email: "hello@test.com", role: "user" });
+    mockedApiFetch.mockResolvedValue({ email: "hello@test.com", roles: ["User"], permissions: [] });
     renderShell();
 
     await waitFor(() => {
@@ -65,7 +72,7 @@ describe("AppShell", () => {
 
   it("calls logout API and redirects to / on sign-out", async () => {
     mockedApiFetch
-      .mockResolvedValueOnce({ email: "admin@test.com", role: "admin" })
+      .mockResolvedValueOnce({ email: "admin@test.com", roles: ["Admin"], permissions: [...PERMISSIONS] })
       .mockResolvedValueOnce(undefined); // logout call
     localStorage.setItem("justif_had_session", "1");
 
@@ -85,7 +92,7 @@ describe("AppShell", () => {
   });
 
   it("renders child content", async () => {
-    mockedApiFetch.mockResolvedValue({ email: "u@t.com", role: "user" });
+    mockedApiFetch.mockResolvedValue({ email: "u@t.com", roles: ["User"], permissions: [] });
     renderShell();
     expect(screen.getByTestId("child")).toBeInTheDocument();
   });

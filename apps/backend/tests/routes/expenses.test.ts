@@ -13,7 +13,7 @@ afterAll(async () => {
   await server.close();
 });
 
-async function loginAs(opts: { email: string; role?: "admin" | "user" }) {
+async function loginAs(opts: { email: string; roleNames?: string[] }) {
   const user = await createUser(opts);
   const client = new TestClient(server.baseUrl);
   await client.post("/api/auth/login", { email: opts.email, password: DEFAULT_PASSWORD });
@@ -48,7 +48,7 @@ describe("ownership scoping", () => {
 
   it("lets an admin view another user's expenses via ?userId=", async () => {
     const { client: member, user } = await loginAs({ email: "member@justif.test" });
-    const { client: admin } = await loginAs({ email: "admin@justif.test", role: "admin" });
+    const { client: admin } = await loginAs({ email: "admin@justif.test", roleNames: ["Admin"] });
     await member.post("/api/expenses", expensePayload());
 
     const res = await admin.get(`/api/expenses?userId=${user.id}`);
@@ -122,7 +122,7 @@ describe("PATCH /api/expenses/:id", () => {
 
   it("lets an admin update another user's expense", async () => {
     const { client: owner } = await loginAs({ email: "owner3@justif.test" });
-    const { client: admin } = await loginAs({ email: "admin2@justif.test", role: "admin" });
+    const { client: admin } = await loginAs({ email: "admin2@justif.test", roleNames: ["Admin"] });
     const created = await (await owner.post("/api/expenses", expensePayload())).json();
 
     const res = await admin.patch(`/api/expenses/${created.id}`, {
@@ -179,6 +179,34 @@ describe("DELETE /api/expenses/:id", () => {
 
     const res = await intruder.delete(`/api/expenses/${created.id}`);
     expect(res.status).toBe(403);
+  });
+});
+
+describe("EXPORT permission scoping", () => {
+  it("lets any user export their own expenses without the EXPORT permission", async () => {
+    const { client } = await loginAs({ email: "selfexport@justif.test" });
+    await client.post("/api/expenses", expensePayload());
+
+    const res = await client.get("/api/expenses/export");
+    expect(res.status).toBe(200);
+  });
+
+  it("forbids a plain user from exporting another user's expenses", async () => {
+    const { client: member, user } = await loginAs({ email: "member3@justif.test" });
+    const { client: other } = await loginAs({ email: "other2@justif.test" });
+    await member.post("/api/expenses", expensePayload());
+
+    const res = await other.get(`/api/expenses/export?userId=${user.id}`);
+    expect(res.status).toBe(403);
+  });
+
+  it("lets an admin (who holds EXPORT) export another user's expenses", async () => {
+    const { client: member, user } = await loginAs({ email: "member4@justif.test" });
+    const { client: admin } = await loginAs({ email: "admin3@justif.test", roleNames: ["Admin"] });
+    await member.post("/api/expenses", expensePayload());
+
+    const res = await admin.get(`/api/expenses/export?userId=${user.id}`);
+    expect(res.status).toBe(200);
   });
 });
 

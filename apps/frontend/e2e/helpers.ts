@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { E2E_ADMIN_EMAIL, E2E_ADMIN_PASSWORD } from "./constants";
+import { E2E_ADMIN_EMAIL, E2E_ADMIN_PASSWORD, E2E_USER_EMAIL, E2E_USER_PASSWORD } from "./constants";
 
 /**
  * Logs in via API request (not UI), storing the auth cookie in the
@@ -9,6 +9,18 @@ import { E2E_ADMIN_EMAIL, E2E_ADMIN_PASSWORD } from "./constants";
 export async function loginViaApi(page: Page): Promise<void> {
   const response = await page.request.post("/api/auth/login", {
     data: { email: E2E_ADMIN_EMAIL, password: E2E_ADMIN_PASSWORD },
+  });
+  if (!response.ok()) {
+    throw new Error(
+      `E2E login failed (${response.status()}): is the E2E backend running with the seeded database?`,
+    );
+  }
+}
+
+/** Same as loginViaApi but for the seeded plain "User" fixture (no permissions). */
+export async function loginAsUserViaApi(page: Page): Promise<void> {
+  const response = await page.request.post("/api/auth/login", {
+    data: { email: E2E_USER_EMAIL, password: E2E_USER_PASSWORD },
   });
   if (!response.ok()) {
     throw new Error(
