@@ -46,6 +46,7 @@ const ONE_EXPENSE_RESPONSE = { data: [EXPENSE], total: 1, page: 1, pages: 1 };
 function setupApiMock(response = ONE_EXPENSE_RESPONSE) {
   mockedApiFetch.mockImplementation(async (url: string) => {
     if (String(url).includes("/api/auth/me")) return { email: "u@t.com", role: "user" };
+    if (String(url).includes("/api/settings")) return { require_validation: "false" };
     if (String(url).includes("/api/expenses?")) return response;
     if (String(url).includes("export-overlap")) return { total: 0, freshCount: 0, previousReports: [] };
     return undefined;
@@ -112,6 +113,7 @@ describe("ExpensesPage", () => {
     let expensesCallCount = 0;
     mockedApiFetch.mockImplementation(async (url: string) => {
       if (String(url).includes("/api/auth/me")) return { email: "u@t.com", role: "user" };
+      if (String(url).includes("/api/settings")) return { require_validation: "false" };
       if (String(url).includes("/api/expenses/exp-1") && !String(url).includes("?")) return undefined;
       if (String(url).includes("/api/expenses?")) {
         expensesCallCount++;
@@ -155,6 +157,7 @@ describe("ExpensesPage", () => {
   it("shows export overlap dialog when previous reports exist", async () => {
     mockedApiFetch.mockImplementation(async (url: string) => {
       if (String(url).includes("/api/auth/me")) return { email: "u@t.com", role: "user" };
+      if (String(url).includes("/api/settings")) return { require_validation: "false" };
       if (String(url).includes("/api/expenses?")) return ONE_EXPENSE_RESPONSE;
       if (String(url).includes("export-overlap")) {
         return {
@@ -180,6 +183,7 @@ describe("ExpensesPage", () => {
   it("closes export dialog when cancel is clicked", async () => {
     mockedApiFetch.mockImplementation(async (url: string) => {
       if (String(url).includes("/api/auth/me")) return { email: "u@t.com", role: "user" };
+      if (String(url).includes("/api/settings")) return { require_validation: "false" };
       if (String(url).includes("/api/expenses?")) return ONE_EXPENSE_RESPONSE;
       if (String(url).includes("export-overlap")) {
         return {
