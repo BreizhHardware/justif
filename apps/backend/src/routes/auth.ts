@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth, signToken } from "../middleware/auth.js";
 import { audit, ipFromReq } from "../services/auditService.js";
+import { SEED_ROLE_NAMES } from "../lib/permissions.js";
 
 const router = Router();
 const COOKIE_OPTS = { httpOnly: true, sameSite: "lax" as const, maxAge: 30 * 24 * 60 * 60 * 1000 };
@@ -21,7 +22,12 @@ router.post("/setup", async (req, res) => {
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  const user = await prisma.user.create({ data: { email, passwordHash, role: "admin" } });
+  const adminRole = await prisma.role.findUniqueOrThrow({ where: { name: SEED_ROLE_NAMES.ADMIN } });
+  const user = await prisma.$transaction(async (tx) => {
+    const created = await tx.user.create({ data: { email, passwordHash } });
+    await tx.userRole.create({ data: { userId: created.id, roleId: adminRole.id } });
+    return created;
+  });
 
   const token = signToken(user.id);
   res.cookie("token", token, COOKIE_OPTS);
@@ -60,7 +66,7 @@ router.post("/logout", (_req, res) => {
 });
 
 router.get("/me", requireAuth, (req, res) => {
-  res.json({ email: req.user!.email, role: req.user!.role });
+  res.json({ email: req.user!.email, roles: req.user!.roles, permissions: req.user!.permissions });
 });
 
 router.get("/status", async (_req, res) => {

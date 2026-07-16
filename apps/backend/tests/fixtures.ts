@@ -1,24 +1,47 @@
 import bcrypt from "bcrypt";
 import type { Expense } from "@prisma/client";
 import { prisma } from "../src/lib/prisma.js";
+import { PERMISSIONS, SEED_ROLE_NAMES } from "../src/lib/permissions.js";
 
 export const DEFAULT_PASSWORD = "password123";
+
+export async function seedSystemRoles() {
+  const admin = await prisma.role.create({
+    data: {
+      name: SEED_ROLE_NAMES.ADMIN,
+      description: "Full access",
+      permissions: { createMany: { data: PERMISSIONS.map((permission) => ({ permission })) } },
+    },
+  });
+  const user = await prisma.role.create({
+    data: { name: SEED_ROLE_NAMES.USER, description: "No elevated permissions" },
+  });
+  return { admin, user };
+}
+
+export async function getRoleIdByName(name: string): Promise<string> {
+  const role = await prisma.role.findUniqueOrThrow({ where: { name } });
+  return role.id;
+}
 
 export async function createUser(opts: {
   email: string;
   password?: string;
-  role?: "admin" | "user";
+  roleNames?: string[];
   active?: boolean;
 }) {
   const passwordHash = await bcrypt.hash(opts.password ?? DEFAULT_PASSWORD, 4);
-  return prisma.user.create({
+  const roleNames = opts.roleNames ?? [SEED_ROLE_NAMES.USER];
+  const roles = await prisma.role.findMany({ where: { name: { in: roleNames } } });
+  const user = await prisma.user.create({
     data: {
       email: opts.email,
       passwordHash,
-      role: opts.role ?? "user",
       active: opts.active ?? true,
+      roles: { createMany: { data: roles.map((role) => ({ roleId: role.id })) } },
     },
   });
+  return user;
 }
 
 export function fakeExpense(overrides: Partial<Expense> = {}): Expense {

@@ -7,7 +7,7 @@ router.get("/summary", async (req: Request, res: Response) => {
   const user = req.user!;
   const { from, to, userId } = req.query as Record<string, string>;
 
-  const targetUserId = user.role === "admin" && userId ? userId : user.id;
+  const targetUserId = user.permissions.includes("VIEW_DASHBOARD") && userId ? userId : user.id;
 
   const dateFilter: { gte?: Date; lte?: Date } = {};
   if (from) dateFilter.gte = new Date(from);

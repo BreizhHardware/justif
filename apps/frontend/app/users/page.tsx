@@ -2,15 +2,20 @@
 
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ShieldCheck, UserMinus, UserPlus } from "lucide-react";
+import { Pencil, UserMinus, UserPlus } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { apiFetch, ApiError } from "@/lib/api";
-import { Badge, Button, Card, Input, Label, PageHeader, Select } from "@/components/ui";
+import { Badge, Button, Card, Input, Label, PageHeader } from "@/components/ui";
+
+interface RoleRef {
+  id: string;
+  name: string;
+}
 
 interface User {
   id: string;
   email: string;
-  role: "admin" | "user";
+  roles: RoleRef[];
   active: boolean;
   createdAt: string;
 }
@@ -18,19 +23,25 @@ interface User {
 export default function UsersPage() {
   const { t } = useTranslation();
   const [users, setUsers] = useState<User[] | null>(null);
+  const [roles, setRoles] = useState<RoleRef[]>([]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"admin" | "user">("user");
+  const [newRoleIds, setNewRoleIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editRoleIds, setEditRoleIds] = useState<Set<string>>(new Set());
+  const [editError, setEditError] = useState<string | null>(null);
 
   async function load() {
-    const [list, me] = await Promise.all([
+    const [list, roleList, me] = await Promise.all([
       apiFetch<User[]>("/api/users"),
-      apiFetch<{ email: string; role: string }>("/api/auth/me"),
+      apiFetch<Array<RoleRef & { permissions: string[] }>>("/api/roles"),
+      apiFetch<{ email: string }>("/api/auth/me"),
     ]);
     setUsers(list);
+    setRoles(roleList);
     setCurrentUserId(list.find((u) => u.email === me.email)?.id ?? null);
   }
 
@@ -44,11 +55,11 @@ export default function UsersPage() {
     try {
       await apiFetch("/api/users", {
         method: "POST",
-        body: JSON.stringify({ email, password, role }),
+        body: JSON.stringify({ email, password, roleIds: Array.from(newRoleIds) }),
       });
       setEmail("");
       setPassword("");
-      setRole("user");
+      setNewRoleIds(new Set());
       await load();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("users.createError"));
@@ -65,12 +76,31 @@ export default function UsersPage() {
     load();
   }
 
-  async function toggleRole(user: User) {
-    await apiFetch(`/api/users/${user.id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ role: user.role === "admin" ? "user" : "admin" }),
-    });
-    load();
+  function startEditRoles(user: User) {
+    setEditingId(user.id);
+    setEditRoleIds(new Set(user.roles.map((r) => r.id)));
+    setEditError(null);
+  }
+
+  async function saveRoles(userId: string) {
+    setEditError(null);
+    try {
+      await apiFetch(`/api/users/${userId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ roleIds: Array.from(editRoleIds) }),
+      });
+      setEditingId(null);
+      await load();
+    } catch (err) {
+      setEditError(err instanceof ApiError ? err.message : t("users.updateError"));
+    }
+  }
+
+  function toggleSetMember(set: Set<string>, id: string): Set<string> {
+    const next = new Set(set);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    return next;
   }
 
   return (
@@ -110,16 +140,19 @@ export default function UsersPage() {
             />
           </div>
           <div>
-            <Label htmlFor="newRole">{t("users.role")}</Label>
-            <Select
-              id="newRole"
-              value={role}
-              onChange={(e) => setRole(e.target.value as "admin" | "user")}
-              className="max-w-xs"
-            >
-              <option value="user">{t("users.user")}</option>
-              <option value="admin">{t("users.admin")}</option>
-            </Select>
+            <Label>{t("users.roles")}</Label>
+            <div className="flex flex-wrap gap-3">
+              {roles.map((role) => (
+                <label key={role.id} className="flex items-center gap-1.5 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={newRoleIds.has(role.id)}
+                    onChange={() => setNewRoleIds(toggleSetMember(newRoleIds, role.id))}
+                  />
+                  {role.name}
+                </label>
+              ))}
+            </div>
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
           <Button type="submit" disabled={creating}>
@@ -137,7 +170,7 @@ export default function UsersPage() {
                 {t("users.email")}
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                {t("users.role")}
+                {t("users.roles")}
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
                 {t("users.active")}
@@ -148,34 +181,73 @@ export default function UsersPage() {
           <tbody>
             {users?.map((user) => {
               const isSelf = user.id === currentUserId;
+              const isEditing = editingId === user.id;
               return (
                 <tr key={user.id} className="border-b border-slate-50 last:border-0">
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 align-top">
                     {user.email}
                     {isSelf && (
                       <span className="ml-2 text-xs text-slate-400">({t("users.you")})</span>
                     )}
                   </td>
-                  <td className="px-4 py-3">
-                    <Badge tone={user.role === "admin" ? "brand" : "slate"}>
-                      {user.role === "admin" ? t("users.admin") : t("users.user")}
-                    </Badge>
+                  <td className="px-4 py-3 align-top">
+                    {isEditing ? (
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap gap-3">
+                          {roles.map((role) => (
+                            <label
+                              key={role.id}
+                              className="flex items-center gap-1.5 text-sm text-slate-700"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={editRoleIds.has(role.id)}
+                                onChange={() =>
+                                  setEditRoleIds(toggleSetMember(editRoleIds, role.id))
+                                }
+                              />
+                              {role.name}
+                            </label>
+                          ))}
+                        </div>
+                        {editError && <p className="text-xs text-red-600">{editError}</p>}
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => saveRoles(user.id)}>
+                            {t("users.saveRoles")}
+                          </Button>
+                          <Button size="sm" variant="secondary" onClick={() => setEditingId(null)}>
+                            {t("users.cancelEdit")}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : user.roles.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {user.roles.map((role) => (
+                          <Badge key={role.id} tone="brand">
+                            {role.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-slate-400">{t("users.noRoles")}</span>
+                    )}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 align-top">
                     <Badge tone={user.active ? "brand" : "amber"}>
                       {user.active ? t("users.active") : t("users.inactive")}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 align-top text-right">
                     <div className="flex justify-end gap-3">
-                      <button
-                        onClick={() => toggleRole(user)}
-                        disabled={isSelf}
-                        className="flex items-center gap-1 text-slate-500 transition hover:text-brand-600 disabled:cursor-not-allowed disabled:opacity-40"
-                        title={user.role === "admin" ? t("users.makeUser") : t("users.makeAdmin")}
-                      >
-                        <ShieldCheck size={16} />
-                      </button>
+                      {!isEditing && (
+                        <button
+                          onClick={() => startEditRoles(user)}
+                          className="flex items-center gap-1 text-slate-500 transition hover:text-brand-600"
+                          title={t("users.editRoles")}
+                        >
+                          <Pencil size={16} />
+                        </button>
+                      )}
                       <button
                         onClick={() => toggleActive(user)}
                         disabled={isSelf}

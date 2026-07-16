@@ -18,6 +18,7 @@ import { apiFetch, apiUrl } from "@/lib/api";
 import { CATEGORY_VALUES, getLocaleTag } from "@/lib/i18n";
 import { COMMON_CURRENCIES } from "@/lib/currencies";
 import { Badge, Button, Card, Input, PageHeader, Select } from "@/components/ui";
+import type { Permission } from "@/lib/permissions";
 
 type ExpenseStatus = "draft" | "pending_review" | "validated" | "exported" | "archived";
 
@@ -59,7 +60,7 @@ interface ExpensesResponse {
 interface UserSummary {
   id: string;
   email: string;
-  role: "admin" | "user";
+  roles: Array<{ id: string; name: string }>;
   active: boolean;
 }
 
@@ -86,7 +87,8 @@ export default function ExpensesPage() {
   const [editValues, setEditValues] = useState<Partial<Expense>>({});
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [canManageUsers, setCanManageUsers] = useState(false);
+  const [canExportOthers, setCanExportOthers] = useState(false);
   const [users, setUsers] = useState<UserSummary[]>([]);
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
 
@@ -98,26 +100,30 @@ export default function ExpensesPage() {
   } | null>(null);
 
   useEffect(() => {
-    apiFetch<{ email: string; role: string }>("/api/auth/me").then((me) => {
-      setIsAdmin(me.role === "admin");
-      if (me.role === "admin") {
-        apiFetch<UserSummary[]>("/api/users").then((list) => {
-          setUsers(list);
-          const self = list.find((u) => u.email === me.email);
-          if (self) {
-            setCurrentUserId(self.id);
-            setViewingUserId(self.id);
-          }
-        });
-      }
-    });
+    apiFetch<{ email: string; roles: string[]; permissions: Permission[] }>("/api/auth/me").then(
+      (me) => {
+        const manageUsers = me.permissions.includes("MANAGE_USERS");
+        setCanManageUsers(manageUsers);
+        setCanExportOthers(me.permissions.includes("EXPORT"));
+        if (manageUsers) {
+          apiFetch<UserSummary[]>("/api/users").then((list) => {
+            setUsers(list);
+            const self = list.find((u) => u.email === me.email);
+            if (self) {
+              setCurrentUserId(self.id);
+              setViewingUserId(self.id);
+            }
+          });
+        }
+      },
+    );
     apiFetch<{ require_validation: string }>("/api/settings").then((s) => {
       setRequireValidation(s.require_validation === "true");
     });
   }, []);
 
   const userScopeParam: Record<string, string> =
-    isAdmin && viewingUserId && viewingUserId !== currentUserId ? { userId: viewingUserId } : {};
+    canManageUsers && viewingUserId && viewingUserId !== currentUserId ? { userId: viewingUserId } : {};
 
   const loadExpenses = useCallback(async () => {
     const params = new URLSearchParams({
@@ -255,20 +261,32 @@ export default function ExpensesPage() {
     { key: "fichier", label: t("expenses.justificatif") },
   ];
 
+  const isViewingOthers = Boolean(userScopeParam.userId);
+  const exportDisabled = isViewingOthers && !canExportOthers;
+
   return (
     <AppShell>
       <PageHeader title={t("expenses.title")}>
-        <Button variant="secondary" onClick={() => handleExportClick("zip")}>
+        <Button
+          variant="secondary"
+          disabled={exportDisabled}
+          title={exportDisabled ? t("expenses.exportPermissionDenied") : undefined}
+          onClick={() => handleExportClick("zip")}
+        >
           <Archive size={16} />
           {t("expenses.exportZip")}
         </Button>
-        <Button onClick={() => handleExportClick("xlsx")}>
+        <Button
+          disabled={exportDisabled}
+          title={exportDisabled ? t("expenses.exportPermissionDenied") : undefined}
+          onClick={() => handleExportClick("xlsx")}
+        >
           <Download size={16} />
           {t("expenses.export")}
         </Button>
       </PageHeader>
 
-      {isAdmin && users.length > 1 && (
+      {canManageUsers && users.length > 1 && (
         <div className="mb-4 flex flex-wrap gap-2">
           {users.map((user) => (
             <button
@@ -593,7 +611,7 @@ export default function ExpensesPage() {
                             {t("expenses.submitForReview")}
                           </button>
                         )}
-                        {isAdmin && expense.status === "pending_review" && (
+                        {canManageUsers && expense.status === "pending_review" && (
                           <>
                             <button
                               onClick={() => handleStatusTransition(expense, "validated")}
@@ -611,7 +629,7 @@ export default function ExpensesPage() {
                             </button>
                           </>
                         )}
-                        {isAdmin && (expense.status === "validated" || expense.status === "exported") && (
+                        {canManageUsers && (expense.status === "validated" || expense.status === "exported") && (
                           <button
                             onClick={() => handleStatusTransition(expense, "archived")}
                             className="text-xs text-slate-400 underline transition hover:text-slate-600"

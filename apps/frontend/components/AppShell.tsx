@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import {
   BarChart2,
   ClipboardList,
+  KeyRound,
   LayoutGrid,
   LogOut,
   Menu,
@@ -17,14 +18,16 @@ import {
   X,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import type { Permission } from "@/lib/permissions";
 
 const links = [
-  { href: "/dashboard", icon: BarChart2, key: "dashboard" as const, adminOnly: false },
-  { href: "/expenses", icon: Receipt, key: "expenses" as const, adminOnly: false },
-  { href: "/upload", icon: UploadCloud, key: "upload" as const, adminOnly: false },
-  { href: "/users", icon: Users, key: "users" as const, adminOnly: true },
-  { href: "/audit", icon: ClipboardList, key: "audit" as const, adminOnly: true },
-  { href: "/settings", icon: Settings, key: "settings" as const, adminOnly: true },
+  { href: "/dashboard", icon: BarChart2, key: "dashboard" as const, permission: undefined },
+  { href: "/expenses", icon: Receipt, key: "expenses" as const, permission: undefined },
+  { href: "/upload", icon: UploadCloud, key: "upload" as const, permission: undefined },
+  { href: "/users", icon: Users, key: "users" as const, permission: "MANAGE_USERS" as const },
+  { href: "/roles", icon: KeyRound, key: "roles" as const, permission: "MANAGE_USERS" as const },
+  { href: "/audit", icon: ClipboardList, key: "audit" as const, permission: "VIEW_AUDIT_LOG" as const },
+  { href: "/settings", icon: Settings, key: "settings" as const, permission: "MANAGE_SETTINGS" as const },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -32,14 +35,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { t } = useTranslation();
   const [email, setEmail] = useState<string | null>(null);
-  const [role, setRole] = useState<string | null>(null);
+  const [permissions, setPermissions] = useState<Permission[]>([]);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    apiFetch<{ email: string; role: string }>("/api/auth/me")
+    apiFetch<{ email: string; roles: string[]; permissions: Permission[] }>("/api/auth/me")
       .then((me) => {
         setEmail(me.email);
-        setRole(me.role);
+        setPermissions(me.permissions);
       })
       .catch(() => {});
   }, []);
@@ -50,7 +53,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     router.push("/");
   }
 
-  const visibleLinks = links.filter((link) => !link.adminOnly || role === "admin");
+  const visibleLinks = links.filter(
+    (link) => !link.permission || permissions.includes(link.permission),
+  );
 
   const sidebarContent = (
     <div className="flex h-full flex-col">

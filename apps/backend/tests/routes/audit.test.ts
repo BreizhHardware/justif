@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { startTestServer, TestClient, type TestServer } from "../client.js";
-import { createUser, DEFAULT_PASSWORD } from "../fixtures.js";
+import { createUser, DEFAULT_PASSWORD, getRoleIdByName } from "../fixtures.js";
 import { prisma } from "../../src/lib/prisma.js";
 
 let server: TestServer;
@@ -13,7 +13,7 @@ afterAll(async () => {
   await server.close();
 });
 
-async function loginAs(opts: { email: string; role?: "admin" | "user" }) {
+async function loginAs(opts: { email: string; roleNames?: string[] }) {
   const user = await createUser(opts);
   const client = new TestClient(server.baseUrl);
   await client.post("/api/auth/login", { email: opts.email, password: DEFAULT_PASSWORD });
@@ -38,7 +38,7 @@ describe("GET /api/audit — access control", () => {
   });
 
   it("allows admin users and returns paginated structure", async () => {
-    const { client } = await loginAs({ email: "admin@audit-access.test", role: "admin" });
+    const { client } = await loginAs({ email: "admin@audit-access.test", roleNames: ["Admin"] });
     const res = await client.get("/api/audit");
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -194,7 +194,7 @@ describe("audit trail — expense events", () => {
     });
     const { client: admin, user: adminUser } = await loginAs({
       email: "admin@audit-cross.test",
-      role: "admin",
+      roleNames: ["Admin"],
     });
 
     const created = await (
@@ -224,12 +224,13 @@ describe("audit trail — user management", () => {
   it("records user.create with email and role snapshot", async () => {
     const { client: admin, user: adminUser } = await loginAs({
       email: "admin@audit-users.test",
-      role: "admin",
+      roleNames: ["Admin"],
     });
+    const userRoleId = await getRoleIdByName("User");
     const res = await admin.post("/api/users", {
       email: "newmember@audit-users.test",
       password: DEFAULT_PASSWORD,
-      role: "user",
+      roleIds: [userRoleId],
     });
     expect(res.status).toBe(201);
     const created = await res.json();
@@ -240,30 +241,31 @@ describe("audit trail — user management", () => {
     expect(log).not.toBeNull();
     const meta = JSON.parse(log!.metadata!);
     expect(meta.email).toBe("newmember@audit-users.test");
-    expect(meta.role).toBe("user");
+    expect(meta.roles).toEqual(["User"]);
   });
 
   it("records user.update with role change in metadata", async () => {
     const { client: admin, user: adminUser } = await loginAs({
       email: "admin2@audit-users.test",
-      role: "admin",
+      roleNames: ["Admin"],
     });
     const target = await createUser({ email: "promoted@audit-users.test" });
-    await admin.patch(`/api/users/${target.id}`, { role: "admin" });
+    const adminRoleId = await getRoleIdByName("Admin");
+    await admin.patch(`/api/users/${target.id}`, { roleIds: [adminRoleId] });
 
     const log = await prisma.auditLog.findFirst({
       where: { userId: adminUser.id, action: "user.update", entityId: target.id },
     });
     expect(log).not.toBeNull();
     const meta = JSON.parse(log!.metadata!);
-    expect(meta.changes.role).toBe("admin");
+    expect(meta.changes.roles).toEqual(["Admin"]);
     expect(meta.changes).not.toHaveProperty("passwordChanged"); // password not changed
   });
 
   it("records passwordChanged flag without exposing password value", async () => {
     const { client: admin, user: adminUser } = await loginAs({
       email: "admin3@audit-users.test",
-      role: "admin",
+      roleNames: ["Admin"],
     });
     const target = await createUser({ email: "pwdchange@audit-users.test" });
     await admin.patch(`/api/users/${target.id}`, { password: "newpassword123" });
@@ -285,7 +287,7 @@ describe("audit trail — user management", () => {
 
 describe("GET /api/audit — filtering", () => {
   it("filters results by action type", async () => {
-    const { client } = await loginAs({ email: "admin@audit-filter.test", role: "admin" });
+    const { client } = await loginAs({ email: "admin@audit-filter.test", roleNames: ["Admin"] });
 
     const res = await client.get("/api/audit?action=auth.login");
     expect(res.status).toBe(200);
@@ -297,7 +299,7 @@ describe("GET /api/audit — filtering", () => {
   });
 
   it("filters results by userId", async () => {
-    const { client: admin } = await loginAs({ email: "admin@audit-filter2.test", role: "admin" });
+    const { client: admin } = await loginAs({ email: "admin@audit-filter2.test", roleNames: ["Admin"] });
     const target = await createUser({ email: "target@audit-filter.test" });
     const targetClient = new TestClient(server.baseUrl);
     await targetClient.post("/api/auth/login", {
@@ -316,7 +318,7 @@ describe("GET /api/audit — filtering", () => {
   });
 
   it("returns at most `limit` results per page", async () => {
-    const { client } = await loginAs({ email: "admin@audit-page.test", role: "admin" });
+    const { client } = await loginAs({ email: "admin@audit-page.test", roleNames: ["Admin"] });
 
     const res = await client.get("/api/audit?page=1&limit=3");
     expect(res.status).toBe(200);
