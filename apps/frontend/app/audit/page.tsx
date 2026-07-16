@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { AppShell } from "@/components/AppShell";
@@ -72,6 +73,7 @@ const LIMIT = 25;
 
 export default function AuditPage() {
   const { t } = useTranslation();
+  const router = useRouter();
   const [response, setResponse] = useState<AuditResponse | null>(null);
   const [users, setUsers] = useState<UserSummary[]>([]);
   const [page, setPage] = useState(1);
@@ -88,8 +90,8 @@ export default function AuditPage() {
   }, [page, filters]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    load().catch(() => router.replace("/expenses"));
+  }, [load, router]);
 
   useEffect(() => {
     apiFetch<UserSummary[]>("/api/users").then(setUsers).catch(() => {});

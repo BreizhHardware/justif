@@ -117,9 +117,11 @@ export default function ExpensesPage() {
         }
       },
     );
-    apiFetch<{ require_validation: string }>("/api/settings").then((s) => {
-      setRequireValidation(s.require_validation === "true");
-    });
+    apiFetch<{ require_validation: string }>("/api/settings")
+      .then((s) => {
+        setRequireValidation(s.require_validation === "true");
+      })
+      .catch(() => {});
   }, []);
 
   const userScopeParam: Record<string, string> =

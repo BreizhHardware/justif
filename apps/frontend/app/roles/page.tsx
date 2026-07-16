@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
@@ -26,6 +27,7 @@ function toggleSetMember(set: Set<Permission>, permission: Permission): Set<Perm
 
 export default function RolesPage() {
   const { t } = useTranslation();
+  const router = useRouter();
   const [roles, setRoles] = useState<Role[] | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -45,7 +47,8 @@ export default function RolesPage() {
   }
 
   useEffect(() => {
-    load();
+    load().catch(() => router.replace("/expenses"));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleCreate() {
