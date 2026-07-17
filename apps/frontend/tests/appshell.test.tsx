@@ -11,7 +11,9 @@ vi.mock("@/lib/api", () => ({
   apiUrl: (p: string) => p,
 }));
 
-const mockSetTheme = vi.fn();
+const { mockSetTheme } = vi.hoisted(() => ({
+  mockSetTheme: vi.fn(),
+}));
 
 vi.mock("@/components/ThemeProvider", () => ({
   useTheme: () => ({ theme: "system", setTheme: mockSetTheme }),
@@ -59,7 +61,12 @@ describe("AppShell", () => {
   });
 
   it("hides permission-gated nav links when the user has no permissions", async () => {
-    mockedApiFetch.mockResolvedValue({ email: "user@test.com", theme: "system", roles: ["User"], permissions: [] });
+    mockedApiFetch.mockResolvedValue({
+      email: "user@test.com",
+      theme: "system",
+      roles: ["User"],
+      permissions: [],
+    });
     renderShell();
 
     await waitFor(() => {
@@ -73,7 +80,12 @@ describe("AppShell", () => {
   });
 
   it("displays the user's email in the sidebar", async () => {
-    mockedApiFetch.mockResolvedValue({ email: "hello@test.com", theme: "system", roles: ["User"], permissions: [] });
+    mockedApiFetch.mockResolvedValue({
+      email: "hello@test.com",
+      theme: "system",
+      roles: ["User"],
+      permissions: [],
+    });
     renderShell();
 
     await waitFor(() => {
@@ -82,9 +94,7 @@ describe("AppShell", () => {
   });
 
   it("calls logout API and redirects to / on sign-out", async () => {
-    mockedApiFetch
-      .mockResolvedValueOnce(ME_RESPONSE)
-      .mockResolvedValueOnce(undefined); // logout call
+    mockedApiFetch.mockResolvedValueOnce(ME_RESPONSE).mockResolvedValueOnce(undefined); // logout call
     localStorage.setItem("justif_had_session", "1");
 
     renderShell();
@@ -103,7 +113,12 @@ describe("AppShell", () => {
   });
 
   it("renders child content", async () => {
-    mockedApiFetch.mockResolvedValue({ email: "u@t.com", theme: "system", roles: ["User"], permissions: [] });
+    mockedApiFetch.mockResolvedValue({
+      email: "u@t.com",
+      theme: "system",
+      roles: ["User"],
+      permissions: [],
+    });
     renderShell();
     expect(screen.getByTestId("child")).toBeInTheDocument();
   });

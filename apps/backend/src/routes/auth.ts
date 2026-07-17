@@ -81,7 +81,7 @@ router.get("/me", requireAuth, (req, res) => {
 
 router.patch("/me", requireAuth, async (req, res) => {
   const { theme } = req.body as { theme?: string };
-  if (theme !== undefined && !["light", "dark", "system"].includes(theme)) {
+  if (!["light", "dark", "system"].includes(theme!)) {
     res.status(400).json({ error: "Invalid theme value" });
     return;
   }
