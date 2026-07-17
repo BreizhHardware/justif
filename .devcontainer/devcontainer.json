@@ -13,7 +13,7 @@
   "forwardPorts": [3000],
 
   // Use 'postCreateCommand' to run commands after the container is created.
-  "postCreateCommand": "pnpm install && cp .env.example .env"
+  "postCreateCommand": "pnpm install && (test -f .env || cp .env.example .env)"
 
   // Configure tool-specific properties.
   // "customizations": {},

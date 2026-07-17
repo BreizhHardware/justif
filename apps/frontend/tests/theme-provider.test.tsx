@@ -14,10 +14,11 @@ const mockedApiFetch = vi.mocked(apiFetch);
 
 // Helper component to expose ThemeProvider context values
 function ThemeDisplay() {
-  const { theme, setTheme } = useTheme();
+  const { theme, isDark, setTheme } = useTheme();
   return (
     <div>
       <span data-testid="theme">{theme}</span>
+      <span data-testid="isDark">{String(isDark)}</span>
       <button onClick={() => setTheme("dark")}>set-dark</button>
       <button onClick={() => setTheme("light")}>set-light</button>
       <button onClick={() => setTheme("system")}>set-system</button>
@@ -178,6 +179,55 @@ describe("ThemeProvider", () => {
     });
   });
 
+  describe("isDark context value", () => {
+    it("exposes isDark=true when theme is 'dark'", async () => {
+      document.cookie = "justif_theme=dark; path=/";
+      mockedApiFetch.mockResolvedValue({ theme: "dark" });
+      renderProvider();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("isDark").textContent).toBe("true");
+      });
+    });
+
+    it("exposes isDark=false when theme is 'light'", async () => {
+      document.cookie = "justif_theme=light; path=/";
+      mockedApiFetch.mockResolvedValue({ theme: "light" });
+      renderProvider();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("isDark").textContent).toBe("false");
+      });
+    });
+
+    it("exposes isDark=true when theme is 'system' and OS prefers dark", async () => {
+      mockMatchMedia(true);
+      document.cookie = "justif_theme=light; path=/"; // mismatch triggers applyThemeClass
+      mockedApiFetch.mockResolvedValue({ theme: "system" });
+      renderProvider();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("isDark").textContent).toBe("true");
+      });
+    });
+
+    it("updates isDark in context when OS preference changes while on 'system'", async () => {
+      const mq = mockMatchMedia(false);
+      mockedApiFetch.mockResolvedValue({ theme: "system" });
+      renderProvider();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("isDark").textContent).toBe("false");
+      });
+
+      act(() => { mq.dispatchChange(true); });
+      expect(screen.getByTestId("isDark").textContent).toBe("true");
+
+      act(() => { mq.dispatchChange(false); });
+      expect(screen.getByTestId("isDark").textContent).toBe("false");
+    });
+  });
+
   describe("system matchMedia listener", () => {
     it("toggles .dark class when OS preference changes while on 'system'", async () => {
       const mq = mockMatchMedia(false);
@@ -237,9 +287,7 @@ describe("ThemeProvider", () => {
     });
 
     it("adds .dark class and writes cookie when setTheme('dark') is called", async () => {
-      mockedApiFetch
-        .mockResolvedValueOnce({ theme: "system" })
-        .mockResolvedValueOnce(undefined);
+      mockedApiFetch.mockResolvedValueOnce({ theme: "system" }).mockResolvedValueOnce(undefined);
 
       renderProvider();
       await waitFor(() => {
@@ -255,9 +303,7 @@ describe("ThemeProvider", () => {
 
     it("removes .dark class when setTheme('light') is called", async () => {
       document.documentElement.classList.add("dark");
-      mockedApiFetch
-        .mockResolvedValueOnce({ theme: "dark" })
-        .mockResolvedValueOnce(undefined);
+      mockedApiFetch.mockResolvedValueOnce({ theme: "dark" }).mockResolvedValueOnce(undefined);
 
       renderProvider();
       await waitFor(() => {
@@ -272,9 +318,7 @@ describe("ThemeProvider", () => {
     });
 
     it("updates the context theme state on setTheme('system')", async () => {
-      mockedApiFetch
-        .mockResolvedValueOnce({ theme: "dark" })
-        .mockResolvedValueOnce(undefined);
+      mockedApiFetch.mockResolvedValueOnce({ theme: "dark" }).mockResolvedValueOnce(undefined);
 
       renderProvider();
       await waitFor(() => {
@@ -285,6 +329,27 @@ describe("ThemeProvider", () => {
 
       expect(screen.getByTestId("theme").textContent).toBe("system");
       expect(document.cookie).toContain("justif_theme=system");
+    });
+
+    it("rolls back state, class, and cookie when PATCH fails", async () => {
+      document.cookie = "justif_theme=light; path=/";
+      mockedApiFetch
+        .mockResolvedValueOnce({ theme: "light" }) // initial GET /me
+        .mockRejectedValueOnce(new Error("Network error")); // PATCH fails
+
+      renderProvider();
+      await waitFor(() => {
+        expect(screen.getByTestId("theme").textContent).toBe("light");
+      });
+
+      await userEvent.click(screen.getByRole("button", { name: "set-dark" }));
+
+      // After rollback, should revert to "light"
+      await waitFor(() => {
+        expect(screen.getByTestId("theme").textContent).toBe("light");
+      });
+      expect(document.documentElement.classList.contains("dark")).toBe(false);
+      expect(document.cookie).toContain("justif_theme=light");
     });
   });
 });

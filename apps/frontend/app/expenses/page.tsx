@@ -652,7 +652,7 @@ export default function ExpensesPage() {
                           (expense.status === "validated" || expense.status === "exported") && (
                             <button
                               onClick={() => handleStatusTransition(expense, "archived")}
-                              className="text-xs text-slate-400 underline transition hover:text-slate-600"
+                              className="text-xs text-slate-400 underline transition hover:text-slate-600 dark:hover:text-slate-300"
                               title={t("expenses.archive")}
                             >
                               {t("expenses.archive")}
