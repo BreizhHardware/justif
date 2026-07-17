@@ -87,6 +87,7 @@ describe("POST /api/auth/login", () => {
     const me = await client.get("/api/auth/me");
     expect(await me.json()).toEqual({
       email: "user@justif.test",
+      theme: "system",
       roles: ["User"],
       permissions: [],
     });
@@ -132,5 +133,61 @@ describe("POST /api/auth/logout", () => {
 
     const logout = await client.post("/api/auth/logout");
     expect(logout.status).toBe(204);
+  });
+});
+
+describe("PATCH /api/auth/me", () => {
+  it("returns 401 without a session", async () => {
+    const client = new TestClient(server.baseUrl);
+    const res = await client.patch("/api/auth/me", { theme: "dark" });
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 400 for an invalid theme value", async () => {
+    await createUser({ email: "theme-invalid@justif.test" });
+    const client = new TestClient(server.baseUrl);
+    await client.post("/api/auth/login", {
+      email: "theme-invalid@justif.test",
+      password: DEFAULT_PASSWORD,
+    });
+    const res = await client.patch("/api/auth/me", { theme: "rainbow" });
+    expect(res.status).toBe(400);
+  });
+
+  it("persists a valid theme and reflects it in GET /me", async () => {
+    await createUser({ email: "theme-ok@justif.test" });
+    const client = new TestClient(server.baseUrl);
+    await client.post("/api/auth/login", {
+      email: "theme-ok@justif.test",
+      password: DEFAULT_PASSWORD,
+    });
+
+    // Default is "system"
+    const before = await client.get("/api/auth/me");
+    expect((await before.json()).theme).toBe("system");
+
+    // Switch to dark
+    const patch = await client.patch("/api/auth/me", { theme: "dark" });
+    expect(patch.status).toBe(200);
+    expect(await patch.json()).toEqual({ theme: "dark" });
+
+    // Verify GET /me now returns updated theme
+    const after = await client.get("/api/auth/me");
+    expect((await after.json()).theme).toBe("dark");
+  });
+
+  it("accepts all three valid theme values", async () => {
+    await createUser({ email: "theme-all@justif.test" });
+    const client = new TestClient(server.baseUrl);
+    await client.post("/api/auth/login", {
+      email: "theme-all@justif.test",
+      password: DEFAULT_PASSWORD,
+    });
+
+    for (const theme of ["light", "dark", "system"] as const) {
+      const res = await client.patch("/api/auth/me", { theme });
+      expect(res.status).toBe(200);
+      expect((await res.json()).theme).toBe(theme);
+    }
   });
 });

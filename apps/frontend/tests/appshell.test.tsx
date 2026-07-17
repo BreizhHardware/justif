@@ -11,6 +11,12 @@ vi.mock("@/lib/api", () => ({
   apiUrl: (p: string) => p,
 }));
 
+const mockSetTheme = vi.fn();
+
+vi.mock("@/components/ThemeProvider", () => ({
+  useTheme: () => ({ theme: "system", setTheme: mockSetTheme }),
+}));
+
 import { AppShell } from "@/components/AppShell";
 import { apiFetch } from "@/lib/api";
 import { mockPush, usePathname } from "./__mocks__/next-navigation";
@@ -26,6 +32,13 @@ function renderShell() {
   );
 }
 
+const ME_RESPONSE = {
+  email: "admin@test.com",
+  theme: "system",
+  roles: ["Admin"],
+  permissions: [...PERMISSIONS],
+};
+
 describe("AppShell", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -34,15 +47,10 @@ describe("AppShell", () => {
   });
 
   it("shows admin-only nav links when the user has all permissions", async () => {
-    mockedApiFetch.mockResolvedValue({
-      email: "admin@test.com",
-      roles: ["Admin"],
-      permissions: [...PERMISSIONS],
-    });
+    mockedApiFetch.mockResolvedValue(ME_RESPONSE);
     renderShell();
 
     await waitFor(() => {
-      // Permission-gated links: users, roles, audit, settings
       expect(screen.getAllByRole("link", { name: "nav.users" }).length).toBeGreaterThan(0);
       expect(screen.getAllByRole("link", { name: "nav.roles" }).length).toBeGreaterThan(0);
       expect(screen.getAllByRole("link", { name: "nav.audit" }).length).toBeGreaterThan(0);
@@ -51,11 +59,10 @@ describe("AppShell", () => {
   });
 
   it("hides permission-gated nav links when the user has no permissions", async () => {
-    mockedApiFetch.mockResolvedValue({ email: "user@test.com", roles: ["User"], permissions: [] });
+    mockedApiFetch.mockResolvedValue({ email: "user@test.com", theme: "system", roles: ["User"], permissions: [] });
     renderShell();
 
     await waitFor(() => {
-      // Non-gated links should appear
       expect(screen.getAllByRole("link", { name: "nav.dashboard" }).length).toBeGreaterThan(0);
     });
 
@@ -66,7 +73,7 @@ describe("AppShell", () => {
   });
 
   it("displays the user's email in the sidebar", async () => {
-    mockedApiFetch.mockResolvedValue({ email: "hello@test.com", roles: ["User"], permissions: [] });
+    mockedApiFetch.mockResolvedValue({ email: "hello@test.com", theme: "system", roles: ["User"], permissions: [] });
     renderShell();
 
     await waitFor(() => {
@@ -76,11 +83,7 @@ describe("AppShell", () => {
 
   it("calls logout API and redirects to / on sign-out", async () => {
     mockedApiFetch
-      .mockResolvedValueOnce({
-        email: "admin@test.com",
-        roles: ["Admin"],
-        permissions: [...PERMISSIONS],
-      })
+      .mockResolvedValueOnce(ME_RESPONSE)
       .mockResolvedValueOnce(undefined); // logout call
     localStorage.setItem("justif_had_session", "1");
 
@@ -100,8 +103,55 @@ describe("AppShell", () => {
   });
 
   it("renders child content", async () => {
-    mockedApiFetch.mockResolvedValue({ email: "u@t.com", roles: ["User"], permissions: [] });
+    mockedApiFetch.mockResolvedValue({ email: "u@t.com", theme: "system", roles: ["User"], permissions: [] });
     renderShell();
     expect(screen.getByTestId("child")).toBeInTheDocument();
+  });
+
+  it("renders the three theme toggle buttons", async () => {
+    mockedApiFetch.mockResolvedValue(ME_RESPONSE);
+    renderShell();
+
+    await waitFor(() => {
+      expect(screen.getAllByTitle("nav.themeLight").length).toBeGreaterThan(0);
+      expect(screen.getAllByTitle("nav.themeSystem").length).toBeGreaterThan(0);
+      expect(screen.getAllByTitle("nav.themeDark").length).toBeGreaterThan(0);
+    });
+  });
+
+  it("calls setTheme('dark') when the dark button is clicked", async () => {
+    mockedApiFetch.mockResolvedValue(ME_RESPONSE);
+    renderShell();
+
+    await waitFor(() => {
+      expect(screen.getAllByTitle("nav.themeDark").length).toBeGreaterThan(0);
+    });
+
+    await userEvent.click(screen.getAllByTitle("nav.themeDark")[0]);
+    expect(mockSetTheme).toHaveBeenCalledWith("dark");
+  });
+
+  it("calls setTheme('light') when the light button is clicked", async () => {
+    mockedApiFetch.mockResolvedValue(ME_RESPONSE);
+    renderShell();
+
+    await waitFor(() => {
+      expect(screen.getAllByTitle("nav.themeLight").length).toBeGreaterThan(0);
+    });
+
+    await userEvent.click(screen.getAllByTitle("nav.themeLight")[0]);
+    expect(mockSetTheme).toHaveBeenCalledWith("light");
+  });
+
+  it("calls setTheme('system') when the system button is clicked", async () => {
+    mockedApiFetch.mockResolvedValue(ME_RESPONSE);
+    renderShell();
+
+    await waitFor(() => {
+      expect(screen.getAllByTitle("nav.themeSystem").length).toBeGreaterThan(0);
+    });
+
+    await userEvent.click(screen.getAllByTitle("nav.themeSystem")[0]);
+    expect(mockSetTheme).toHaveBeenCalledWith("system");
   });
 });
