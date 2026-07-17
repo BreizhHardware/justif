@@ -125,7 +125,10 @@ describe("PATCH /api/expenses/:id/status — validation workflow enabled", () =>
     await enableValidation();
     try {
       const { client: user } = await loginAs({ email: "member-validate@justif.test" });
-      const { client: admin } = await loginAs({ email: "admin-validate@justif.test", roleNames: ["Admin"] });
+      const { client: admin } = await loginAs({
+        email: "admin-validate@justif.test",
+        roleNames: ["Admin"],
+      });
       const expense = await (await user.post("/api/expenses", expensePayload())).json();
 
       await user.patch(`/api/expenses/${expense.id}/status`, { status: "pending_review" });
@@ -142,7 +145,10 @@ describe("PATCH /api/expenses/:id/status — validation workflow enabled", () =>
     await enableValidation();
     try {
       const { client: user } = await loginAs({ email: "member-reject@justif.test" });
-      const { client: admin } = await loginAs({ email: "admin-reject@justif.test", roleNames: ["Admin"] });
+      const { client: admin } = await loginAs({
+        email: "admin-reject@justif.test",
+        roleNames: ["Admin"],
+      });
       const expense = await (await user.post("/api/expenses", expensePayload())).json();
 
       await user.patch(`/api/expenses/${expense.id}/status`, { status: "pending_review" });
@@ -189,8 +195,13 @@ describe("export sets status to 'exported'", () => {
   });
 
   it("admin can archive an exported expense", async () => {
-    const { client: user, user: userRecord } = await loginAs({ email: "export-then-archive@justif.test" });
-    const { client: admin } = await loginAs({ email: "admin-archive-exported@justif.test", roleNames: ["Admin"] });
+    const { client: user, user: userRecord } = await loginAs({
+      email: "export-then-archive@justif.test",
+    });
+    const { client: admin } = await loginAs({
+      email: "admin-archive-exported@justif.test",
+      roleNames: ["Admin"],
+    });
     const expense = await (await user.post("/api/expenses", expensePayload())).json();
 
     await user.get("/api/expenses/export");
@@ -207,7 +218,9 @@ describe("export sets status to 'exported'", () => {
 describe("GET /api/expenses — status filter", () => {
   it("filters expenses by status", async () => {
     const { client } = await loginAs({ email: "filter-status@justif.test" });
-    const e1 = await (await client.post("/api/expenses", expensePayload({ fournisseur: "A" }))).json();
+    const e1 = await (
+      await client.post("/api/expenses", expensePayload({ fournisseur: "A" }))
+    ).json();
     await (await client.post("/api/expenses", expensePayload({ fournisseur: "B" }))).json();
 
     // Archive the first expense

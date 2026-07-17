@@ -1,5 +1,10 @@
 import type { Page } from "@playwright/test";
-import { E2E_ADMIN_EMAIL, E2E_ADMIN_PASSWORD, E2E_USER_EMAIL, E2E_USER_PASSWORD } from "./constants";
+import {
+  E2E_ADMIN_EMAIL,
+  E2E_ADMIN_PASSWORD,
+  E2E_USER_EMAIL,
+  E2E_USER_PASSWORD,
+} from "./constants";
 
 /**
  * Logs in via API request (not UI), storing the auth cookie in the

@@ -49,27 +49,33 @@ export default function HomePage() {
   }, [router]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-12">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-12 dark:bg-slate-950">
       {/* Logo */}
       <div className="mb-8 flex flex-col items-center gap-3">
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-500 shadow-lg">
           <LayoutGrid className="text-white" size={28} />
         </div>
-        <span className="text-2xl font-bold text-slate-800">{t("appName")}</span>
+        <span className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+          {t("appName")}
+        </span>
       </div>
 
       {state === "checking" && (
         <div className="flex flex-col items-center gap-3">
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-brand-400 border-t-transparent" />
-          <p className="text-sm text-slate-400">{t("home.checking")}</p>
+          <p className="text-sm text-slate-400 dark:text-slate-500">{t("home.checking")}</p>
         </div>
       )}
 
       {state === "setup_required" && (
         <div className="w-full max-w-sm">
           <div className="mb-5 text-center">
-            <h1 className="text-xl font-semibold text-slate-800">{t("home.setupTitle")}</h1>
-            <p className="mt-1.5 text-sm text-slate-500">{t("home.setupDescription")}</p>
+            <h1 className="text-xl font-semibold text-slate-800 dark:text-slate-100">
+              {t("home.setupTitle")}
+            </h1>
+            <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
+              {t("home.setupDescription")}
+            </p>
           </div>
           <ul className="mb-6 space-y-2">
             {FEATURE_KEYS.map((key, i) => {
@@ -77,10 +83,10 @@ export default function HomePage() {
               return (
                 <li
                   key={key}
-                  className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm"
+                  className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900"
                 >
                   <Icon size={15} className="shrink-0 text-brand-500" />
-                  <span className="text-sm text-slate-700">{t(key)}</span>
+                  <span className="text-sm text-slate-700 dark:text-slate-300">{t(key)}</span>
                 </li>
               );
             })}
@@ -93,8 +99,12 @@ export default function HomePage() {
 
       {state === "needs_login" && (
         <div className="w-full max-w-sm text-center">
-          <h1 className="text-xl font-semibold text-slate-800">{t("home.welcomeTitle")}</h1>
-          <p className="mt-2 text-sm text-slate-500">{t("home.welcomeDescription")}</p>
+          <h1 className="text-xl font-semibold text-slate-800 dark:text-slate-100">
+            {t("home.welcomeTitle")}
+          </h1>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            {t("home.welcomeDescription")}
+          </p>
           <Button className="mt-6 w-full" onClick={() => router.push("/login")}>
             {t("home.signIn")} <ArrowRight size={15} />
           </Button>
@@ -103,15 +113,21 @@ export default function HomePage() {
 
       {state === "session_expired" && (
         <div className="w-full max-w-sm text-center">
-          <h1 className="text-xl font-semibold text-slate-800">{t("home.sessionExpiredTitle")}</h1>
-          <p className="mt-2 text-sm text-slate-500">{t("home.sessionExpiredDescription")}</p>
+          <h1 className="text-xl font-semibold text-slate-800 dark:text-slate-100">
+            {t("home.sessionExpiredTitle")}
+          </h1>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            {t("home.sessionExpiredDescription")}
+          </p>
           <Button className="mt-6 w-full" onClick={() => router.push("/login")}>
             {t("home.reconnect")} <ArrowRight size={15} />
           </Button>
         </div>
       )}
 
-      {state === "ready" && <p className="text-sm text-slate-400">{t("home.redirecting")}</p>}
+      {state === "ready" && (
+        <p className="text-sm text-slate-400 dark:text-slate-500">{t("home.redirecting")}</p>
+      )}
     </div>
   );
 }

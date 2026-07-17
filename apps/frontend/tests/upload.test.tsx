@@ -110,8 +110,8 @@ describe("UploadPage", () => {
 
   it("saves expense and redirects to /expenses on submit", async () => {
     mockedApiFetch
-      .mockResolvedValueOnce(OCR_RESULT)   // OCR call
-      .mockResolvedValueOnce(undefined);    // save call
+      .mockResolvedValueOnce(OCR_RESULT) // OCR call
+      .mockResolvedValueOnce(undefined); // save call
 
     render(<UploadPage />);
     const input = document.querySelector("input[type='file']") as HTMLInputElement;

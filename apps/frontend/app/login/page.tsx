@@ -34,13 +34,15 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 dark:bg-slate-950">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-2">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500">
             <LayoutGrid className="text-white" size={22} />
           </div>
-          <span className="text-xl font-semibold text-slate-900">{t("appName")}</span>
+          <span className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+            {t("appName")}
+          </span>
         </div>
 
         <Card className="p-6">
@@ -51,7 +53,9 @@ export default function LoginPage() {
             }}
             className="space-y-4"
           >
-            <h1 className="text-lg font-semibold text-slate-900">{t("login.title")}</h1>
+            <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+              {t("login.title")}
+            </h1>
             <div>
               <Label htmlFor="email">{t("login.email")}</Label>
               <Input
@@ -78,8 +82,11 @@ export default function LoginPage() {
             </Button>
           </form>
         </Card>
-        <p className="mt-4 text-center text-xs text-slate-400">
-          <Link href="/privacy" className="underline hover:text-slate-600">
+        <p className="mt-4 text-center text-xs text-slate-400 dark:text-slate-500">
+          <Link
+            href="/privacy"
+            className="underline hover:text-slate-600 dark:hover:text-slate-300"
+          >
             {t("login.privacy")}
           </Link>
         </p>

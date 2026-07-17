@@ -18,7 +18,10 @@
     "users": "Users",
     "roles": "Roles",
     "audit": "Audit log",
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "themeLight": "Light",
+    "themeSystem": "System",
+    "themeDark": "Dark"
   },
   "home": {
     "checking": "Checking session…",

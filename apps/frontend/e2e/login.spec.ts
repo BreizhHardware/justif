@@ -52,7 +52,14 @@ test.describe("Login page", () => {
         body: JSON.stringify({
           email: E2E_ADMIN_EMAIL,
           roles: ["Admin"],
-          permissions: ["EXPORT", "CONFIG_OCR", "VIEW_DASHBOARD", "MANAGE_USERS", "MANAGE_SETTINGS", "VIEW_AUDIT_LOG"],
+          permissions: [
+            "EXPORT",
+            "CONFIG_OCR",
+            "VIEW_DASHBOARD",
+            "MANAGE_USERS",
+            "MANAGE_SETTINGS",
+            "VIEW_AUDIT_LOG",
+          ],
         }),
       }),
     );

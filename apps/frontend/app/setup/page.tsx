@@ -87,14 +87,16 @@ export default function SetupPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12">
+    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 dark:bg-slate-950">
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="mb-6 flex flex-col items-center gap-2">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500">
             <LayoutGrid className="text-white" size={22} />
           </div>
-          <span className="text-xl font-semibold text-slate-900">{t("appName")}</span>
+          <span className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+            {t("appName")}
+          </span>
         </div>
 
         {/* Step indicator */}
@@ -111,7 +113,7 @@ export default function SetupPage() {
               {step > 1 ? <Check size={13} /> : "1"}
             </div>
             <span
-              className={`text-xs font-medium ${step === 1 ? "text-brand-600" : "text-slate-500"}`}
+              className={`text-xs font-medium ${step === 1 ? "text-brand-600" : "text-slate-500 dark:text-slate-400"}`}
             >
               {t("setup.stepAccount")}
             </span>
@@ -119,7 +121,9 @@ export default function SetupPage() {
 
           {/* Connector */}
           <div className="mx-3 mt-3.5 w-16 shrink-0">
-            <div className={`h-0.5 transition-all ${step > 1 ? "bg-brand-500" : "bg-slate-200"}`} />
+            <div
+              className={`h-0.5 transition-all ${step > 1 ? "bg-brand-500" : "bg-slate-200 dark:bg-slate-700"}`}
+            />
           </div>
 
           {/* Step 2 */}
@@ -127,14 +131,14 @@ export default function SetupPage() {
             <div
               className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-all ${
                 step === 2
-                  ? "border-2 border-brand-500 bg-white text-brand-600"
-                  : "border-2 border-slate-200 bg-white text-slate-400"
+                  ? "border-2 border-brand-500 bg-white text-brand-600 dark:bg-slate-950"
+                  : "border-2 border-slate-200 bg-white text-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-500"
               }`}
             >
               2
             </div>
             <span
-              className={`text-xs font-medium ${step === 2 ? "text-brand-600" : "text-slate-400"}`}
+              className={`text-xs font-medium ${step === 2 ? "text-brand-600" : "text-slate-400 dark:text-slate-500"}`}
             >
               {t("setup.stepConfig")}
             </span>
@@ -152,8 +156,10 @@ export default function SetupPage() {
               className="space-y-4"
             >
               <div>
-                <h1 className="text-lg font-semibold text-slate-900">{t("setup.title")}</h1>
-                <p className="text-sm text-slate-500">{t("setup.subtitle")}</p>
+                <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  {t("setup.title")}
+                </h1>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{t("setup.subtitle")}</p>
               </div>
               <div>
                 <Label htmlFor="email">{t("login.email")}</Label>
@@ -176,7 +182,9 @@ export default function SetupPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
-                <p className="mt-1 text-xs text-slate-400">{t("setup.minPassword")}</p>
+                <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                  {t("setup.minPassword")}
+                </p>
               </div>
               {step1Error && <p className="text-sm text-red-600">{step1Error}</p>}
               <Button type="submit" disabled={step1Loading} className="w-full">
@@ -197,8 +205,12 @@ export default function SetupPage() {
               className="space-y-4"
             >
               <div>
-                <h1 className="text-lg font-semibold text-slate-900">{t("setup.ocrTitle")}</h1>
-                <p className="text-sm text-slate-500">{t("setup.ocrDescription")}</p>
+                <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  {t("setup.ocrTitle")}
+                </h1>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {t("setup.ocrDescription")}
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -207,30 +219,42 @@ export default function SetupPage() {
                   onClick={() => setOcrProvider("cloud")}
                   className={`flex flex-col items-center gap-2 rounded-xl border-2 px-3 py-3 transition ${
                     ocrProvider === "cloud"
-                      ? "border-brand-500 bg-brand-50"
-                      : "border-slate-200 hover:border-slate-300"
+                      ? "border-brand-500 bg-brand-50 dark:bg-brand-950/30"
+                      : "border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600"
                   }`}
                 >
                   <Cloud
-                    className={ocrProvider === "cloud" ? "text-brand-600" : "text-slate-400"}
+                    className={
+                      ocrProvider === "cloud"
+                        ? "text-brand-600"
+                        : "text-slate-400 dark:text-slate-500"
+                    }
                     size={20}
                   />
-                  <span className="text-xs font-medium text-slate-700">{t("settings.cloud")}</span>
+                  <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                    {t("settings.cloud")}
+                  </span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setOcrProvider("local")}
                   className={`flex flex-col items-center gap-2 rounded-xl border-2 px-3 py-3 transition ${
                     ocrProvider === "local"
-                      ? "border-brand-500 bg-brand-50"
-                      : "border-slate-200 hover:border-slate-300"
+                      ? "border-brand-500 bg-brand-50 dark:bg-brand-950/30"
+                      : "border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600"
                   }`}
                 >
                   <HardDrive
-                    className={ocrProvider === "local" ? "text-brand-600" : "text-slate-400"}
+                    className={
+                      ocrProvider === "local"
+                        ? "text-brand-600"
+                        : "text-slate-400 dark:text-slate-500"
+                    }
                     size={20}
                   />
-                  <span className="text-xs font-medium text-slate-700">{t("settings.local")}</span>
+                  <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                    {t("settings.local")}
+                  </span>
                 </button>
               </div>
 
@@ -276,26 +300,28 @@ export default function SetupPage() {
                 </div>
               )}
 
-              <label className="flex items-center gap-2.5 text-sm text-slate-700">
+              <label className="flex items-center gap-2.5 text-sm text-slate-700 dark:text-slate-300">
                 <input
                   type="checkbox"
                   checked={extractReferenceNumber}
                   onChange={(e) => setExtractReferenceNumber(e.target.checked)}
-                  className="rounded border-slate-300 text-brand-500 focus:ring-brand-200"
+                  className="rounded border-slate-300 text-brand-500 focus:ring-brand-200 dark:border-slate-600"
                 />
                 {t("settings.extractReferenceNumber")}
               </label>
 
-              <label className="flex items-center gap-2.5 text-sm text-slate-700">
+              <label className="flex items-center gap-2.5 text-sm text-slate-700 dark:text-slate-300">
                 <input
                   type="checkbox"
                   checked={requireValidation}
                   onChange={(e) => setRequireValidation(e.target.checked)}
-                  className="rounded border-slate-300 text-brand-500 focus:ring-brand-200"
+                  className="rounded border-slate-300 text-brand-500 focus:ring-brand-200 dark:border-slate-600"
                 />
                 {t("settings.requireValidation")}
               </label>
-              <p className="text-xs text-slate-400">{t("settings.requireValidationHelp")}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500">
+                {t("settings.requireValidationHelp")}
+              </p>
 
               <div className="flex flex-col gap-2 pt-1">
                 <Button type="submit" disabled={step2Loading} className="w-full">
@@ -304,7 +330,7 @@ export default function SetupPage() {
                 <button
                   type="button"
                   onClick={() => router.push("/expenses")}
-                  className="py-1 text-center text-sm text-slate-400 transition hover:text-slate-600"
+                  className="py-1 text-center text-sm text-slate-400 transition hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
                 >
                   {t("setup.skip")}
                 </button>

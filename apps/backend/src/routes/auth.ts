@@ -49,7 +49,12 @@ router.post("/login", async (req, res) => {
     return;
   }
   if (!user.active) {
-    await audit({ userId: user.id, action: "auth.login_failed", metadata: { reason: "account_disabled" }, ip });
+    await audit({
+      userId: user.id,
+      action: "auth.login_failed",
+      metadata: { reason: "account_disabled" },
+      ip,
+    });
     res.status(403).json({ error: "This account has been disabled" });
     return;
   }
@@ -66,7 +71,22 @@ router.post("/logout", (_req, res) => {
 });
 
 router.get("/me", requireAuth, (req, res) => {
-  res.json({ email: req.user!.email, roles: req.user!.roles, permissions: req.user!.permissions });
+  res.json({
+    email: req.user!.email,
+    theme: req.user!.theme,
+    roles: req.user!.roles,
+    permissions: req.user!.permissions,
+  });
+});
+
+router.patch("/me", requireAuth, async (req, res) => {
+  const { theme } = req.body as { theme?: string };
+  if (theme !== undefined && !["light", "dark", "system"].includes(theme)) {
+    res.status(400).json({ error: "Invalid theme value" });
+    return;
+  }
+  await prisma.user.update({ where: { id: req.user!.id }, data: { theme: theme! } });
+  res.json({ theme });
 });
 
 router.get("/status", async (_req, res) => {

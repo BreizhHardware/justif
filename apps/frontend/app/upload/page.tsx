@@ -124,11 +124,16 @@ export default function UploadPage() {
             onDragLeave={() => setDragOver(false)}
             onClick={() => inputRef.current?.click()}
             className={`flex h-56 cursor-pointer flex-col items-center justify-center gap-3 border-2 border-dashed text-sm transition ${
-              dragOver ? "border-brand-500 bg-brand-50" : "border-slate-200 hover:border-brand-300"
+              dragOver
+                ? "border-brand-500 bg-brand-50 dark:bg-brand-950/30"
+                : "border-slate-200 hover:border-brand-300 dark:border-slate-700 dark:hover:border-brand-700"
             }`}
           >
-            <UploadCloud className={dragOver ? "text-brand-600" : "text-slate-400"} size={32} />
-            <span className="text-slate-500">{t("upload.dropzone")}</span>
+            <UploadCloud
+              className={dragOver ? "text-brand-600" : "text-slate-400 dark:text-slate-500"}
+              size={32}
+            />
+            <span className="text-slate-500 dark:text-slate-400">{t("upload.dropzone")}</span>
             <input
               ref={inputRef}
               type="file"
@@ -143,7 +148,7 @@ export default function UploadPage() {
         )}
 
         {analyzing && (
-          <div className="mt-4 flex items-center gap-2 text-sm text-slate-500">
+          <div className="mt-4 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
             <Loader2 className="animate-spin" size={16} />
             {t("upload.analyzing")}
           </div>
@@ -165,20 +170,20 @@ export default function UploadPage() {
               className="space-y-5"
             >
               {previewUrl && (
-                <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
                   <img
                     src={previewUrl}
                     alt={t("expenses.previewAlt")}
                     className="h-20 w-20 rounded-lg border object-cover"
                   />
-                  <div className="flex items-center gap-1.5 text-sm text-slate-500">
+                  <div className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
                     <FileImage size={16} />
                     {file?.name}
                   </div>
                   <button
                     type="button"
                     onClick={reset}
-                    className="ml-auto text-slate-400 hover:text-slate-700"
+                    className="ml-auto text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                   >
                     <X size={18} />
                   </button>
@@ -279,7 +284,7 @@ export default function UploadPage() {
                 </div>
               </div>
 
-              <div className="flex gap-3 border-t border-slate-100 pt-5">
+              <div className="flex gap-3 border-t border-slate-100 pt-5 dark:border-slate-800">
                 <Button type="submit" disabled={saving}>
                   {t("upload.save")}
                 </Button>

@@ -4,8 +4,15 @@ import { prisma } from "../lib/prisma.js";
 const router = Router();
 
 router.get("/", async (req, res) => {
-  const { page = "1", limit = "50", action, userId, entityType, from, to } =
-    req.query as Record<string, string>;
+  const {
+    page = "1",
+    limit = "50",
+    action,
+    userId,
+    entityType,
+    from,
+    to,
+  } = req.query as Record<string, string>;
 
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
   const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 50));
