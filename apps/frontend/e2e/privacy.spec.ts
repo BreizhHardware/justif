@@ -12,15 +12,11 @@ test.describe("Privacy policy page", () => {
   });
 
   test("contains the IP address collection section", async ({ page }) => {
-    await expect(
-      page.getByRole("heading", { name: /ip address|adresse ip/i }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: /ip address|adresse ip/i })).toBeVisible();
   });
 
   test("contains the GDPR rights section", async ({ page }) => {
-    await expect(
-      page.getByRole("heading", { name: /your rights|vos droits/i }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: /your rights|vos droits/i })).toBeVisible();
   });
 
   test("has a working back-to-login link", async ({ page }) => {

@@ -18,7 +18,10 @@
     "users": "Utilisateurs",
     "roles": "Rôles",
     "audit": "Journal d'audit",
-    "logout": "Déconnexion"
+    "logout": "Déconnexion",
+    "themeLight": "Clair",
+    "themeSystem": "Système",
+    "themeDark": "Sombre"
   },
   "home": {
     "checking": "Vérification de la session…",

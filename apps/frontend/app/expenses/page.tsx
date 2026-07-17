@@ -79,7 +79,14 @@ export default function ExpensesPage() {
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState("date");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
-  const [filters, setFilters] = useState({ from: "", to: "", categorie: "", devise: "", q: "", status: "" });
+  const [filters, setFilters] = useState({
+    from: "",
+    to: "",
+    categorie: "",
+    devise: "",
+    q: "",
+    status: "",
+  });
   const [requireValidation, setRequireValidation] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [modalImage, setModalImage] = useState<string | null>(null);
@@ -125,7 +132,9 @@ export default function ExpensesPage() {
   }, []);
 
   const userScopeParam: Record<string, string> =
-    canManageUsers && viewingUserId && viewingUserId !== currentUserId ? { userId: viewingUserId } : {};
+    canManageUsers && viewingUserId && viewingUserId !== currentUserId
+      ? { userId: viewingUserId }
+      : {};
 
   const loadExpenses = useCallback(async () => {
     const params = new URLSearchParams({
@@ -207,11 +216,16 @@ export default function ExpensesPage() {
 
   function statusTone(status: ExpenseStatus): "slate" | "amber" | "brand" | "blue" {
     switch (status) {
-      case "draft": return "slate";
-      case "pending_review": return "amber";
-      case "validated": return "brand";
-      case "exported": return "blue";
-      case "archived": return "slate";
+      case "draft":
+        return "slate";
+      case "pending_review":
+        return "amber";
+      case "validated":
+        return "brand";
+      case "exported":
+        return "blue";
+      case "archived":
+        return "slate";
     }
   }
 
@@ -300,7 +314,7 @@ export default function ExpensesPage() {
               className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
                 viewingUserId === user.id
                   ? "bg-brand-500 text-white"
-                  : "bg-white text-slate-600 hover:bg-slate-100"
+                  : "bg-white text-slate-600 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
               }`}
             >
               {user.id === currentUserId ? t("expenses.myExpenses") : user.email}
@@ -311,7 +325,7 @@ export default function ExpensesPage() {
 
       <Card className="mb-5 grid grid-cols-2 gap-3 p-4 sm:grid-cols-6">
         <div>
-          <span className="mb-1 block text-xs font-medium text-slate-500">
+          <span className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
             {t("expenses.filters.from")}
           </span>
           <Input
@@ -324,7 +338,7 @@ export default function ExpensesPage() {
           />
         </div>
         <div>
-          <span className="mb-1 block text-xs font-medium text-slate-500">
+          <span className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
             {t("expenses.filters.to")}
           </span>
           <Input
@@ -337,7 +351,7 @@ export default function ExpensesPage() {
           />
         </div>
         <div>
-          <span className="mb-1 block text-xs font-medium text-slate-500">
+          <span className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
             {t("expenses.filters.categorie")}
           </span>
           <Select
@@ -356,7 +370,7 @@ export default function ExpensesPage() {
           </Select>
         </div>
         <div>
-          <span className="mb-1 block text-xs font-medium text-slate-500">
+          <span className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
             {t("expenses.filters.devise")}
           </span>
           <Select
@@ -375,7 +389,7 @@ export default function ExpensesPage() {
           </Select>
         </div>
         <div>
-          <span className="mb-1 block text-xs font-medium text-slate-500">
+          <span className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
             {t("expenses.filters.status")}
           </span>
           <Select
@@ -394,7 +408,7 @@ export default function ExpensesPage() {
           </Select>
         </div>
         <div className="relative">
-          <span className="mb-1 block text-xs font-medium text-slate-500">
+          <span className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
             {t("expenses.filters.search")}
           </span>
           <Search
@@ -416,12 +430,12 @@ export default function ExpensesPage() {
       <Card className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-100 text-left">
+            <tr className="border-b border-slate-100 text-left dark:border-slate-800">
               {columns.map((col) => (
                 <th
                   key={col.key}
                   onClick={() => col.key !== "fichier" && toggleSort(col.key)}
-                  className="cursor-pointer whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 hover:text-slate-900"
+                  className="cursor-pointer whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
                 >
                   {col.label}
                   {sort === col.key && (order === "asc" ? " ▲" : " ▼")}
@@ -433,7 +447,10 @@ export default function ExpensesPage() {
           <tbody>
             {response?.data.length === 0 && (
               <tr>
-                <td colSpan={columns.length + 1} className="px-4 py-10 text-center text-slate-400">
+                <td
+                  colSpan={columns.length + 1}
+                  className="px-4 py-10 text-center text-slate-400 dark:text-slate-500"
+                >
                   {t("expenses.noResults")}
                 </td>
               </tr>
@@ -443,7 +460,7 @@ export default function ExpensesPage() {
               return (
                 <tr
                   key={expense.id}
-                  className="border-b border-slate-50 last:border-0 hover:bg-slate-50/70"
+                  className="border-b border-slate-50 last:border-0 hover:bg-slate-50/70 dark:border-slate-800/60 dark:hover:bg-slate-800/40"
                 >
                   <td className="whitespace-nowrap px-4 py-3">
                     {isEditing ? (
@@ -631,15 +648,16 @@ export default function ExpensesPage() {
                             </button>
                           </>
                         )}
-                        {canManageUsers && (expense.status === "validated" || expense.status === "exported") && (
-                          <button
-                            onClick={() => handleStatusTransition(expense, "archived")}
-                            className="text-xs text-slate-400 underline transition hover:text-slate-600"
-                            title={t("expenses.archive")}
-                          >
-                            {t("expenses.archive")}
-                          </button>
-                        )}
+                        {canManageUsers &&
+                          (expense.status === "validated" || expense.status === "exported") && (
+                            <button
+                              onClick={() => handleStatusTransition(expense, "archived")}
+                              className="text-xs text-slate-400 underline transition hover:text-slate-600"
+                              title={t("expenses.archive")}
+                            >
+                              {t("expenses.archive")}
+                            </button>
+                          )}
                         <button
                           onClick={() => setConfirmDeleteId(expense.id)}
                           className="text-slate-400 transition hover:text-red-600"
@@ -666,7 +684,7 @@ export default function ExpensesPage() {
           >
             <ChevronLeft size={14} />
           </Button>
-          <span className="text-slate-600">
+          <span className="text-slate-600 dark:text-slate-400">
             {page} / {response.pages}
           </span>
           <Button
@@ -683,7 +701,9 @@ export default function ExpensesPage() {
       {confirmDeleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <Card className="w-full max-w-sm p-6">
-            <p className="mb-4 text-sm text-slate-700">{t("expenses.deleteConfirm")}</p>
+            <p className="mb-4 text-sm text-slate-700 dark:text-slate-300">
+              {t("expenses.deleteConfirm")}
+            </p>
             <div className="flex justify-end gap-3">
               <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>
                 {t("expenses.cancel")}
@@ -716,13 +736,15 @@ export default function ExpensesPage() {
       {exportDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <Card className="w-full max-w-md p-6">
-            <h2 className="mb-2 text-base font-semibold text-slate-900">
+            <h2 className="mb-2 text-base font-semibold text-slate-900 dark:text-slate-100">
               {t("expenses.exportDialog.title")}
             </h2>
-            <p className="mb-4 text-sm text-slate-600">{t("expenses.exportDialog.description")}</p>
+            <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">
+              {t("expenses.exportDialog.description")}
+            </p>
 
             {exportDialog.freshCount > 0 && (
-              <p className="mb-3 text-sm text-brand-600">
+              <p className="mb-3 text-sm text-brand-600 dark:text-brand-400">
                 {exportDialog.freshCount} {t("expenses.exportDialog.freshLabel")}
               </p>
             )}
@@ -731,16 +753,16 @@ export default function ExpensesPage() {
               {exportDialog.reports.map((report) => (
                 <label
                   key={report.id}
-                  className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50"
+                  className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
                 >
                   <input
                     type="checkbox"
                     checked={exportDialog.selected.has(report.id)}
                     onChange={() => toggleReportSelection(report.id)}
-                    className="rounded border-slate-300 text-brand-500 focus:ring-brand-200"
+                    className="rounded border-slate-300 text-brand-500 focus:ring-brand-200 dark:border-slate-600"
                   />
                   <span className="flex-1">{report.name}</span>
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-slate-400 dark:text-slate-500">
                     {report.count} · {new Date(report.createdAt).toLocaleDateString(getLocaleTag())}
                   </span>
                 </label>

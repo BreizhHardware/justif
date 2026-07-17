@@ -41,6 +41,7 @@ model User {
   email        String   @unique
   passwordHash String
   active       Boolean  @default(true)
+  theme        String   @default("system")
   createdAt    DateTime @default(now())
 
   expenses  Expense[]

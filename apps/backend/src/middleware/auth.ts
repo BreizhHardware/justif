@@ -17,7 +17,13 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
-      user?: { id: string; email: string; roles: string[]; permissions: Permission[] };
+      user?: {
+        id: string;
+        email: string;
+        theme: string;
+        roles: string[];
+        permissions: Permission[];
+      };
     }
   }
 }
@@ -41,7 +47,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       return;
     }
     const { roles, permissions } = await getUserRolesAndPermissions(user.id);
-    req.user = { id: user.id, email: user.email, roles, permissions };
+    req.user = { id: user.id, email: user.email, theme: user.theme, roles, permissions };
 
     const secondsLeft = payload.exp - Math.floor(Date.now() / 1000);
     if (secondsLeft < RENEW_THRESHOLD_SECONDS) {

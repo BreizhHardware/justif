@@ -110,7 +110,7 @@ export default function UsersPage() {
       <PageHeader title={t("users.title")} />
 
       <Card className="mb-6 max-w-xl p-6">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
           {t("users.newUserTitle")}
         </h2>
         <form
@@ -167,14 +167,14 @@ export default function UsersPage() {
       <Card className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-100 text-left">
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <tr className="border-b border-slate-100 text-left dark:border-slate-800">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {t("users.email")}
               </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {t("users.roles")}
               </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {t("users.active")}
               </th>
               <th className="px-4 py-3"></th>
@@ -185,11 +185,16 @@ export default function UsersPage() {
               const isSelf = user.id === currentUserId;
               const isEditing = editingId === user.id;
               return (
-                <tr key={user.id} className="border-b border-slate-50 last:border-0">
+                <tr
+                  key={user.id}
+                  className="border-b border-slate-50 last:border-0 dark:border-slate-800/60"
+                >
                   <td className="px-4 py-3 align-top">
                     {user.email}
                     {isSelf && (
-                      <span className="ml-2 text-xs text-slate-400">({t("users.you")})</span>
+                      <span className="ml-2 text-xs text-slate-400 dark:text-slate-500">
+                        ({t("users.you")})
+                      </span>
                     )}
                   </td>
                   <td className="px-4 py-3 align-top">
@@ -199,7 +204,7 @@ export default function UsersPage() {
                           {roles.map((role) => (
                             <label
                               key={role.id}
-                              className="flex items-center gap-1.5 text-sm text-slate-700"
+                              className="flex items-center gap-1.5 text-sm text-slate-700 dark:text-slate-300"
                             >
                               <input
                                 type="checkbox"
@@ -231,7 +236,9 @@ export default function UsersPage() {
                         ))}
                       </div>
                     ) : (
-                      <span className="text-xs text-slate-400">{t("users.noRoles")}</span>
+                      <span className="text-xs text-slate-400 dark:text-slate-500">
+                        {t("users.noRoles")}
+                      </span>
                     )}
                   </td>
                   <td className="px-4 py-3 align-top">

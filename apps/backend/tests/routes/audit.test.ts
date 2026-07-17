@@ -292,14 +292,15 @@ describe("GET /api/audit — filtering", () => {
     const res = await client.get("/api/audit?action=auth.login");
     expect(res.status).toBe(200);
     const body = await res.json();
-    const allMatch = body.data.every(
-      (log: { action: string }) => log.action === "auth.login",
-    );
+    const allMatch = body.data.every((log: { action: string }) => log.action === "auth.login");
     expect(allMatch).toBe(true);
   });
 
   it("filters results by userId", async () => {
-    const { client: admin } = await loginAs({ email: "admin@audit-filter2.test", roleNames: ["Admin"] });
+    const { client: admin } = await loginAs({
+      email: "admin@audit-filter2.test",
+      roleNames: ["Admin"],
+    });
     const target = await createUser({ email: "target@audit-filter.test" });
     const targetClient = new TestClient(server.baseUrl);
     await targetClient.post("/api/auth/login", {
@@ -311,9 +312,7 @@ describe("GET /api/audit — filtering", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.length).toBeGreaterThan(0);
-    const allMatch = body.data.every(
-      (log: { userId: string | null }) => log.userId === target.id,
-    );
+    const allMatch = body.data.every((log: { userId: string | null }) => log.userId === target.id);
     expect(allMatch).toBe(true);
   });
 

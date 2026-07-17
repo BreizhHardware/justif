@@ -94,7 +94,9 @@ export default function AuditPage() {
   }, [load, router]);
 
   useEffect(() => {
-    apiFetch<UserSummary[]>("/api/users").then(setUsers).catch(() => {});
+    apiFetch<UserSummary[]>("/api/users")
+      .then(setUsers)
+      .catch(() => {});
   }, []);
 
   function handleFilterChange(key: keyof typeof filters, value: string) {
@@ -108,7 +110,7 @@ export default function AuditPage() {
 
       <Card className="mb-4 flex flex-wrap gap-4 p-4">
         <div>
-          <span className="mb-1 block text-xs font-medium text-slate-500">
+          <span className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
             {t("audit.filters.from")}
           </span>
           <Input
@@ -118,7 +120,7 @@ export default function AuditPage() {
           />
         </div>
         <div>
-          <span className="mb-1 block text-xs font-medium text-slate-500">
+          <span className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
             {t("audit.filters.to")}
           </span>
           <Input
@@ -128,7 +130,7 @@ export default function AuditPage() {
           />
         </div>
         <div>
-          <span className="mb-1 block text-xs font-medium text-slate-500">
+          <span className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
             {t("audit.filters.action")}
           </span>
           <Select
@@ -144,7 +146,7 @@ export default function AuditPage() {
           </Select>
         </div>
         <div>
-          <span className="mb-1 block text-xs font-medium text-slate-500">
+          <span className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
             {t("audit.filters.user")}
           </span>
           <Select
@@ -164,20 +166,20 @@ export default function AuditPage() {
       <Card className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-100 text-left">
-              <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <tr className="border-b border-slate-100 text-left dark:border-slate-800">
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {t("audit.columns.timestamp")}
               </th>
-              <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {t("audit.columns.actor")}
               </th>
-              <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {t("audit.columns.action")}
               </th>
-              <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {t("audit.columns.entity")}
               </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {t("audit.columns.details")}
               </th>
             </tr>
@@ -185,7 +187,10 @@ export default function AuditPage() {
           <tbody>
             {response?.data.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-slate-400">
+                <td
+                  colSpan={5}
+                  className="px-4 py-10 text-center text-slate-400 dark:text-slate-500"
+                >
                   {t("audit.noResults")}
                 </td>
               </tr>
@@ -193,32 +198,38 @@ export default function AuditPage() {
             {response?.data.map((log) => (
               <tr
                 key={log.id}
-                className="border-b border-slate-50 last:border-0 hover:bg-slate-50/70"
+                className="border-b border-slate-50 last:border-0 hover:bg-slate-50/70 dark:border-slate-800/60 dark:hover:bg-slate-800/40"
               >
-                <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-slate-500">
+                <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-slate-500 dark:text-slate-400">
                   {new Date(log.timestamp).toLocaleString(getLocaleTag())}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3">
                   {log.user?.email ?? (
-                    <span className="italic text-slate-400">{t("audit.deletedUser")}</span>
+                    <span className="italic text-slate-400 dark:text-slate-500">
+                      {t("audit.deletedUser")}
+                    </span>
                   )}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3">
                   <Badge tone={actionTone(log.action)}>{log.action}</Badge>
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-slate-500">
+                <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-slate-500 dark:text-slate-400">
                   {log.entityType ? (
                     <>
-                      <span className="font-medium text-slate-700">{log.entityType}</span>
+                      <span className="font-medium text-slate-700 dark:text-slate-300">
+                        {log.entityType}
+                      </span>
                       {log.entityId && (
-                        <span className="ml-1 text-slate-400">{log.entityId.slice(0, 8)}…</span>
+                        <span className="ml-1 text-slate-400 dark:text-slate-500">
+                          {log.entityId.slice(0, 8)}…
+                        </span>
                       )}
                     </>
                   ) : (
                     "—"
                   )}
                 </td>
-                <td className="max-w-xs truncate px-4 py-3 font-mono text-xs text-slate-500">
+                <td className="max-w-xs truncate px-4 py-3 font-mono text-xs text-slate-500 dark:text-slate-400">
                   {formatMetadata(log.metadata)}
                 </td>
               </tr>
@@ -237,7 +248,7 @@ export default function AuditPage() {
           >
             <ChevronLeft size={14} />
           </Button>
-          <span className="text-slate-600">
+          <span className="text-slate-600 dark:text-slate-400">
             {page} / {response.pages}
           </span>
           <Button
