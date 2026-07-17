@@ -85,7 +85,11 @@ describe("POST /api/auth/login", () => {
     expect(login.status).toBe(200);
 
     const me = await client.get("/api/auth/me");
-    expect(await me.json()).toEqual({ email: "user@justif.test", roles: ["User"], permissions: [] });
+    expect(await me.json()).toEqual({
+      email: "user@justif.test",
+      roles: ["User"],
+      permissions: [],
+    });
   });
 
   it("rejects an incorrect password", async () => {

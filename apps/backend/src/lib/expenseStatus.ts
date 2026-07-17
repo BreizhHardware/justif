@@ -65,14 +65,16 @@ export function canTransition(
 
   if (from === "validated") {
     if (to === "archived") {
-      if (!isAdmin) return { allowed: false, reason: "Only an admin can archive a validated expense" };
+      if (!isAdmin)
+        return { allowed: false, reason: "Only an admin can archive a validated expense" };
       return { allowed: true };
     }
   }
 
   if (from === "exported") {
     if (to === "archived") {
-      if (!isAdmin) return { allowed: false, reason: "Only an admin can archive an exported expense" };
+      if (!isAdmin)
+        return { allowed: false, reason: "Only an admin can archive an exported expense" };
       return { allowed: true };
     }
   }

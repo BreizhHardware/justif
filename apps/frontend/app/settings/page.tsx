@@ -90,7 +90,7 @@ export default function SettingsPage() {
         className="max-w-2xl space-y-6"
       >
         <Card className="p-6">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
             {t("settings.ocrProvider")}
           </h2>
 
@@ -100,30 +100,42 @@ export default function SettingsPage() {
               onClick={() => setSettings({ ...settings, ocr_provider: "cloud" })}
               className={`flex flex-col items-center gap-2 rounded-xl border-2 px-4 py-4 transition ${
                 settings.ocr_provider === "cloud"
-                  ? "border-brand-500 bg-brand-50"
-                  : "border-slate-200 hover:border-slate-300"
+                  ? "border-brand-500 bg-brand-50 dark:bg-brand-950/30"
+                  : "border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600"
               }`}
             >
               <Cloud
-                className={settings.ocr_provider === "cloud" ? "text-brand-600" : "text-slate-400"}
+                className={
+                  settings.ocr_provider === "cloud"
+                    ? "text-brand-600"
+                    : "text-slate-400 dark:text-slate-500"
+                }
                 size={22}
               />
-              <span className="text-sm font-medium text-slate-700">{t("settings.cloud")}</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                {t("settings.cloud")}
+              </span>
             </button>
             <button
               type="button"
               onClick={() => setSettings({ ...settings, ocr_provider: "local" })}
               className={`flex flex-col items-center gap-2 rounded-xl border-2 px-4 py-4 transition ${
                 settings.ocr_provider === "local"
-                  ? "border-brand-500 bg-brand-50"
-                  : "border-slate-200 hover:border-slate-300"
+                  ? "border-brand-500 bg-brand-50 dark:bg-brand-950/30"
+                  : "border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600"
               }`}
             >
               <HardDrive
-                className={settings.ocr_provider === "local" ? "text-brand-600" : "text-slate-400"}
+                className={
+                  settings.ocr_provider === "local"
+                    ? "text-brand-600"
+                    : "text-slate-400 dark:text-slate-500"
+                }
                 size={22}
               />
-              <span className="text-sm font-medium text-slate-700">{t("settings.local")}</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                {t("settings.local")}
+              </span>
             </button>
           </div>
 
@@ -185,10 +197,12 @@ export default function SettingsPage() {
         </Card>
 
         <Card className="p-6">
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
             {t("settings.ocrPromptOverride")}
           </h2>
-          <p className="mb-4 text-sm text-slate-500">{t("settings.ocrPromptOverrideHelp")}</p>
+          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+            {t("settings.ocrPromptOverrideHelp")}
+          </p>
           <Textarea
             rows={4}
             value={settings.ocr_prompt_override}
@@ -196,7 +210,7 @@ export default function SettingsPage() {
             placeholder={t("settings.ocrPromptOverridePlaceholder")}
           />
 
-          <label className="mt-4 flex items-center gap-2.5 text-sm text-slate-700">
+          <label className="mt-4 flex items-center gap-2.5 text-sm text-slate-700 dark:text-slate-300">
             <input
               type="checkbox"
               checked={settings.ocr_extract_reference_number === "true"}
@@ -206,17 +220,17 @@ export default function SettingsPage() {
                   ocr_extract_reference_number: e.target.checked ? "true" : "false",
                 })
               }
-              className="rounded border-slate-300 text-brand-500 focus:ring-brand-200"
+              className="rounded border-slate-300 text-brand-500 focus:ring-brand-200 dark:border-slate-600"
             />
             {t("settings.extractReferenceNumber")}
           </label>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
             {t("settings.extractReferenceNumberHelp")}
           </p>
         </Card>
 
         <Card className="p-6">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
             {t("settings.defaultCurrency")}
           </h2>
           <Select
@@ -233,11 +247,13 @@ export default function SettingsPage() {
         </Card>
 
         <Card className="p-6">
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
             {t("settings.requireValidation")}
           </h2>
-          <p className="mb-4 text-sm text-slate-500">{t("settings.requireValidationHelp")}</p>
-          <label className="flex items-center gap-2.5 text-sm text-slate-700">
+          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+            {t("settings.requireValidationHelp")}
+          </p>
+          <label className="flex items-center gap-2.5 text-sm text-slate-700 dark:text-slate-300">
             <input
               type="checkbox"
               checked={settings.require_validation === "true"}
@@ -247,7 +263,7 @@ export default function SettingsPage() {
                   require_validation: e.target.checked ? "true" : "false",
                 })
               }
-              className="rounded border-slate-300 text-brand-500 focus:ring-brand-200"
+              className="rounded border-slate-300 text-brand-500 focus:ring-brand-200 dark:border-slate-600"
             />
             {t("settings.requireValidation")}
           </label>
@@ -255,7 +271,11 @@ export default function SettingsPage() {
 
         <div className="flex items-center gap-3">
           <Button type="submit">{t("settings.save")}</Button>
-          {saved && <span className="text-sm text-brand-600">{t("settings.saved")}</span>}
+          {saved && (
+            <span className="text-sm text-brand-600 dark:text-brand-400">
+              {t("settings.saved")}
+            </span>
+          )}
         </div>
       </form>
     </AppShell>

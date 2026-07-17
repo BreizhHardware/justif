@@ -9,6 +9,7 @@ import { apiFetch, ApiError } from "@/lib/api";
 import { getLocaleTag } from "@/lib/i18n";
 import { ResponsivePie } from "@nivo/pie";
 import { ResponsiveLine } from "@nivo/line";
+import { useTheme } from "@/components/ThemeProvider";
 
 type DashboardSummary = {
   total: number;
@@ -28,8 +29,8 @@ function fmt(n: number) {
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <Card className="p-5">
-      <p className="text-sm font-medium text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-bold text-slate-800">{value}</p>
+      <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</p>
+      <p className="mt-1 text-2xl font-bold text-slate-800 dark:text-slate-100">{value}</p>
     </Card>
   );
 }
@@ -37,6 +38,12 @@ function StatCard({ label, value }: { label: string; value: string }) {
 export default function DashboardPage() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  const isDark =
+    theme === "dark" ||
+    (theme === "system" &&
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [from, setFrom] = useState("");
@@ -117,7 +124,7 @@ export default function DashboardPage() {
               setFrom("");
               setTo("");
             }}
-            className="text-sm text-slate-500 hover:text-slate-800 underline"
+            className="text-sm text-slate-500 hover:text-slate-800 underline dark:text-slate-400 dark:hover:text-slate-200"
           >
             {t("dashboard.reset")}
           </button>
@@ -125,7 +132,7 @@ export default function DashboardPage() {
       </div>
 
       {loading ? (
-        <div className="flex h-48 items-center justify-center text-slate-400 text-sm">
+        <div className="flex h-48 items-center justify-center text-slate-400 text-sm dark:text-slate-500">
           {t("dashboard.loading")}
         </div>
       ) : (
@@ -150,7 +157,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* By category */}
             <Card className="p-5">
-              <h2 className="mb-4 text-sm font-semibold text-slate-700">
+              <h2 className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-300">
                 {t("dashboard.byCategory")}
               </h2>
               {hasBar ? (
@@ -166,7 +173,7 @@ export default function DashboardPage() {
                     enableArcLabels={false}
                     enableArcLinkLabels={false}
                     tooltip={({ datum }) => (
-                      <div className="rounded bg-white px-3 py-2 text-xs shadow-card border border-slate-100">
+                      <div className="rounded bg-white px-3 py-2 text-xs shadow-card border border-slate-100 dark:bg-slate-800 dark:border-slate-700">
                         <span className="font-medium">{datum.label}</span>
                         {" — "}
                         {fmt(datum.value)} €
@@ -181,7 +188,7 @@ export default function DashboardPage() {
                         translateY: 0,
                         itemWidth: 110,
                         itemHeight: 22,
-                        itemTextColor: "#64748b",
+                        itemTextColor: isDark ? "#94a3b8" : "#64748b",
                         symbolSize: 10,
                         symbolShape: "circle",
                       },
@@ -189,7 +196,7 @@ export default function DashboardPage() {
                   />
                 </div>
               ) : (
-                <p className="flex h-48 items-center justify-center text-sm text-slate-400">
+                <p className="flex h-48 items-center justify-center text-sm text-slate-400 dark:text-slate-500">
                   {t("dashboard.noData")}
                 </p>
               )}
@@ -197,7 +204,7 @@ export default function DashboardPage() {
 
             {/* Monthly trend */}
             <Card className="p-5">
-              <h2 className="mb-4 text-sm font-semibold text-slate-700">
+              <h2 className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-300">
                 {t("dashboard.monthlyTrend")}
               </h2>
               {hasLine ? (
@@ -220,28 +227,30 @@ export default function DashboardPage() {
                     colors={["#2D6A4F"]}
                     lineWidth={2}
                     pointSize={6}
-                    pointColor="#fff"
+                    pointColor={isDark ? "#0f172a" : "#fff"}
                     pointBorderWidth={2}
                     pointBorderColor="#2D6A4F"
                     enableArea
                     areaOpacity={0.08}
                     tooltip={({ point }) => (
-                      <div className="rounded bg-white px-3 py-2 text-xs shadow-card border border-slate-100">
+                      <div className="rounded bg-white px-3 py-2 text-xs shadow-card border border-slate-100 dark:bg-slate-800 dark:border-slate-700">
                         <span className="font-medium">{String(point.data.x)}</span>
                         {" — "}
                         {fmt(point.data.y as number)} €
                       </div>
                     )}
                     theme={{
-                      axis: { ticks: { text: { fontSize: 11, fill: "#64748b" } } },
-                      grid: { line: { stroke: "#f1f5f9" } },
+                      axis: {
+                        ticks: { text: { fontSize: 11, fill: isDark ? "#94a3b8" : "#64748b" } },
+                      },
+                      grid: { line: { stroke: isDark ? "#1e293b" : "#f1f5f9" } },
                     }}
                     gridYValues={4}
                     useMesh
                   />
                 </div>
               ) : (
-                <p className="flex h-48 items-center justify-center text-sm text-slate-400">
+                <p className="flex h-48 items-center justify-center text-sm text-slate-400 dark:text-slate-500">
                   {summary && summary.byMonth.length === 1
                     ? t("dashboard.singleMonth")
                     : t("dashboard.noData")}
@@ -253,14 +262,14 @@ export default function DashboardPage() {
           {/* Recent exports */}
           {summary && summary.recentReports.length > 0 && (
             <Card className="mt-6 p-5">
-              <h2 className="mb-3 text-sm font-semibold text-slate-700">
+              <h2 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">
                 {t("dashboard.recentExports")}
               </h2>
-              <ul className="divide-y divide-slate-100">
+              <ul className="divide-y divide-slate-100 dark:divide-slate-800">
                 {summary.recentReports.map((r) => (
                   <li key={r.id} className="flex items-center justify-between py-2.5">
-                    <span className="text-sm text-slate-700">{r.name}</span>
-                    <span className="text-xs text-slate-400">
+                    <span className="text-sm text-slate-700 dark:text-slate-300">{r.name}</span>
+                    <span className="text-xs text-slate-400 dark:text-slate-500">
                       {t("dashboard.expenseCount", { count: r.count })} ·{" "}
                       {new Date(r.createdAt).toLocaleDateString(getLocaleTag())}
                     </span>

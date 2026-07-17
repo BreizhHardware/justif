@@ -11,14 +11,18 @@ import {
   LayoutGrid,
   LogOut,
   Menu,
+  Monitor,
+  Moon,
   Receipt,
   Settings,
+  Sun,
   UploadCloud,
   Users,
   X,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import type { Permission } from "@/lib/permissions";
+import { useTheme, type Theme } from "@/components/ThemeProvider";
 
 const links = [
   { href: "/dashboard", icon: BarChart2, key: "dashboard" as const, permission: undefined },
@@ -26,14 +30,31 @@ const links = [
   { href: "/upload", icon: UploadCloud, key: "upload" as const, permission: undefined },
   { href: "/users", icon: Users, key: "users" as const, permission: "MANAGE_USERS" as const },
   { href: "/roles", icon: KeyRound, key: "roles" as const, permission: "MANAGE_USERS" as const },
-  { href: "/audit", icon: ClipboardList, key: "audit" as const, permission: "VIEW_AUDIT_LOG" as const },
-  { href: "/settings", icon: Settings, key: "settings" as const, permission: "MANAGE_SETTINGS" as const },
+  {
+    href: "/audit",
+    icon: ClipboardList,
+    key: "audit" as const,
+    permission: "VIEW_AUDIT_LOG" as const,
+  },
+  {
+    href: "/settings",
+    icon: Settings,
+    key: "settings" as const,
+    permission: "MANAGE_SETTINGS" as const,
+  },
+];
+
+const THEME_OPTIONS: { value: Theme; icon: typeof Sun; labelKey: string }[] = [
+  { value: "light", icon: Sun, labelKey: "nav.themeLight" },
+  { value: "system", icon: Monitor, labelKey: "nav.themeSystem" },
+  { value: "dark", icon: Moon, labelKey: "nav.themeDark" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useTranslation();
+  const { theme, setTheme } = useTheme();
   const [email, setEmail] = useState<string | null>(null);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -88,7 +109,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </nav>
 
       <div className="border-t border-slate-800 px-3 py-4">
-        {email && <p className="mb-2 truncate px-3 text-xs text-slate-400">{email}</p>}
+        {email && <p className="mb-3 truncate px-3 text-xs text-slate-400">{email}</p>}
+
+        {/* Theme selector */}
+        <div className="mb-2 flex items-center gap-1 rounded-lg bg-slate-800/60 p-1">
+          {THEME_OPTIONS.map(({ value, icon: Icon, labelKey }) => (
+            <button
+              key={value}
+              onClick={() => setTheme(value)}
+              title={t(labelKey as never)}
+              className={`flex flex-1 items-center justify-center rounded-md p-1.5 transition ${
+                theme === value ? "bg-slate-700 text-white" : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <Icon size={15} />
+            </button>
+          ))}
+        </div>
+
         <button
           onClick={handleLogout}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
@@ -101,7 +139,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 bg-slate-900 md:block">
         {sidebarContent}
       </aside>
@@ -122,14 +160,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       )}
 
       <div className="md:pl-64">
-        <header className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 md:hidden">
+        <header className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900 md:hidden">
           <button
             onClick={() => setMobileOpen(true)}
-            className="text-slate-500 hover:text-slate-900"
+            className="text-slate-500 hover:text-slate-900 dark:hover:text-white"
           >
             <Menu size={22} />
           </button>
-          <span className="text-base font-semibold text-slate-900">{t("appName")}</span>
+          <span className="text-base font-semibold text-slate-900 dark:text-white">
+            {t("appName")}
+          </span>
         </header>
 
         <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>

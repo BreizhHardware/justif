@@ -14,9 +14,7 @@ test.describe("Upload page", () => {
   });
 
   test("shows the file dropzone", async ({ page }) => {
-    await expect(
-      page.getByText(/drop a file here|déposer un fichier/i),
-    ).toBeVisible();
+    await expect(page.getByText(/drop a file here|déposer un fichier/i)).toBeVisible();
   });
 
   test("dropzone has a hidden file input", async ({ page }) => {

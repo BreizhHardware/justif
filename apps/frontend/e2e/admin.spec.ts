@@ -31,9 +31,7 @@ test.describe("Audit log page (admin)", () => {
   });
 
   test("renders the audit log heading", async ({ page }) => {
-    await expect(
-      page.getByRole("heading", { name: /audit log|journal d'audit/i }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: /audit log|journal d'audit/i })).toBeVisible();
   });
 
   test("shows audit log entries from the E2E setup", async ({ page }) => {
@@ -60,9 +58,7 @@ test.describe("Settings page (admin)", () => {
   });
 
   test("renders the settings heading", async ({ page }) => {
-    await expect(
-      page.getByRole("heading", { name: /^settings$|^paramètres$/i }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^settings$|^paramètres$/i })).toBeVisible();
   });
 
   test("shows the OCR provider selector", async ({ page }) => {
@@ -79,6 +75,8 @@ test.describe("Settings page (admin)", () => {
 
   test("shows the validation workflow toggle", async ({ page }) => {
     // Text appears in both a heading and its label; use .first() to avoid a strict-mode violation.
-    await expect(page.getByText(/validation workflow|circuit de validation/i).first()).toBeVisible();
+    await expect(
+      page.getByText(/validation workflow|circuit de validation/i).first(),
+    ).toBeVisible();
   });
 });

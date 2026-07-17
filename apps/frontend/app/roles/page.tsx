@@ -119,7 +119,7 @@ export default function RolesPage() {
       <PageHeader title={t("roles.title")} />
 
       <Card className="mb-6 max-w-xl p-6">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
           {t("roles.newRoleTitle")}
         </h2>
         <form
@@ -145,7 +145,10 @@ export default function RolesPage() {
             <Label>{t("roles.permissions")}</Label>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {PERMISSIONS.map((permission) => (
-                <label key={permission} className="flex items-center gap-1.5 text-sm text-slate-700">
+                <label
+                  key={permission}
+                  className="flex items-center gap-1.5 text-sm text-slate-700 dark:text-slate-300"
+                >
                   <input
                     type="checkbox"
                     checked={newPermissions.has(permission)}
@@ -169,14 +172,14 @@ export default function RolesPage() {
       <Card className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-100 text-left">
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <tr className="border-b border-slate-100 text-left dark:border-slate-800">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {t("roles.name")}
               </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {t("roles.permissions")}
               </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {t("roles.usersCount")}
               </th>
               <th className="px-4 py-3"></th>
@@ -186,7 +189,10 @@ export default function RolesPage() {
             {roles?.map((role) => {
               const isEditing = editingId === role.id;
               return (
-                <tr key={role.id} className="border-b border-slate-50 last:border-0">
+                <tr
+                  key={role.id}
+                  className="border-b border-slate-50 last:border-0 dark:border-slate-800/60"
+                >
                   {isEditing ? (
                     <td colSpan={4} className="px-4 py-3">
                       <div className="space-y-3">
@@ -207,7 +213,7 @@ export default function RolesPage() {
                           {PERMISSIONS.map((permission) => (
                             <label
                               key={permission}
-                              className="flex items-center gap-1.5 text-sm text-slate-700"
+                              className="flex items-center gap-1.5 text-sm text-slate-700 dark:text-slate-300"
                             >
                               <input
                                 type="checkbox"
@@ -234,9 +240,13 @@ export default function RolesPage() {
                   ) : (
                     <>
                       <td className="px-4 py-3 align-top">
-                        <div className="font-medium text-slate-900">{role.name}</div>
+                        <div className="font-medium text-slate-900 dark:text-slate-100">
+                          {role.name}
+                        </div>
                         {role.description && (
-                          <div className="text-xs text-slate-500">{role.description}</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">
+                            {role.description}
+                          </div>
                         )}
                       </td>
                       <td className="px-4 py-3 align-top">
@@ -248,7 +258,7 @@ export default function RolesPage() {
                               </Badge>
                             ))
                           ) : (
-                            <span className="text-xs text-slate-400">—</span>
+                            <span className="text-xs text-slate-400 dark:text-slate-500">—</span>
                           )}
                         </div>
                       </td>

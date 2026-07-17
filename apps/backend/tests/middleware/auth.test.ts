@@ -32,7 +32,9 @@ describe("requirePermission", () => {
   }
 
   it("calls next() when the user holds the required permission", () => {
-    const req = { user: { id: "u1", email: "a@b.com", roles: [], permissions: ["MANAGE_USERS"] } } as unknown as Request;
+    const req = {
+      user: { id: "u1", email: "a@b.com", roles: [], permissions: ["MANAGE_USERS"] },
+    } as unknown as Request;
     const res = mockRes();
     const next = vi.fn();
 
@@ -43,7 +45,9 @@ describe("requirePermission", () => {
   });
 
   it("returns 403 when the user lacks the required permission", () => {
-    const req = { user: { id: "u1", email: "a@b.com", roles: [], permissions: [] } } as unknown as Request;
+    const req = {
+      user: { id: "u1", email: "a@b.com", roles: [], permissions: [] },
+    } as unknown as Request;
     const res = mockRes();
     const next = vi.fn();
 

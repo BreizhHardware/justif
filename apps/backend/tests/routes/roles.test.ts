@@ -40,7 +40,11 @@ describe("GET /api/roles", () => {
     const admin = await loginAs({ email: "admin@justif.test", roleNames: ["Admin"] });
     const res = await admin.get("/api/roles");
     expect(res.status).toBe(200);
-    const roles = (await res.json()) as Array<{ name: string; permissions: string[]; userCount: number }>;
+    const roles = (await res.json()) as Array<{
+      name: string;
+      permissions: string[];
+      userCount: number;
+    }>;
     const adminRole = roles.find((r) => r.name === "Admin")!;
     const userRole = roles.find((r) => r.name === "User")!;
     expect([...adminRole.permissions].sort()).toEqual([...PERMISSIONS].sort());
@@ -104,7 +108,9 @@ describe("PATCH /api/roles/:id", () => {
 describe("DELETE /api/roles/:id", () => {
   it("deletes an unassigned role", async () => {
     const admin = await loginAs({ email: "admin7@justif.test", roleNames: ["Admin"] });
-    const created = await (await admin.post("/api/roles", { name: "Temp", permissions: [] })).json();
+    const created = await (
+      await admin.post("/api/roles", { name: "Temp", permissions: [] })
+    ).json();
 
     const res = await admin.delete(`/api/roles/${created.id}`);
     expect(res.status).toBe(204);

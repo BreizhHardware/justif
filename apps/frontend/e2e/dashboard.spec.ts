@@ -8,7 +8,9 @@ test.describe("Dashboard page", () => {
   });
 
   test("renders the dashboard heading", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: /^dashboard$|^tableau de bord$/i })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /^dashboard$|^tableau de bord$/i }),
+    ).toBeVisible();
   });
 
   test("shows stat cards", async ({ page }) => {

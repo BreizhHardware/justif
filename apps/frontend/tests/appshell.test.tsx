@@ -19,7 +19,11 @@ import { PERMISSIONS } from "@/lib/permissions";
 const mockedApiFetch = vi.mocked(apiFetch);
 
 function renderShell() {
-  return render(<AppShell><div data-testid="child">Content</div></AppShell>);
+  return render(
+    <AppShell>
+      <div data-testid="child">Content</div>
+    </AppShell>,
+  );
 }
 
 describe("AppShell", () => {
@@ -72,7 +76,11 @@ describe("AppShell", () => {
 
   it("calls logout API and redirects to / on sign-out", async () => {
     mockedApiFetch
-      .mockResolvedValueOnce({ email: "admin@test.com", roles: ["Admin"], permissions: [...PERMISSIONS] })
+      .mockResolvedValueOnce({
+        email: "admin@test.com",
+        roles: ["Admin"],
+        permissions: [...PERMISSIONS],
+      })
       .mockResolvedValueOnce(undefined); // logout call
     localStorage.setItem("justif_had_session", "1");
 
