@@ -33,9 +33,11 @@ function applyThemeClass(theme: Theme) {
 
 const ThemeContext = createContext<{
   theme: Theme;
+  isDark: boolean;
   setTheme: (t: Theme) => Promise<void>;
 }>({
   theme: "system",
+  isDark: false,
   setTheme: async () => {},
 });
 
@@ -45,6 +47,12 @@ export function useTheme() {
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => readThemeCookie() ?? "system");
+  const [isDark, setIsDark] = useState(() => {
+    const t = readThemeCookie() ?? "system";
+    if (t === "dark") return true;
+    if (t === "light") return false;
+    return typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  });
 
   // Sync from DB on mount (handles cross-device: DB overrides cookie)
   useEffect(() => {
@@ -64,26 +72,36 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Listen for system preference changes when theme === "system"
+  // Resolve isDark and manage system preference listener
   useEffect(() => {
-    if (theme !== "system") return;
+    if (theme === "dark") { setIsDark(true); return; }
+    if (theme === "light") { setIsDark(false); return; }
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    setIsDark(mq.matches);
     const handler = (e: MediaQueryListEvent) => {
       document.documentElement.classList.toggle("dark", e.matches);
+      setIsDark(e.matches);
     };
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   }, [theme]);
 
   async function setTheme(t: Theme) {
+    const prev = theme;
     setThemeState(t);
     applyThemeClass(t);
     writeThemeCookie(t);
-    await apiFetch("/api/auth/me", {
-      method: "PATCH",
-      body: JSON.stringify({ theme: t }),
-    });
+    try {
+      await apiFetch("/api/auth/me", {
+        method: "PATCH",
+        body: JSON.stringify({ theme: t }),
+      });
+    } catch {
+      setThemeState(prev);
+      applyThemeClass(prev);
+      writeThemeCookie(prev);
+    }
   }
 
-  return <ThemeContext.Provider value={{ theme, setTheme }}>{children}</ThemeContext.Provider>;
+  return <ThemeContext.Provider value={{ theme, isDark, setTheme }}>{children}</ThemeContext.Provider>;
 }

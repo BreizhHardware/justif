@@ -38,12 +38,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
 export default function DashboardPage() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { theme } = useTheme();
-  const isDark =
-    theme === "dark" ||
-    (theme === "system" &&
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches);
+  const { isDark } = useTheme();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [from, setFrom] = useState("");
