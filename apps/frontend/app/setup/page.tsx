@@ -145,7 +145,7 @@ export default function SetupPage() {
           </div>
         </div>
 
-        {/* Step 1 — Account creation */}
+        {/* Step 1 - Account creation */}
         {step === 1 && (
           <Card className="p-6">
             <form
@@ -194,7 +194,7 @@ export default function SetupPage() {
           </Card>
         )}
 
-        {/* Step 2 — OCR configuration */}
+        {/* Step 2 - OCR configuration */}
         {step === 2 && (
           <Card className="p-6">
             <form

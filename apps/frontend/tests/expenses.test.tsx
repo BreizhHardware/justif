@@ -151,7 +151,7 @@ describe("ExpensesPage", () => {
 
     await waitFor(() => {
       expect(mockedApiFetch).toHaveBeenCalledWith(expect.stringContaining("export-overlap"));
-      // location.href is set by runExport — no dialog shown
+      // location.href is set by runExport - no dialog shown
       expect(screen.queryByText("expenses.exportDialog.title")).not.toBeInTheDocument();
     });
   });

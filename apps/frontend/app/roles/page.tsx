@@ -258,7 +258,7 @@ export default function RolesPage() {
                               </Badge>
                             ))
                           ) : (
-                            <span className="text-xs text-slate-400 dark:text-slate-500">—</span>
+                            <span className="text-xs text-slate-400 dark:text-slate-500">-</span>
                           )}
                         </div>
                       </td>
