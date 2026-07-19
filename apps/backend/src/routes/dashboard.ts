@@ -5,9 +5,10 @@ const router = Router();
 
 router.get("/summary", async (req: Request, res: Response) => {
   const user = req.user!;
-  const { from, to, userId } = req.query as Record<string, string>;
+  const { from, to, userId, granularity: rawGranularity } = req.query as Record<string, string>;
 
   const targetUserId = user.permissions.includes("VIEW_DASHBOARD") && userId ? userId : user.id;
+  const granularity = rawGranularity === "day" ? "day" : "month";
 
   const dateFilter: { gte?: Date; lte?: Date } = {};
   if (from) dateFilter.gte = new Date(from);
@@ -18,7 +19,7 @@ router.get("/summary", async (req: Request, res: Response) => {
     ...(Object.keys(dateFilter).length > 0 && { date: dateFilter }),
   };
 
-  const [totals, byCategory, recentReports, allExpenses] = await Promise.all([
+  const [totals, byCategory, byVendorRaw, recentReports, allExpenses] = await Promise.all([
     prisma.expense.aggregate({
       where,
       _sum: { montant_ttc_eur: true },
@@ -27,6 +28,14 @@ router.get("/summary", async (req: Request, res: Response) => {
 
     prisma.expense.groupBy({
       by: ["categorie"],
+      where,
+      _sum: { montant_ttc_eur: true },
+      _count: { id: true },
+      orderBy: { _sum: { montant_ttc_eur: "desc" } },
+    }),
+
+    prisma.expense.groupBy({
+      by: ["fournisseur"],
       where,
       _sum: { montant_ttc_eur: true },
       _count: { id: true },
@@ -46,18 +55,19 @@ router.get("/summary", async (req: Request, res: Response) => {
     }),
   ]);
 
-  // SQLite doesn't support DATE_TRUNC so we group by month in JS
-  const monthMap = new Map<string, { count: number; sum: number }>();
+  // SQLite doesn't support DATE_TRUNC so we group by month/day in JS
+  const periodMap = new Map<string, { count: number; sum: number }>();
   for (const e of allExpenses) {
-    const key = e.date.toISOString().slice(0, 7); // "YYYY-MM"
-    const existing = monthMap.get(key) ?? { count: 0, sum: 0 };
-    monthMap.set(key, {
+    const key =
+      granularity === "day" ? e.date.toISOString().slice(0, 10) : e.date.toISOString().slice(0, 7);
+    const existing = periodMap.get(key) ?? { count: 0, sum: 0 };
+    periodMap.set(key, {
       count: existing.count + 1,
       sum: existing.sum + (e.montant_ttc_eur ?? 0),
     });
   }
 
-  const byMonth = Array.from(monthMap.entries())
+  const byMonth = Array.from(periodMap.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([month, { count, sum }]) => ({
       month,
@@ -77,7 +87,13 @@ router.get("/summary", async (req: Request, res: Response) => {
       sum: Math.round((c._sum.montant_ttc_eur ?? 0) * 100) / 100,
       count: c._count.id,
     })),
+    byVendor: byVendorRaw.map((v) => ({
+      fournisseur: v.fournisseur,
+      sum: Math.round((v._sum.montant_ttc_eur ?? 0) * 100) / 100,
+      count: v._count.id,
+    })),
     byMonth,
+    granularity,
     recentReports: recentReports.map((r) => ({
       id: r.id,
       name: r.name,

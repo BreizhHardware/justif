@@ -58,7 +58,7 @@ function actionTone(action: string): ActionTone {
 }
 
 function formatMetadata(metadata: string | null): string {
-  if (!metadata) return "—";
+  if (!metadata) return "-";
   try {
     return JSON.stringify(JSON.parse(metadata), null, 0)
       .replace(/[{}"]/g, "")
@@ -226,7 +226,7 @@ export default function AuditPage() {
                       )}
                     </>
                   ) : (
-                    "—"
+                    "-"
                   )}
                 </td>
                 <td className="max-w-xs truncate px-4 py-3 font-mono text-xs text-slate-500 dark:text-slate-400">

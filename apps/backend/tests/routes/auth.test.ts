@@ -88,6 +88,8 @@ describe("POST /api/auth/login", () => {
     expect(await me.json()).toEqual({
       email: "user@justif.test",
       theme: "system",
+      dashboardBreakdownBy: "category",
+      dashboardGranularity: "month",
       roles: ["User"],
       permissions: [],
     });
@@ -189,5 +191,63 @@ describe("PATCH /api/auth/me", () => {
       expect(res.status).toBe(200);
       expect((await res.json()).theme).toBe(theme);
     }
+  });
+
+  it("returns 400 when no valid fields are provided", async () => {
+    await createUser({ email: "prefs-empty@justif.test" });
+    const client = new TestClient(server.baseUrl);
+    await client.post("/api/auth/login", {
+      email: "prefs-empty@justif.test",
+      password: DEFAULT_PASSWORD,
+    });
+    const res = await client.patch("/api/auth/me", {});
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 for an invalid dashboardGranularity value", async () => {
+    await createUser({ email: "prefs-invalid@justif.test" });
+    const client = new TestClient(server.baseUrl);
+    await client.post("/api/auth/login", {
+      email: "prefs-invalid@justif.test",
+      password: DEFAULT_PASSWORD,
+    });
+    const res = await client.patch("/api/auth/me", { dashboardGranularity: "year" });
+    expect(res.status).toBe(400);
+  });
+
+  it("persists dashboardBreakdownBy and dashboardGranularity independently of theme", async () => {
+    await createUser({ email: "prefs-ok@justif.test" });
+    const client = new TestClient(server.baseUrl);
+    await client.post("/api/auth/login", {
+      email: "prefs-ok@justif.test",
+      password: DEFAULT_PASSWORD,
+    });
+
+    const patch = await client.patch("/api/auth/me", {
+      dashboardBreakdownBy: "vendor",
+      dashboardGranularity: "day",
+    });
+    expect(patch.status).toBe(200);
+    expect(await patch.json()).toEqual({
+      dashboardBreakdownBy: "vendor",
+      dashboardGranularity: "day",
+    });
+
+    const after = await client.get("/api/auth/me");
+    const afterBody = await after.json();
+    expect(afterBody.dashboardBreakdownBy).toBe("vendor");
+    expect(afterBody.dashboardGranularity).toBe("day");
+    expect(afterBody.theme).toBe("system");
+  });
+
+  it("returns 400 for an invalid dashboardBreakdownBy value", async () => {
+    await createUser({ email: "prefs-breakdown-invalid@justif.test" });
+    const client = new TestClient(server.baseUrl);
+    await client.post("/api/auth/login", {
+      email: "prefs-breakdown-invalid@justif.test",
+      password: DEFAULT_PASSWORD,
+    });
+    const res = await client.patch("/api/auth/me", { dashboardBreakdownBy: "region" });
+    expect(res.status).toBe(400);
   });
 });

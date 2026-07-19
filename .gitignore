@@ -145,7 +145,7 @@ vite.config.ts.timestamp-*
 # Prisma generated client
 apps/backend/src/generated/
 
-# Justif — données locales (SQLite + justificatifs uploadés)
+# Justif - données locales (SQLite + justificatifs uploadés)
 apps/backend/db/
 apps/backend/uploads/
 data/
