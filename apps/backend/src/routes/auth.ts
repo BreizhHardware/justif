@@ -74,19 +74,57 @@ router.get("/me", requireAuth, (req, res) => {
   res.json({
     email: req.user!.email,
     theme: req.user!.theme,
+    dashboardBreakdownBy: req.user!.dashboardBreakdownBy,
+    dashboardGranularity: req.user!.dashboardGranularity,
     roles: req.user!.roles,
     permissions: req.user!.permissions,
   });
 });
 
 router.patch("/me", requireAuth, async (req, res) => {
-  const { theme } = req.body as { theme?: string };
-  if (!["light", "dark", "system"].includes(theme!)) {
-    res.status(400).json({ error: "Invalid theme value" });
+  const { theme, dashboardBreakdownBy, dashboardGranularity } = req.body as {
+    theme?: string;
+    dashboardBreakdownBy?: string;
+    dashboardGranularity?: string;
+  };
+
+  const data: {
+    theme?: string;
+    dashboardBreakdownBy?: string;
+    dashboardGranularity?: string;
+  } = {};
+
+  if (theme !== undefined) {
+    if (!["light", "dark", "system"].includes(theme)) {
+      res.status(400).json({ error: "Invalid theme value" });
+      return;
+    }
+    data.theme = theme;
+  }
+
+  if (dashboardBreakdownBy !== undefined) {
+    if (!["category", "vendor"].includes(dashboardBreakdownBy)) {
+      res.status(400).json({ error: "Invalid dashboardBreakdownBy value" });
+      return;
+    }
+    data.dashboardBreakdownBy = dashboardBreakdownBy;
+  }
+
+  if (dashboardGranularity !== undefined) {
+    if (!["month", "day"].includes(dashboardGranularity)) {
+      res.status(400).json({ error: "Invalid dashboardGranularity value" });
+      return;
+    }
+    data.dashboardGranularity = dashboardGranularity;
+  }
+
+  if (Object.keys(data).length === 0) {
+    res.status(400).json({ error: "No valid fields to update" });
     return;
   }
-  await prisma.user.update({ where: { id: req.user!.id }, data: { theme: theme! } });
-  res.json({ theme });
+
+  await prisma.user.update({ where: { id: req.user!.id }, data });
+  res.json(data);
 });
 
 router.get("/status", async (_req, res) => {

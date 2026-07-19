@@ -59,11 +59,11 @@ This starts in parallel:
 
 Two modes, configurable from `/settings` (or via environment variables):
 
-**Cloud mode — Mistral AI**
+**Cloud mode - Mistral AI**
 - Create an API key at [console.mistral.ai](https://console.mistral.ai/)
 - Set it in `/settings`, recommended model: `pixtral-12b-2409`
 
-**Local mode — Ollama**
+**Local mode - Ollama**
 - Install [Ollama](https://ollama.com/) and a vision model (`llava`, `moondream`, `minicpm-v`)
 - Set the Ollama URL (default: `http://localhost:11434`) and the model name
 
@@ -71,7 +71,7 @@ Use the "Test connection" button in `/settings` to verify the configuration.
 
 ## 4. Currency configuration
 
-Multi-currency conversion uses [Frankfurter](https://frankfurter.dev) — official
+Multi-currency conversion uses [Frankfurter](https://frankfurter.dev) - official
 European Central Bank data, free API, no key required.
 
 - The default currency (conversion target, EUR by default) is configurable in `/settings`
@@ -85,14 +85,14 @@ European Central Bank data, free API, no key required.
 [vinext](https://github.com/cloudflare/vinext) is an experimental Vite plugin
 (v0.0.52 at the time of writing) that reimplements the Next.js 16 API surface.
 With the App Router, vinext requires `@vitejs/plugin-rsc` (already included in
-`apps/frontend/package.json`) — no need to declare it explicitly in
+`apps/frontend/package.json`) - no need to declare it explicitly in
 `vite.config.ts`. If you hit stability issues, migrating to standard Next.js
 is straightforward:
 
 1. In `apps/frontend/package.json`, replace `vinext` with `next` in the scripts
    (`next dev`, `next build`, `next start`)
 2. Delete `apps/frontend/vite.config.ts`
-3. The rest of the code (`app/`, `next.config.ts`) is unchanged — no
+3. The rest of the code (`app/`, `next.config.ts`) is unchanged - no
    modifications needed
 
 ---
@@ -126,9 +126,9 @@ the following fields: action type, timestamp, affected entity, actor, and the
 
 IP addresses are collected for three reasons:
 
-1. **Brute-force detection** — repeated failed login attempts from the same IP can be spotted and blocked at the infrastructure level.
-2. **Compliance traceability** — administrative actions (role changes, bulk exports, account deletion) can be traced back to a network origin.
-3. **Audit investigations** — internal or external auditors can correlate events across time and origin.
+1. **Brute-force detection** - repeated failed login attempts from the same IP can be spotted and blocked at the infrastructure level.
+2. **Compliance traceability** - administrative actions (role changes, bulk exports, account deletion) can be traced back to a network origin.
+3. **Audit investigations** - internal or external auditors can correlate events across time and origin.
 
 The legal basis is the operator's legitimate interest in maintaining the
 security and integrity of the application and its data (GDPR Art. 6(1)(f)).
@@ -137,7 +137,7 @@ security and integrity of the application and its data (GDPR Art. 6(1)(f)).
 
 - **Pseudonymisation on account deletion**: when a user account is deleted,
   the `userId` foreign key in existing audit log entries is set to `NULL`
-  (`onDelete: SetNull`) — the log entries are preserved (audit trail
+  (`onDelete: SetNull`) - the log entries are preserved (audit trail
   integrity) but the actor is no longer identifiable.
 - **No secrets in metadata**: audit metadata stores only field names and
   safe snapshots (e.g. `passwordChanged: true`, never the password value;
@@ -153,7 +153,7 @@ As a self-hosted application, **you** are the data controller. You should:
 - Reference the `/privacy` page (or adapt its text) in your own privacy
   notice and make it accessible to users.
 - Define a log retention policy appropriate for your compliance obligations
-  and purge old entries accordingly — the app does not enforce a TTL.
+  and purge old entries accordingly - the app does not enforce a TTL.
 - If you sit behind a reverse proxy (nginx, Caddy, Traefik…), ensure the
   `X-Forwarded-For` header is set correctly so the recorded IP belongs to
   the actual client and not the proxy.
@@ -163,5 +163,5 @@ As a self-hosted application, **you** are the data controller. You should:
 Uploaded receipts are **always preserved** in `uploads/`, even after an
 expense is deleted from the database. For periodic cleanup of orphaned
 files, you can schedule a cron job that diffs `uploads/` against the known
-`fichier` paths in the database — this isn't built in (to keep the project
+`fichier` paths in the database - this isn't built in (to keep the project
 lean), but contributions are welcome.

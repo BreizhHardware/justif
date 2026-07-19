@@ -1,0 +1,19 @@
+# Normalize all text files to LF in the repository, regardless of the
+# committing platform's line-ending settings (avoids Windows/Linux CRLF churn
+# turning up as full-file diffs in PRs).
+* text=auto eol=lf
+
+# Explicitly binary - never touched by line-ending normalization.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.db binary
+*.zip binary

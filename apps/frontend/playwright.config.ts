@@ -39,7 +39,7 @@ export default defineConfig({
       timeout: 60_000,
     },
     {
-      // Vinext frontend — port is pinned to 3001 in vite.config.ts.
+      // Vinext frontend - port is pinned to 3001 in vite.config.ts.
       command: "pnpm --filter frontend run dev",
       port: 3001,
       reuseExistingServer: !process.env.CI,

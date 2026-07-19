@@ -23,7 +23,7 @@ CREATE TABLE "UserRole" (
     CONSTRAINT "UserRole_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
--- Seed the two system roles (literal IDs — SQLite has no server-side cuid();
+-- Seed the two system roles (literal IDs - SQLite has no server-side cuid();
 -- these are fixed seed rows, not app-generated data).
 INSERT INTO "Role" ("id","name","description","createdAt") VALUES
   ('rbac_role_admin', 'Admin', 'Full access (seeded; replaces legacy role="admin")', CURRENT_TIMESTAMP),

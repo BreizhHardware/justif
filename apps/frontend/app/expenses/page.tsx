@@ -361,7 +361,7 @@ export default function ExpensesPage() {
               setPage(1);
             }}
           >
-            <option value="">—</option>
+            <option value="">-</option>
             {CATEGORY_VALUES.map((c) => (
               <option key={c} value={c}>
                 {t(`categories.${c}` as never)}
@@ -380,7 +380,7 @@ export default function ExpensesPage() {
               setPage(1);
             }}
           >
-            <option value="">—</option>
+            <option value="">-</option>
             {COMMON_CURRENCIES.map((code) => (
               <option key={code} value={code}>
                 {code}
@@ -484,7 +484,7 @@ export default function ExpensesPage() {
                         className="w-32"
                       />
                     ) : (
-                      (expense.fournisseur ?? "—")
+                      (expense.fournisseur ?? "-")
                     )}
                   </td>
                   <td className="px-4 py-3" onClick={() => !isEditing && startEdit(expense)}>
@@ -497,7 +497,7 @@ export default function ExpensesPage() {
                         className="w-28"
                       />
                     ) : (
-                      (expense.numero_reference ?? "—")
+                      (expense.numero_reference ?? "-")
                     )}
                   </td>
                   <td className="px-4 py-3" onClick={() => !isEditing && startEdit(expense)}>
@@ -532,7 +532,7 @@ export default function ExpensesPage() {
                         className="w-40"
                       />
                     ) : (
-                      (expense.description ?? "—")
+                      (expense.description ?? "-")
                     )}
                   </td>
                   <td
@@ -550,7 +550,7 @@ export default function ExpensesPage() {
                         className="w-24"
                       />
                     ) : (
-                      (expense.montant_ttc?.toFixed(2) ?? "—")
+                      (expense.montant_ttc?.toFixed(2) ?? "-")
                     )}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3">
@@ -605,7 +605,7 @@ export default function ExpensesPage() {
                         className="h-10 w-10 cursor-pointer rounded-lg border border-slate-200 object-cover transition hover:opacity-80"
                       />
                     ) : (
-                      "—"
+                      "-"
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">

@@ -56,7 +56,7 @@ router.patch("/", async (req, res) => {
     ),
   );
 
-  // Log key names only — never values (secret keys must not appear in audit metadata).
+  // Log key names only - never values (secret keys must not appear in audit metadata).
   await audit({
     userId: req.user!.id,
     action: "settings.update",

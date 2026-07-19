@@ -51,7 +51,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const t = readThemeCookie() ?? "system";
     if (t === "dark") return true;
     if (t === "light") return false;
-    return typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    return (
+      typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches
+    );
   });
 
   // Sync from DB on mount (handles cross-device: DB overrides cookie)
@@ -66,7 +68,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         }
       })
       .catch(() => {
-        // Not authenticated (login/setup pages) — apply from cookie
+        // Not authenticated (login/setup pages) - apply from cookie
         applyThemeClass(theme);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -74,8 +76,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Resolve isDark and manage system preference listener
   useEffect(() => {
-    if (theme === "dark") { setIsDark(true); return; }
-    if (theme === "light") { setIsDark(false); return; }
+    if (theme === "dark") {
+      setIsDark(true);
+      return;
+    }
+    if (theme === "light") {
+      setIsDark(false);
+      return;
+    }
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     setIsDark(mq.matches);
     const handler = (e: MediaQueryListEvent) => {
@@ -103,5 +111,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  return <ThemeContext.Provider value={{ theme, isDark, setTheme }}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={{ theme, isDark, setTheme }}>{children}</ThemeContext.Provider>
+  );
 }
