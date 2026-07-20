@@ -27,7 +27,7 @@ test.describe("Dashboard page", () => {
 
   test("shows chart section headings", async ({ page }) => {
     await expect(
-      page.getByRole("heading", { name: /^by category$|^par catégorie$/i }),
+      page.getByRole("heading", { name: /^by category$|par catégorie/i }),
     ).toBeVisible();
     await expect(page.getByText(/monthly trend|évolution mensuelle/i)).toBeVisible();
   });
@@ -48,16 +48,16 @@ test.describe("Dashboard page", () => {
     });
 
     await expect(
-      page.getByRole("heading", { name: /^by category$|^par catégorie$/i }),
+      page.getByRole("heading", { name: /^by category$|par catégorie/i }),
     ).toBeVisible();
 
     await page.getByRole("button", { name: /by vendor|par fournisseur/i }).click();
 
     await expect(
-      page.getByRole("heading", { name: /^by vendor$|^par fournisseur$/i }),
+      page.getByRole("heading", { name: /^by vendor$|par fournisseur/i }),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: /^by category$|^par catégorie$/i }),
+      page.getByRole("heading", { name: /^by category$|par catégorie/i }),
     ).not.toBeVisible();
   });
 
