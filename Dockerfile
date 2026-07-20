@@ -70,7 +70,7 @@ COPY docker/proxy.mjs ./proxy.mjs
 RUN chmod +x ./entrypoint.sh
 
 RUN mkdir -p /app/backend/uploads /app/backend/db \
-    && chown -R app:app /app /home/app
+    && chown -R app:app /app/backend/uploads /app/backend/db /home/app
 
 # Single public port. BACKEND_PORT/FRONTEND_PORT are internal ports.
 ENV PORT=3000
