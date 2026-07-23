@@ -22,7 +22,7 @@ export function isValidStatus(s: unknown): s is ExpenseStatus {
  *   draft          → pending_review  (owner/admin, only when requireValidation=true)
  *   draft          → archived        (owner/admin)
  *   pending_review → validated       (admin only)
- *   pending_review → draft           (admin only — reject)
+ *   pending_review → draft           (admin only - reject)
  *   pending_review → archived        (admin only)
  *   validated      → archived        (admin only)
  *   exported       → archived        (admin only)

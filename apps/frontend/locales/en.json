@@ -69,10 +69,10 @@
     "rights": {
       "title": "Your rights",
       "intro": "Under the GDPR you have the following rights regarding your personal data:",
-      "access": "Right of access — you may request a copy of the data held about you",
-      "erasure": "Right to erasure — you may request deletion of your account and associated personal data",
+      "access": "Right of access - you may request a copy of the data held about you",
+      "erasure": "Right to erasure - you may request deletion of your account and associated personal data",
       "erasureNote": "Note: audit log entries are pseudonymised rather than fully deleted upon account erasure, as they may be required for legal or compliance purposes",
-      "portability": "Right to data portability — you may request your data in a structured, machine-readable format",
+      "portability": "Right to data portability - you may request your data in a structured, machine-readable format",
       "contact": "To exercise any of these rights, contact the administrator of this Justif instance directly."
     }
   },
@@ -108,9 +108,15 @@
     "countLabel": "Number of expenses",
     "averageLabel": "Average per expense",
     "byCategory": "By category",
+    "byVendor": "By vendor",
+    "unknownVendor": "Unknown vendor",
     "noData": "No data",
     "monthlyTrend": "Monthly trend",
-    "singleMonth": "Single month — chart requires at least 2 data points",
+    "dailyTrend": "Daily trend",
+    "groupByMonth": "Month",
+    "groupByDay": "Day",
+    "singleMonth": "Single month - chart requires at least 2 data points",
+    "singleDay": "Single day - chart requires at least 2 data points",
     "recentExports": "Recent exports",
     "expenseSeries": "Expenses",
     "expenseCount_one": "{{count}} expense",
@@ -140,7 +146,7 @@
     "recalculate": "Recalculate",
     "conversionFailed": "Currency conversion failed",
     "noResults": "No expenses found",
-    "rateTooltip": "1 {{devise}} = {{rate}} EUR — ECB rate from {{date}}",
+    "rateTooltip": "1 {{devise}} = {{rate}} EUR - ECB rate from {{date}}",
     "submitForReview": "Submit for review",
     "validate": "Validate",
     "reject": "Reject",
@@ -158,7 +164,7 @@
     "exportDialog": {
       "title": "Some expenses have already been exported",
       "description": "Some expenses in this selection have already been included in a previous expense report. Choose which ones to include again in this export:",
-      "freshLabel": "expense(s) never exported — always included",
+      "freshLabel": "expense(s) never exported - always included",
       "confirm": "Export",
       "cancel": "Cancel"
     },
@@ -175,7 +181,7 @@
     "dropzone": "Drop a file here or click to select",
     "analyzing": "Analyzing…",
     "save": "Save",
-    "ocrError": "OCR analysis failed — you can fill in the fields manually"
+    "ocrError": "OCR analysis failed - you can fill in the fields manually"
   },
   "settings": {
     "title": "Settings",
