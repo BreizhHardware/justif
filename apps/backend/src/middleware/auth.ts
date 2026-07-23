@@ -21,8 +21,6 @@ declare global {
         id: string;
         email: string;
         theme: string;
-        dashboardBreakdownBy: string;
-        dashboardGranularity: string;
         roles: string[];
         permissions: Permission[];
       };
@@ -49,15 +47,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       return;
     }
     const { roles, permissions } = await getUserRolesAndPermissions(user.id);
-    req.user = {
-      id: user.id,
-      email: user.email,
-      theme: user.theme,
-      dashboardBreakdownBy: user.dashboardBreakdownBy,
-      dashboardGranularity: user.dashboardGranularity,
-      roles,
-      permissions,
-    };
+    req.user = { id: user.id, email: user.email, theme: user.theme, roles, permissions };
 
     const secondsLeft = payload.exp - Math.floor(Date.now() / 1000);
     if (secondsLeft < RENEW_THRESHOLD_SECONDS) {

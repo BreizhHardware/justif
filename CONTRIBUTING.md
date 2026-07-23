@@ -15,19 +15,9 @@ pnpm run dev
 ## Before opening a Pull Request
 
 - Keep changes focused: one PR = one topic
-- TypeScript runs in strict mode - make sure it builds (`pnpm --filter backend run build`, `pnpm --filter frontend run build`)
+- TypeScript runs in strict mode — make sure it builds (`pnpm --filter backend run build`, `pnpm --filter frontend run build`)
 - Run the linter: `pnpm run lint`
 - Clearly describe the problem solved or the feature added
-
-## Merging
-
-- PRs into `develop` (or any other branch): use **"Rebase and merge"**.
-- The `develop` → `main` PR: use **"Create a merge commit"**.
-
-Rebasing the `develop` → `main` PR rewrites those commits with new SHAs, which
-leaves `develop` diverged from `main` even though the content is identical,
-`git log`/`git merge` then treat them as unrelated changes. A merge commit for
-that specific PR keeps `develop`'s commits byte-identical on both branches.
 
 ## Contributing a translation
 
@@ -50,15 +40,15 @@ Frontend tests use [Vitest](https://vitest.dev/) and playwright for end-to-end t
 pnpm --filter frontend run test
 ```
 
-If your PR adds or changes behaviour, please include or update the relevant tests. If you genuinely can't write a test for something, explain why in the PR description - that's fine, but skipping tests without a reason is not.
+If your PR adds or changes behaviour, please include or update the relevant tests. If you genuinely can't write a test for something, explain why in the PR description — that's fine, but skipping tests without a reason is not.
 
 ## Use of AI tools
 
 You are free to use AI assistants (Copilot, Claude, ChatGPT, etc.) while contributing. If you do, please:
 
 - **Disclose it** in your PR description (a single line is enough, e.g. "Parts of this were written with Claude")
-- **Own the code** - you are fully responsible for reviewing, testing, and standing behind every line, AI-generated or not
-- **Do not submit code you don't understand** - if an AI produced something you can't explain, take the time to understand it first
+- **Own the code** — you are fully responsible for reviewing, testing, and standing behind every line, AI-generated or not
+- **Do not submit code you don't understand** — if an AI produced something you can't explain, take the time to understand it first
 
 There is no shame in using these tools; the only requirement is honesty.
 

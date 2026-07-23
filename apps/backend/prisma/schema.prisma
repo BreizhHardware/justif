@@ -42,8 +42,6 @@ model User {
   passwordHash String
   active       Boolean  @default(true)
   theme        String   @default("system")
-  dashboardBreakdownBy String @default("category")
-  dashboardGranularity String @default("month")
   createdAt    DateTime @default(now())
 
   expenses  Expense[]
@@ -82,7 +80,7 @@ model UserRole {
 }
 
 // AuditLog records sensitive actions for compliance and investigation purposes.
-// GDPR note: userId uses SetNull on delete - logs are pseudonymised when a user
+// GDPR note: userId uses SetNull on delete — logs are pseudonymised when a user
 // exercises their right to erasure while preserving the audit trail integrity.
 // IP addresses stored here are personal data and must be disclosed in the privacy policy.
 model AuditLog {
@@ -92,7 +90,7 @@ model AuditLog {
   entityType   String?  // "Expense" | "User" | "Setting" | "ExpenseReport"
   entityId     String?  // ID of the affected entity
   targetUserId String?  // Set when an admin acts on another user's data
-  metadata     String?  // JSON string - no passwords, no API key values, minimal PII
+  metadata     String?  // JSON string — no passwords, no API key values, minimal PII
   ip           String?  // Client IP (GDPR: personal data)
 
   userId String?

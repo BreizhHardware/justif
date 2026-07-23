@@ -31,7 +31,7 @@ function expensePayload(overrides: Record<string, unknown> = {}) {
   };
 }
 
-describe("expense status - initial state", () => {
+describe("expense status — initial state", () => {
   it("new expenses default to 'draft'", async () => {
     const { client } = await loginAs({ email: "status-draft@justif.test" });
     const res = await client.post("/api/expenses", expensePayload());
@@ -40,7 +40,7 @@ describe("expense status - initial state", () => {
   });
 });
 
-describe("PATCH /api/expenses/:id/status - validation workflow disabled (default)", () => {
+describe("PATCH /api/expenses/:id/status — validation workflow disabled (default)", () => {
   it("owner can archive a draft expense", async () => {
     const { client } = await loginAs({ email: "archive-draft@justif.test" });
     const expense = await (await client.post("/api/expenses", expensePayload())).json();
@@ -88,7 +88,7 @@ describe("PATCH /api/expenses/:id/status - validation workflow disabled (default
   });
 });
 
-describe("PATCH /api/expenses/:id/status - validation workflow enabled", () => {
+describe("PATCH /api/expenses/:id/status — validation workflow enabled", () => {
   async function enableValidation() {
     await prisma.setting.upsert({
       where: { key: "require_validation" },
@@ -215,7 +215,7 @@ describe("export sets status to 'exported'", () => {
   });
 });
 
-describe("GET /api/expenses - status filter", () => {
+describe("GET /api/expenses — status filter", () => {
   it("filters expenses by status", async () => {
     const { client } = await loginAs({ email: "filter-status@justif.test" });
     const e1 = await (

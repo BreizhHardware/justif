@@ -24,7 +24,7 @@ async function loginAs(opts: { email: string; roleNames?: string[] }) {
 // Access control
 // ---------------------------------------------------------------------------
 
-describe("GET /api/audit - access control", () => {
+describe("GET /api/audit — access control", () => {
   it("rejects unauthenticated requests", async () => {
     const client = new TestClient(server.baseUrl);
     const res = await client.get("/api/audit");
@@ -53,7 +53,7 @@ describe("GET /api/audit - access control", () => {
 // Auth events
 // ---------------------------------------------------------------------------
 
-describe("audit trail - auth events", () => {
+describe("audit trail — auth events", () => {
   it("records auth.login on successful login", async () => {
     const user = await createUser({ email: "ok@audit-login.test" });
     const client = new TestClient(server.baseUrl);
@@ -103,7 +103,7 @@ describe("audit trail - auth events", () => {
 // Expense events
 // ---------------------------------------------------------------------------
 
-describe("audit trail - expense events", () => {
+describe("audit trail — expense events", () => {
   it("records expense.create with categorie and devise in metadata", async () => {
     const { client, user } = await loginAs({ email: "creator@audit-expense.test" });
     const res = await client.post("/api/expenses", {
@@ -220,7 +220,7 @@ describe("audit trail - expense events", () => {
 // User management events
 // ---------------------------------------------------------------------------
 
-describe("audit trail - user management", () => {
+describe("audit trail — user management", () => {
   it("records user.create with email and role snapshot", async () => {
     const { client: admin, user: adminUser } = await loginAs({
       email: "admin@audit-users.test",
@@ -285,7 +285,7 @@ describe("audit trail - user management", () => {
 // Filtering and pagination
 // ---------------------------------------------------------------------------
 
-describe("GET /api/audit - filtering", () => {
+describe("GET /api/audit — filtering", () => {
   it("filters results by action type", async () => {
     const { client } = await loginAs({ email: "admin@audit-filter.test", roleNames: ["Admin"] });
 
