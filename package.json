@@ -2,7 +2,7 @@
   "name": "justif",
   "version": "0.2.1",
   "private": true,
-  "description": "Justif - gestion de notes de frais open source et auto-hébergeable",
+  "description": "Justif — gestion de notes de frais open source et auto-hébergeable",
   "license": "MIT",
   "scripts": {
     "dev": "pnpm --parallel -r run dev",

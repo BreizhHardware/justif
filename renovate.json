@@ -2,7 +2,9 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
   "assignees": ["breizhhardware"],
-  "baseBranchPatterns": ["develop"],
+  "baseBranchPatterns": [
+    "develop"
+  ],
   "dependencyDashboard": true,
   "dependencyDashboardTitle": "🤖 Renovate – Justif deps status",
   "packageRules": [

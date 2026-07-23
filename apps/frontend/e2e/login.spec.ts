@@ -60,8 +60,6 @@ test.describe("Login page", () => {
             "MANAGE_SETTINGS",
             "VIEW_AUDIT_LOG",
           ],
-          dashboardGranularity: "month",
-          dashboardBreakdownBy: "category",
         }),
       }),
     );
@@ -74,9 +72,7 @@ test.describe("Login page", () => {
           count: 0,
           average: 0,
           byCategory: [],
-          byVendor: [],
           byMonth: [],
-          granularity: "month",
           recentReports: [],
         }),
       }),

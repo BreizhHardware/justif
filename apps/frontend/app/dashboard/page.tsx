@@ -11,23 +11,13 @@ import { ResponsivePie } from "@nivo/pie";
 import { ResponsiveLine } from "@nivo/line";
 import { useTheme } from "@/components/ThemeProvider";
 
-type Granularity = "month" | "day";
-type BreakdownBy = "category" | "vendor";
-
 type DashboardSummary = {
   total: number;
   count: number;
   average: number;
   byCategory: { categorie: string; sum: number; count: number }[];
-  byVendor: { fournisseur: string | null; sum: number; count: number }[];
   byMonth: { month: string; count: number; sum: number }[];
-  granularity: Granularity;
   recentReports: { id: string; name: string; createdAt: string; count: number }[];
-};
-
-type MePrefs = {
-  dashboardGranularity: Granularity;
-  dashboardBreakdownBy: BreakdownBy;
 };
 
 const BRAND_COLORS = ["#2D6A4F", "#40916C", "#52B788", "#74C69D", "#95D5B2", "#B7E4C7", "#D8F3DC"];
@@ -53,19 +43,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [granularity, setGranularity] = useState<Granularity>("month");
-  const [breakdownBy, setBreakdownBy] = useState<BreakdownBy>("category");
-  const [prefsLoaded, setPrefsLoaded] = useState(false);
-
-  useEffect(() => {
-    apiFetch<MePrefs>("/api/auth/me")
-      .then((me) => {
-        setGranularity(me.dashboardGranularity ?? "month");
-        setBreakdownBy(me.dashboardBreakdownBy ?? "category");
-      })
-      .catch(() => {})
-      .finally(() => setPrefsLoaded(true));
-  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -73,7 +50,6 @@ export default function DashboardPage() {
       const params = new URLSearchParams();
       if (from) params.set("from", from);
       if (to) params.set("to", to);
-      params.set("granularity", granularity);
       const data = await apiFetch<DashboardSummary>(`/api/dashboard/summary?${params}`);
       setSummary(data);
     } catch (err) {
@@ -83,53 +59,19 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [from, to, granularity, router]);
+  }, [from, to, router]);
 
   useEffect(() => {
-    if (!prefsLoaded) return;
     load();
-  }, [load, prefsLoaded]);
+  }, [load]);
 
-  async function updateGranularity(next: Granularity) {
-    const prev = granularity;
-    setGranularity(next);
-    try {
-      await apiFetch("/api/auth/me", {
-        method: "PATCH",
-        body: JSON.stringify({ dashboardGranularity: next }),
-      });
-    } catch {
-      setGranularity(prev);
-    }
-  }
-
-  async function updateBreakdownBy(next: BreakdownBy) {
-    const prev = breakdownBy;
-    setBreakdownBy(next);
-    try {
-      await apiFetch("/api/auth/me", {
-        method: "PATCH",
-        body: JSON.stringify({ dashboardBreakdownBy: next }),
-      });
-    } catch {
-      setBreakdownBy(prev);
-    }
-  }
-
-  const breakdownData =
-    breakdownBy === "vendor"
-      ? (summary?.byVendor.map((v, i) => ({
-          id: v.fournisseur ?? t("dashboard.unknownVendor"),
-          label: v.fournisseur ?? t("dashboard.unknownVendor"),
-          value: v.sum,
-          color: BRAND_COLORS[i % BRAND_COLORS.length],
-        })) ?? [])
-      : (summary?.byCategory.map((c, i) => ({
-          id: c.categorie,
-          label: t(`categories.${c.categorie}` as never),
-          value: c.sum,
-          color: BRAND_COLORS[i % BRAND_COLORS.length],
-        })) ?? []);
+  const pieData =
+    summary?.byCategory.map((c, i) => ({
+      id: c.categorie,
+      label: t(`categories.${c.categorie}` as never),
+      value: c.sum,
+      color: BRAND_COLORS[i % BRAND_COLORS.length],
+    })) ?? [];
 
   const lineData =
     summary && summary.byMonth.length > 0
@@ -142,7 +84,7 @@ export default function DashboardPage() {
         ]
       : [];
 
-  const hasBreakdown = breakdownData.length > 0;
+  const hasBar = pieData.length > 0;
   const hasLine = lineData.length > 0 && lineData[0].data.length > 1;
 
   return (
@@ -194,53 +136,29 @@ export default function DashboardPage() {
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <StatCard
               label={t("dashboard.totalLabel")}
-              value={summary ? `${fmt(summary.total)} €` : "-"}
+              value={summary ? `${fmt(summary.total)} €` : "—"}
             />
             <StatCard
               label={t("dashboard.countLabel")}
-              value={summary ? String(summary.count) : "-"}
+              value={summary ? String(summary.count) : "—"}
             />
             <StatCard
               label={t("dashboard.averageLabel")}
-              value={summary && summary.count > 0 ? `${fmt(summary.average)} €` : "-"}
+              value={summary && summary.count > 0 ? `${fmt(summary.average)} €` : "—"}
             />
           </div>
 
           {/* Charts */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {/* By category / By vendor */}
+            {/* By category */}
             <Card className="p-5">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                  {breakdownBy === "vendor" ? t("dashboard.byVendor") : t("dashboard.byCategory")}
-                </h2>
-                <div className="flex rounded-lg border border-slate-200 p-0.5 text-xs dark:border-slate-700">
-                  <button
-                    onClick={() => updateBreakdownBy("category")}
-                    className={`rounded-md px-2.5 py-1 font-medium transition ${
-                      breakdownBy === "category"
-                        ? "bg-brand-500 text-white"
-                        : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
-                    }`}
-                  >
-                    {t("dashboard.byCategory")}
-                  </button>
-                  <button
-                    onClick={() => updateBreakdownBy("vendor")}
-                    className={`rounded-md px-2.5 py-1 font-medium transition ${
-                      breakdownBy === "vendor"
-                        ? "bg-brand-500 text-white"
-                        : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
-                    }`}
-                  >
-                    {t("dashboard.byVendor")}
-                  </button>
-                </div>
-              </div>
-              {hasBreakdown ? (
+              <h2 className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                {t("dashboard.byCategory")}
+              </h2>
+              {hasBar ? (
                 <div style={{ height: 280 }}>
                   <ResponsivePie
-                    data={breakdownData}
+                    data={pieData}
                     margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
                     innerRadius={0.5}
                     padAngle={1.5}
@@ -252,7 +170,7 @@ export default function DashboardPage() {
                     tooltip={({ datum }) => (
                       <div className="rounded bg-white px-3 py-2 text-xs shadow-card border border-slate-100 dark:bg-slate-800 dark:border-slate-700">
                         <span className="font-medium">{datum.label}</span>
-                        {" - "}
+                        {" — "}
                         {fmt(datum.value)} €
                       </div>
                     )}
@@ -279,35 +197,11 @@ export default function DashboardPage() {
               )}
             </Card>
 
-            {/* Monthly/daily trend */}
+            {/* Monthly trend */}
             <Card className="p-5">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                  {granularity === "day" ? t("dashboard.dailyTrend") : t("dashboard.monthlyTrend")}
-                </h2>
-                <div className="flex rounded-lg border border-slate-200 p-0.5 text-xs dark:border-slate-700">
-                  <button
-                    onClick={() => updateGranularity("month")}
-                    className={`rounded-md px-2.5 py-1 font-medium transition ${
-                      granularity === "month"
-                        ? "bg-brand-500 text-white"
-                        : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
-                    }`}
-                  >
-                    {t("dashboard.groupByMonth")}
-                  </button>
-                  <button
-                    onClick={() => updateGranularity("day")}
-                    className={`rounded-md px-2.5 py-1 font-medium transition ${
-                      granularity === "day"
-                        ? "bg-brand-500 text-white"
-                        : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
-                    }`}
-                  >
-                    {t("dashboard.groupByDay")}
-                  </button>
-                </div>
-              </div>
+              <h2 className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                {t("dashboard.monthlyTrend")}
+              </h2>
               {hasLine ? (
                 <div style={{ height: 280 }}>
                   <ResponsiveLine
@@ -336,7 +230,7 @@ export default function DashboardPage() {
                     tooltip={({ point }) => (
                       <div className="rounded bg-white px-3 py-2 text-xs shadow-card border border-slate-100 dark:bg-slate-800 dark:border-slate-700">
                         <span className="font-medium">{String(point.data.x)}</span>
-                        {" - "}
+                        {" — "}
                         {fmt(point.data.y as number)} €
                       </div>
                     )}
@@ -353,7 +247,7 @@ export default function DashboardPage() {
               ) : (
                 <p className="flex h-48 items-center justify-center text-sm text-slate-400 dark:text-slate-500">
                   {summary && summary.byMonth.length === 1
-                    ? t(granularity === "day" ? "dashboard.singleDay" : "dashboard.singleMonth")
+                    ? t("dashboard.singleMonth")
                     : t("dashboard.noData")}
                 </p>
               )}

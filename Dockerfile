@@ -59,9 +59,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl \
 RUN corepack enable && corepack prepare pnpm@11.10.0 --activate
 ENV PNPM_CONFIG_VERIFY_DEPS_BEFORE_RUN=false
 
-RUN groupadd -r app && useradd -r -m -g app -d /home/app app
-ENV HOME=/home/app
-
 COPY --from=backend-build /deploy/backend ./backend
 COPY --from=frontend-build /deploy/frontend ./frontend
 
@@ -69,8 +66,7 @@ COPY docker/entrypoint.sh ./entrypoint.sh
 COPY docker/proxy.mjs ./proxy.mjs
 RUN chmod +x ./entrypoint.sh
 
-RUN mkdir -p /app/backend/uploads /app/backend/db \
-    && chown -R app:app /app /home/app
+RUN mkdir -p /app/backend/uploads /app/backend/db
 
 # Single public port. BACKEND_PORT/FRONTEND_PORT are internal ports.
 ENV PORT=3000
@@ -78,9 +74,5 @@ ENV BACKEND_PORT=3001
 ENV FRONTEND_PORT=3002
 
 EXPOSE 3000
-
-USER app
-
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s CMD node -e "fetch('http://localhost:'+process.env.PORT).then(()=>process.exit(0)).catch(()=>process.exit(1))"
 
 ENTRYPOINT ["./entrypoint.sh"]

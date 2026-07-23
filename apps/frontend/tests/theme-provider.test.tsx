@@ -154,7 +154,7 @@ describe("ThemeProvider", () => {
     it("applies .dark when theme is 'system' and OS prefers dark", async () => {
       mockMatchMedia(true); // OS prefers dark
       // Cookie says "light" but API is unavailable (unauthenticated page) →
-      // catch path calls applyThemeClass("light") - not what we want here.
+      // catch path calls applyThemeClass("light") — not what we want here.
       // Instead: cookie="light", DB="system" → mismatch, applyThemeClass("system") called
       document.cookie = "justif_theme=light; path=/";
       mockedApiFetch.mockResolvedValue({ theme: "system" });
@@ -220,14 +220,10 @@ describe("ThemeProvider", () => {
         expect(screen.getByTestId("isDark").textContent).toBe("false");
       });
 
-      act(() => {
-        mq.dispatchChange(true);
-      });
+      act(() => { mq.dispatchChange(true); });
       expect(screen.getByTestId("isDark").textContent).toBe("true");
 
-      act(() => {
-        mq.dispatchChange(false);
-      });
+      act(() => { mq.dispatchChange(false); });
       expect(screen.getByTestId("isDark").textContent).toBe("false");
     });
   });

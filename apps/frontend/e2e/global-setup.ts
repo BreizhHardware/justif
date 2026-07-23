@@ -1,5 +1,5 @@
 /**
- * Playwright global setup - runs once before any test or webServer.
+ * Playwright global setup — runs once before any test or webServer.
  *
  * 1. Ensures apps/backend/db/ exists.
  * 2. Applies Prisma migrations to a dedicated E2E SQLite database so the

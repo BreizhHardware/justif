@@ -69,10 +69,10 @@
     "rights": {
       "title": "Vos droits",
       "intro": "En vertu du RGPD, vous disposez des droits suivants concernant vos données personnelles :",
-      "access": "Droit d'accès - vous pouvez demander une copie des données vous concernant",
-      "erasure": "Droit à l'effacement - vous pouvez demander la suppression de votre compte et des données personnelles associées",
+      "access": "Droit d'accès — vous pouvez demander une copie des données vous concernant",
+      "erasure": "Droit à l'effacement — vous pouvez demander la suppression de votre compte et des données personnelles associées",
       "erasureNote": "Remarque : les entrées du journal d'audit sont pseudonymisées plutôt que supprimées lors de l'effacement du compte, car elles peuvent être requises à des fins légales ou de conformité",
-      "portability": "Droit à la portabilité - vous pouvez demander vos données dans un format structuré et lisible par machine",
+      "portability": "Droit à la portabilité — vous pouvez demander vos données dans un format structuré et lisible par machine",
       "contact": "Pour exercer l'un de ces droits, contactez directement l'administrateur de cette instance Justif."
     }
   },
@@ -108,15 +108,9 @@
     "countLabel": "Nombre de dépenses",
     "averageLabel": "Moyenne par dépense",
     "byCategory": "Répartition par catégorie",
-    "byVendor": "Répartition par fournisseur",
-    "unknownVendor": "Fournisseur inconnu",
     "noData": "Aucune donnée",
     "monthlyTrend": "Évolution mensuelle",
-    "dailyTrend": "Évolution journalière",
-    "groupByMonth": "Mois",
-    "groupByDay": "Jour",
-    "singleMonth": "Un seul mois - le graphique nécessite au moins 2 points",
-    "singleDay": "Un seul jour - le graphique nécessite au moins 2 points",
+    "singleMonth": "Un seul mois — le graphique nécessite au moins 2 points",
     "recentExports": "Exports récents",
     "expenseSeries": "Dépenses",
     "expenseCount_one": "{{count}} dépense",
@@ -146,7 +140,7 @@
     "recalculate": "Recalculer",
     "conversionFailed": "Conversion devise échouée",
     "noResults": "Aucune dépense trouvée",
-    "rateTooltip": "1 {{devise}} = {{rate}} EUR - taux BCE du {{date}}",
+    "rateTooltip": "1 {{devise}} = {{rate}} EUR — taux BCE du {{date}}",
     "submitForReview": "Soumettre pour validation",
     "validate": "Valider",
     "reject": "Rejeter",
@@ -164,7 +158,7 @@
     "exportDialog": {
       "title": "Des dépenses ont déjà été exportées",
       "description": "Certaines dépenses de cette sélection ont déjà été incluses dans une note de frais précédente. Choisissez celles à inclure à nouveau dans cet export :",
-      "freshLabel": "dépense(s) jamais exportée(s) - toujours incluse(s)",
+      "freshLabel": "dépense(s) jamais exportée(s) — toujours incluse(s)",
       "confirm": "Exporter",
       "cancel": "Annuler"
     },
@@ -181,7 +175,7 @@
     "dropzone": "Glissez un fichier ici ou cliquez pour sélectionner",
     "analyzing": "Analyse en cours...",
     "save": "Enregistrer",
-    "ocrError": "Erreur d'analyse OCR - vous pouvez saisir les champs manuellement"
+    "ocrError": "Erreur d'analyse OCR — vous pouvez saisir les champs manuellement"
   },
   "settings": {
     "title": "Paramètres",
