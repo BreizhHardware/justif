@@ -36,6 +36,12 @@ describe("LoginPage", () => {
     expect(link).toHaveAttribute("href", "/privacy");
   });
 
+  it("shows a forgot-password link pointing to /forgot-password", () => {
+    render(<LoginPage />);
+    const link = screen.getByRole("link", { name: "login.forgotPassword" });
+    expect(link).toHaveAttribute("href", "/forgot-password");
+  });
+
   it("redirects to /dashboard on successful login", async () => {
     mockedApiFetch.mockResolvedValue(undefined);
     render(<LoginPage />);

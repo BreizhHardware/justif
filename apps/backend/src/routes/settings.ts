@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { audit, ipFromReq } from "../services/auditService.js";
+import { sendTestEmail } from "../services/emailService.js";
 
 const router = Router();
 
@@ -13,8 +14,13 @@ const PUBLIC_KEYS = [
   "ocr_prompt_override",
   "ocr_extract_reference_number",
   "require_validation",
+  "smtp_host",
+  "smtp_port",
+  "smtp_secure",
+  "smtp_user",
+  "smtp_from",
 ];
-const SECRET_KEYS = ["mistral_api_key"];
+const SECRET_KEYS = ["mistral_api_key", "smtp_password"];
 const ALL_KEYS = [...PUBLIC_KEYS, ...SECRET_KEYS];
 
 const DEFAULTS: Record<string, string> = {
@@ -27,6 +33,12 @@ const DEFAULTS: Record<string, string> = {
   ocr_prompt_override: "",
   ocr_extract_reference_number: "false",
   require_validation: "false",
+  smtp_host: process.env.SMTP_HOST ?? "",
+  smtp_port: process.env.SMTP_PORT ?? "587",
+  smtp_secure: process.env.SMTP_SECURE ?? "false",
+  smtp_user: process.env.SMTP_USER ?? "",
+  smtp_password: process.env.SMTP_PASSWORD ?? "",
+  smtp_from: process.env.SMTP_FROM ?? "",
 };
 
 router.get("/", async (_req, res) => {
@@ -36,9 +48,11 @@ router.get("/", async (_req, res) => {
   for (const key of PUBLIC_KEYS) {
     result[key] = map.get(key) ?? DEFAULTS[key] ?? "";
   }
-  // Indicate whether a Mistral key is configured without ever returning its value.
+  // Indicate whether secret keys are configured without ever returning their value.
   const mistralRow = await prisma.setting.findUnique({ where: { key: "mistral_api_key" } });
   result.mistral_api_key_set = String(Boolean(mistralRow?.value ?? DEFAULTS.mistral_api_key));
+  const smtpPasswordRow = await prisma.setting.findUnique({ where: { key: "smtp_password" } });
+  result.smtp_password_set = String(Boolean(smtpPasswordRow?.value ?? DEFAULTS.smtp_password));
   res.json(result);
 });
 
@@ -71,6 +85,20 @@ router.patch("/", async (req, res) => {
     result[key] = map.get(key) ?? DEFAULTS[key] ?? "";
   }
   res.json(result);
+});
+
+router.post("/test-email", async (req, res) => {
+  try {
+    await sendTestEmail(req.user!.email);
+    res.json({ success: true, message: `Test email sent to ${req.user!.email}` });
+  } catch (err) {
+    res
+      .status(502)
+      .json({
+        success: false,
+        message: err instanceof Error ? err.message : "Failed to send test email",
+      });
+  }
 });
 
 export async function getDefaultCurrency(): Promise<string> {

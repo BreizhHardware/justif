@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { startTestServer, TestClient, type TestServer } from "../client.js";
 import { createUser, DEFAULT_PASSWORD, getRoleIdByName } from "../fixtures.js";
+import { prisma } from "../../src/lib/prisma.js";
 
 let server: TestServer;
 
@@ -133,5 +134,34 @@ describe("PATCH /api/users/:id", () => {
 
     const res = await client.patch(`/api/users/${admin.id}`, { active: false });
     expect(res.status).toBe(400);
+  });
+});
+
+describe("POST /api/users/:id/send-reset-email", () => {
+  it("rejects a non-admin user", async () => {
+    const client = await loginAs({ email: "resetplain@justif.test", roleNames: ["User"] });
+    const target = await createUser({ email: "resettarget1@justif.test" });
+    const res = await client.post(`/api/users/${target.id}/send-reset-email`);
+    expect(res.status).toBe(403);
+  });
+
+  it("returns 404 for an unknown user id", async () => {
+    const admin = await loginAs({ email: "resetadmin1@justif.test", roleNames: ["Admin"] });
+    const res = await admin.post("/api/users/nonexistent-id/send-reset-email");
+    expect(res.status).toBe(404);
+  });
+
+  it("creates a reset token for the target user (email delivery failure surfaces as 502 without SMTP configured)", async () => {
+    const admin = await loginAs({ email: "resetadmin2@justif.test", roleNames: ["Admin"] });
+    const target = await createUser({ email: "resettarget2@justif.test" });
+
+    const res = await admin.post(`/api/users/${target.id}/send-reset-email`);
+    // No SMTP is configured in the test environment, so delivery fails - but
+    // the token itself must still have been generated.
+    expect(res.status).toBe(502);
+
+    const tokens = await prisma.passwordResetToken.findMany({ where: { userId: target.id } });
+    expect(tokens).toHaveLength(1);
+    expect(tokens[0].usedAt).toBeNull();
   });
 });

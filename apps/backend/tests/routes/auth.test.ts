@@ -3,6 +3,7 @@ import { startTestServer, TestClient, type TestServer } from "../client.js";
 import { createUser, DEFAULT_PASSWORD } from "../fixtures.js";
 import { prisma } from "../../src/lib/prisma.js";
 import { PERMISSIONS } from "../../src/lib/permissions.js";
+import { createPasswordResetToken } from "../../src/services/passwordResetService.js";
 
 let server: TestServer;
 
@@ -202,6 +203,147 @@ describe("PATCH /api/auth/me", () => {
     });
     const res = await client.patch("/api/auth/me", {});
     expect(res.status).toBe(400);
+  });
+
+  describe("POST /api/auth/forgot-password", () => {
+    it("returns the same generic message for a known email", async () => {
+      const user = await createUser({ email: "forgot-known@justif.test" });
+      const client = new TestClient(server.baseUrl);
+      const res = await client.post("/api/auth/forgot-password", { email: user.email });
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.message).toBeDefined();
+
+      const tokens = await prisma.passwordResetToken.findMany({ where: { userId: user.id } });
+      expect(tokens).toHaveLength(1);
+      expect(tokens[0].usedAt).toBeNull();
+    });
+
+    it("returns the same generic message for an unknown email (no enumeration)", async () => {
+      const client = new TestClient(server.baseUrl);
+      const known = await client.post("/api/auth/forgot-password", {
+        email: "unknown@justif.test",
+      });
+      const unknown = await client.post("/api/auth/forgot-password", {
+        email: "unknown2@justif.test",
+      });
+      expect(known.status).toBe(200);
+      expect(unknown.status).toBe(200);
+      expect(await known.json()).toEqual(await unknown.json());
+    });
+
+    it("returns 400 when no email is provided", async () => {
+      const client = new TestClient(server.baseUrl);
+      const res = await client.post("/api/auth/forgot-password", {});
+      expect(res.status).toBe(400);
+    });
+
+    it("does not create a token for a disabled account", async () => {
+      const user = await createUser({ email: "forgot-disabled@justif.test", active: false });
+      const client = new TestClient(server.baseUrl);
+      const res = await client.post("/api/auth/forgot-password", { email: user.email });
+      expect(res.status).toBe(200);
+      const tokens = await prisma.passwordResetToken.findMany({ where: { userId: user.id } });
+      expect(tokens).toHaveLength(0);
+    });
+
+    it("invalidates a previously issued token when a new one is requested", async () => {
+      const user = await createUser({ email: "forgot-twice@justif.test" });
+      const client = new TestClient(server.baseUrl);
+      await client.post("/api/auth/forgot-password", { email: user.email });
+      await client.post("/api/auth/forgot-password", { email: user.email });
+
+      const tokens = await prisma.passwordResetToken.findMany({ where: { userId: user.id } });
+      expect(tokens).toHaveLength(2);
+      expect(tokens.filter((t) => t.usedAt === null)).toHaveLength(1);
+    });
+  });
+
+  describe("POST /api/auth/reset-password", () => {
+    it("updates the password, consumes the token and logs the user in", async () => {
+      const user = await createUser({ email: "reset-ok@justif.test" });
+      const rawToken = await createPasswordResetToken(user.id);
+
+      const client = new TestClient(server.baseUrl);
+      const res = await client.post("/api/auth/reset-password", {
+        token: rawToken,
+        password: "brand-new-password",
+      });
+      expect(res.status).toBe(200);
+      expect((await res.json()).token).toBeDefined();
+
+      // The new session cookie set by reset-password should already be authenticated.
+      const me = await client.get("/api/auth/me");
+      expect(me.status).toBe(200);
+      expect((await me.json()).email).toBe(user.email);
+
+      // Old password no longer works, new one does.
+      const freshClient = new TestClient(server.baseUrl);
+      const oldLogin = await freshClient.post("/api/auth/login", {
+        email: user.email,
+        password: DEFAULT_PASSWORD,
+      });
+      expect(oldLogin.status).toBe(401);
+      const newLogin = await freshClient.post("/api/auth/login", {
+        email: user.email,
+        password: "brand-new-password",
+      });
+      expect(newLogin.status).toBe(200);
+    });
+
+    it("rejects a reused token", async () => {
+      const user = await createUser({ email: "reset-reuse@justif.test" });
+      const rawToken = await createPasswordResetToken(user.id);
+      const client = new TestClient(server.baseUrl);
+
+      const first = await client.post("/api/auth/reset-password", {
+        token: rawToken,
+        password: "first-new-password",
+      });
+      expect(first.status).toBe(200);
+
+      const second = await client.post("/api/auth/reset-password", {
+        token: rawToken,
+        password: "second-new-password",
+      });
+      expect(second.status).toBe(400);
+    });
+
+    it("rejects an unknown token", async () => {
+      const client = new TestClient(server.baseUrl);
+      const res = await client.post("/api/auth/reset-password", {
+        token: "not-a-real-token",
+        password: "whatever-password",
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it("rejects an expired token", async () => {
+      const user = await createUser({ email: "reset-expired@justif.test" });
+      const rawToken = await createPasswordResetToken(user.id);
+      await prisma.passwordResetToken.updateMany({
+        where: { userId: user.id },
+        data: { expiresAt: new Date(Date.now() - 1000) },
+      });
+
+      const client = new TestClient(server.baseUrl);
+      const res = await client.post("/api/auth/reset-password", {
+        token: rawToken,
+        password: "whatever-password",
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it("rejects a password shorter than 8 characters", async () => {
+      const user = await createUser({ email: "reset-weak@justif.test" });
+      const rawToken = await createPasswordResetToken(user.id);
+      const client = new TestClient(server.baseUrl);
+      const res = await client.post("/api/auth/reset-password", {
+        token: rawToken,
+        password: "short",
+      });
+      expect(res.status).toBe(400);
+    });
   });
 
   it("returns 400 for an invalid dashboardGranularity value", async () => {

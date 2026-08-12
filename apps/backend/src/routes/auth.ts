@@ -4,6 +4,12 @@ import { prisma } from "../lib/prisma.js";
 import { requireAuth, signToken } from "../middleware/auth.js";
 import { audit, ipFromReq } from "../services/auditService.js";
 import { SEED_ROLE_NAMES } from "../lib/permissions.js";
+import { getAppUrl } from "../lib/appUrl.js";
+import {
+  createPasswordResetToken,
+  consumePasswordResetToken,
+} from "../services/passwordResetService.js";
+import { sendPasswordResetEmail } from "../services/emailService.js";
 
 const router = Router();
 const COOKIE_OPTS = { httpOnly: true, sameSite: "lax" as const, maxAge: 30 * 24 * 60 * 60 * 1000 };
@@ -63,6 +69,66 @@ router.post("/login", async (req, res) => {
   res.cookie("token", token, COOKIE_OPTS);
   await audit({ userId: user.id, action: "auth.login", ip });
   res.json({ token });
+});
+
+router.post("/forgot-password", async (req, res) => {
+  const { email } = req.body as { email?: string };
+  if (!email) {
+    res.status(400).json({ error: "Email required" });
+    return;
+  }
+
+  // Always return the same generic response, whether or not the account
+  // exists, so this endpoint can't be used to enumerate registered emails.
+  const genericResponse = {
+    message: "If an account exists for this email, a reset link has been sent.",
+  };
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user || !user.active) {
+    res.json(genericResponse);
+    return;
+  }
+
+  const rawToken = await createPasswordResetToken(user.id);
+  const resetUrl = `${getAppUrl(req)}/reset-password?token=${rawToken}`;
+  try {
+    await sendPasswordResetEmail(user.email, resetUrl);
+  } catch (err) {
+    // The request must not fail (and must not reveal whether sending
+    // succeeded), a misconfigured SMTP server is an admin-side problem.
+    console.error("Failed to send password reset email:", err);
+  }
+  await audit({ userId: user.id, action: "auth.password_reset_requested", ip: ipFromReq(req) });
+
+  res.json(genericResponse);
+});
+
+router.post("/reset-password", async (req, res) => {
+  const { token, password } = req.body as { token?: string; password?: string };
+  if (!token || !password || password.length < 8) {
+    res.status(400).json({ error: "Token and password (min. 8 characters) required" });
+    return;
+  }
+
+  const userId = await consumePasswordResetToken(token);
+  if (!userId) {
+    res.status(400).json({ error: "This reset link is invalid or has expired" });
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(password, 12);
+  const user = await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+  await audit({ userId, action: "auth.password_reset_completed", ip: ipFromReq(req) });
+
+  if (!user.active) {
+    res.json({ message: "Password updated" });
+    return;
+  }
+
+  const jwt = signToken(user.id);
+  res.cookie("token", jwt, COOKIE_OPTS);
+  res.json({ token: jwt });
 });
 
 router.post("/logout", (_req, res) => {

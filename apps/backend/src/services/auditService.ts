@@ -4,8 +4,11 @@ import type { Request } from "express";
 export type AuditAction =
   | "auth.login"
   | "auth.login_failed"
+  | "auth.password_reset_requested"
+  | "auth.password_reset_completed"
   | "user.create"
   | "user.update"
+  | "user.password_reset_sent"
   | "expense.create"
   | "expense.update"
   | "expense.delete"

@@ -4,6 +4,9 @@ import { prisma } from "../lib/prisma.js";
 import { requirePermission } from "../middleware/auth.js";
 import { SEED_ROLE_NAMES } from "../lib/permissions.js";
 import { audit, ipFromReq } from "../services/auditService.js";
+import { getAppUrl } from "../lib/appUrl.js";
+import { createPasswordResetToken } from "../services/passwordResetService.js";
+import { sendPasswordResetEmail } from "../services/emailService.js";
 
 const router = Router();
 
@@ -170,6 +173,35 @@ router.patch("/:id", async (req, res) => {
     ip: ipFromReq(req),
   });
   res.json(toUserResponse(user));
+});
+
+router.post("/:id/send-reset-email", async (req, res) => {
+  const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  const rawToken = await createPasswordResetToken(user.id);
+  const resetUrl = `${getAppUrl(req)}/reset-password?token=${rawToken}`;
+  try {
+    await sendPasswordResetEmail(user.email, resetUrl);
+  } catch (err) {
+    console.error("Failed to send password reset email:", err);
+    res.status(502).json({ error: "Failed to send the email - check the SMTP settings" });
+    return;
+  }
+
+  await audit({
+    userId: req.user!.id,
+    action: "user.password_reset_sent",
+    entityType: "User",
+    entityId: user.id,
+    targetUserId: user.id,
+    metadata: { email: user.email },
+    ip: ipFromReq(req),
+  });
+  res.status(204).end();
 });
 
 export default router;

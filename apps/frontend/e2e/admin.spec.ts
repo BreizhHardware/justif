@@ -22,6 +22,38 @@ test.describe("Users page (admin)", () => {
     await expect(page.getByLabel(/email/i).first()).toBeVisible();
     await expect(page.getByLabel(/password|mot de passe/i)).toBeVisible();
   });
+
+  test("sends a password reset email and shows a confirmation", async ({ page }) => {
+    await page.route("**/api/users/*/send-reset-email", (route) => route.fulfill({ status: 204 }));
+
+    await page
+      .getByRole("button", { name: /send password reset email|envoyer un email de/i })
+      .first()
+      .click();
+
+    await expect(page.getByText(/reset email sent|email de réinitialisation envoyé/i)).toBeVisible({
+      timeout: 10_000,
+    });
+  });
+
+  test("shows an error when the reset email fails to send", async ({ page }) => {
+    await page.route("**/api/users/*/send-reset-email", (route) =>
+      route.fulfill({
+        status: 502,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "Failed to send the email - check the SMTP settings" }),
+      }),
+    );
+
+    await page
+      .getByRole("button", { name: /send password reset email|envoyer un email de/i })
+      .first()
+      .click();
+
+    await expect(
+      page.getByText(/failed to send the reset email|échec de l'envoi de l'email/i),
+    ).toBeVisible({ timeout: 10_000 });
+  });
 });
 
 test.describe("Audit log page (admin)", () => {
@@ -78,5 +110,54 @@ test.describe("Settings page (admin)", () => {
     await expect(
       page.getByText(/validation workflow|circuit de validation/i).first(),
     ).toBeVisible();
+  });
+
+  test("shows the SMTP configuration section", async ({ page }) => {
+    await expect(page.getByText(/email \(smtp\)/i)).toBeVisible();
+    await expect(page.getByLabel(/smtp host|serveur smtp/i)).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /send test email|envoyer un email de test/i }),
+    ).toBeVisible();
+  });
+});
+
+test.describe("Forgot / reset password pages", () => {
+  test("links from the login page to /forgot-password", async ({ page }) => {
+    await page.goto("/login", { waitUntil: "networkidle" });
+    await page.getByRole("link", { name: /forgot your password|mot de passe oublié/i }).click();
+    await page.waitForURL("**/forgot-password");
+    await expect(page).toHaveURL(/\/forgot-password/);
+  });
+
+  test("shows a generic success message for any email, without revealing account existence", async ({
+    page,
+  }) => {
+    await page.goto("/forgot-password", { waitUntil: "networkidle" });
+    await page.getByLabel(/email/i).fill("definitely-not-a-real-account@example.com");
+    await page.getByRole("button", { name: /send reset link|envoyer le lien/i }).click();
+
+    await expect(
+      page.getByText(/reset link has been sent|lien de réinitialisation a été envoyé/i),
+    ).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("shows a missing-token message when visited without a token", async ({ page }) => {
+    await page.goto("/reset-password", { waitUntil: "networkidle" });
+    await expect(page.getByText(/missing its token|n'a pas de jeton valide/i)).toBeVisible();
+  });
+
+  test("shows an invalid-token error for a bogus token", async ({ page }) => {
+    await page.goto("/reset-password?token=not-a-real-token", { waitUntil: "networkidle" });
+    await page.getByLabel(/^new password$|^nouveau mot de passe$/i).fill("brand-new-password");
+    await page
+      .getByLabel(/confirm new password|confirmer le nouveau mot de passe/i)
+      .fill("brand-new-password");
+    await page
+      .getByRole("button", { name: /reset password|réinitialiser le mot de passe/i })
+      .click();
+
+    await expect(page.getByText(/invalid or has expired|invalide ou a expiré/i)).toBeVisible({
+      timeout: 10_000,
+    });
   });
 });
