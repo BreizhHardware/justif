@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { Pencil, UserMinus, UserPlus } from "lucide-react";
+import { Mail, Pencil, UserMinus, UserPlus } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { apiFetch, ApiError } from "@/lib/api";
 import { Badge, Button, Card, Input, Label, PageHeader } from "@/components/ui";
@@ -35,6 +35,12 @@ export default function UsersPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRoleIds, setEditRoleIds] = useState<Set<string>>(new Set());
   const [editError, setEditError] = useState<string | null>(null);
+  const [resetEmailStatus, setResetEmailStatus] = useState<{
+    userId: string;
+    tone: "success" | "error";
+    message: string;
+  } | null>(null);
+  const [sendingResetId, setSendingResetId] = useState<string | null>(null);
 
   async function load() {
     const [list, roleList, me] = await Promise.all([
@@ -95,6 +101,23 @@ export default function UsersPage() {
       await load();
     } catch (err) {
       setEditError(err instanceof ApiError ? err.message : t("users.updateError"));
+    }
+  }
+
+  async function sendResetEmail(user: User) {
+    setResetEmailStatus(null);
+    setSendingResetId(user.id);
+    try {
+      await apiFetch(`/api/users/${user.id}/send-reset-email`, { method: "POST" });
+      setResetEmailStatus({
+        userId: user.id,
+        tone: "success",
+        message: t("users.resetEmailSent", { email: user.email }),
+      });
+    } catch {
+      setResetEmailStatus({ userId: user.id, tone: "error", message: t("users.resetEmailError") });
+    } finally {
+      setSendingResetId(null);
     }
   }
 
@@ -258,6 +281,14 @@ export default function UsersPage() {
                         </button>
                       )}
                       <button
+                        onClick={() => sendResetEmail(user)}
+                        disabled={sendingResetId === user.id}
+                        className="flex items-center gap-1 text-slate-500 transition hover:text-brand-600 disabled:cursor-not-allowed disabled:opacity-40"
+                        title={t("users.sendResetEmail")}
+                      >
+                        <Mail size={16} />
+                      </button>
+                      <button
                         onClick={() => toggleActive(user)}
                         disabled={isSelf}
                         className="flex items-center gap-1 text-slate-500 transition hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
@@ -266,6 +297,13 @@ export default function UsersPage() {
                         <UserMinus size={16} />
                       </button>
                     </div>
+                    {resetEmailStatus?.userId === user.id && (
+                      <p
+                        className={`mt-1.5 text-xs ${resetEmailStatus.tone === "success" ? "text-brand-600" : "text-red-600"}`}
+                      >
+                        {resetEmailStatus.message}
+                      </p>
+                    )}
                   </td>
                 </tr>
               );

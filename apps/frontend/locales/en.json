@@ -82,7 +82,31 @@
     "password": "Password",
     "privacy": "Privacy policy",
     "submit": "Sign in",
-    "error": "Invalid credentials"
+    "error": "Invalid credentials",
+    "forgotPassword": "Forgot your password?"
+  },
+  "forgotPassword": {
+    "title": "Reset your password",
+    "description": "Enter your account email and, if it exists, we'll send you a link to choose a new password.",
+    "email": "Email",
+    "submit": "Send reset link",
+    "sending": "Sending…",
+    "success": "If an account exists for this email, a reset link has been sent. Check your inbox.",
+    "backToLogin": "Back to sign in"
+  },
+  "resetPassword": {
+    "title": "Choose a new password",
+    "password": "New password",
+    "confirmPassword": "Confirm new password",
+    "minPassword": "8 characters minimum",
+    "submit": "Reset password",
+    "saving": "Saving…",
+    "mismatch": "Passwords don't match",
+    "invalidToken": "This reset link is invalid or has expired.",
+    "requestNewLink": "Request a new link",
+    "genericError": "Something went wrong. Please try again.",
+    "success": "Your password has been updated. Signing you in…",
+    "missingToken": "This reset link is missing its token."
   },
   "setup": {
     "title": "Welcome to Justif",
@@ -202,7 +226,19 @@
     "saved": "Settings saved",
     "error": "Error",
     "requireValidation": "Enable validation workflow",
-    "requireValidationHelp": "When enabled, expenses must be submitted for review and approved by an administrator before they can be exported."
+    "requireValidationHelp": "When enabled, expenses must be submitted for review and approved by an administrator before they can be exported.",
+    "smtp": "Email (SMTP)",
+    "smtpHelp": "Used to send password reset emails to users.",
+    "smtpHost": "SMTP host",
+    "smtpPort": "Port",
+    "smtpSecure": "Use TLS (SSL)",
+    "smtpUser": "Username",
+    "smtpPassword": "Password",
+    "smtpFrom": "From address",
+    "smtpFromPlaceholder": "Justif <no-reply@your-domain.example>",
+    "testEmail": "Send test email",
+    "testEmailSuccess": "Test email sent to {{email}}",
+    "testEmailError": "Failed to send test email"
   },
   "audit": {
     "title": "Audit log",
@@ -241,7 +277,10 @@
     "cancelEdit": "Cancel",
     "you": "you",
     "createError": "Error creating user",
-    "updateError": "Error updating user"
+    "updateError": "Error updating user",
+    "sendResetEmail": "Send password reset email",
+    "resetEmailSent": "Reset email sent to {{email}}",
+    "resetEmailError": "Failed to send the reset email - check the SMTP settings"
   },
   "roles": {
     "title": "Roles",

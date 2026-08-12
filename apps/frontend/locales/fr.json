@@ -82,7 +82,31 @@
     "password": "Mot de passe",
     "submit": "Se connecter",
     "error": "Identifiants invalides",
-    "privacy": "Politique de confidentialité"
+    "privacy": "Politique de confidentialité",
+    "forgotPassword": "Mot de passe oublié ?"
+  },
+  "forgotPassword": {
+    "title": "Réinitialiser votre mot de passe",
+    "description": "Indiquez l'email de votre compte : s'il existe, nous vous enverrons un lien pour choisir un nouveau mot de passe.",
+    "email": "Email",
+    "submit": "Envoyer le lien",
+    "sending": "Envoi…",
+    "success": "Si un compte existe pour cet email, un lien de réinitialisation a été envoyé. Vérifiez votre boîte de réception.",
+    "backToLogin": "Retour à la connexion"
+  },
+  "resetPassword": {
+    "title": "Choisir un nouveau mot de passe",
+    "password": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le nouveau mot de passe",
+    "minPassword": "8 caractères minimum",
+    "submit": "Réinitialiser le mot de passe",
+    "saving": "Enregistrement…",
+    "mismatch": "Les mots de passe ne correspondent pas",
+    "invalidToken": "Ce lien de réinitialisation est invalide ou a expiré.",
+    "requestNewLink": "Demander un nouveau lien",
+    "genericError": "Une erreur est survenue. Réessayez.",
+    "success": "Votre mot de passe a été mis à jour. Connexion en cours…",
+    "missingToken": "Ce lien de réinitialisation n'a pas de jeton valide."
   },
   "setup": {
     "title": "Bienvenue sur Justif",
@@ -202,7 +226,19 @@
     "saved": "Paramètres enregistrés",
     "error": "Erreur",
     "requireValidation": "Activer le circuit de validation",
-    "requireValidationHelp": "Lorsqu'il est activé, les dépenses doivent être soumises pour validation et approuvées par un administrateur avant d'être exportées."
+    "requireValidationHelp": "Lorsqu'il est activé, les dépenses doivent être soumises pour validation et approuvées par un administrateur avant d'être exportées.",
+    "smtp": "Email (SMTP)",
+    "smtpHelp": "Utilisé pour envoyer les emails de réinitialisation de mot de passe aux utilisateurs.",
+    "smtpHost": "Serveur SMTP",
+    "smtpPort": "Port",
+    "smtpSecure": "Utiliser TLS (SSL)",
+    "smtpUser": "Nom d'utilisateur",
+    "smtpPassword": "Mot de passe",
+    "smtpFrom": "Adresse d'expédition",
+    "smtpFromPlaceholder": "Justif <no-reply@votre-domaine.example>",
+    "testEmail": "Envoyer un email de test",
+    "testEmailSuccess": "Email de test envoyé à {{email}}",
+    "testEmailError": "Échec de l'envoi de l'email de test"
   },
   "audit": {
     "title": "Journal d'audit",
@@ -241,7 +277,10 @@
     "cancelEdit": "Annuler",
     "you": "vous",
     "createError": "Erreur lors de la création",
-    "updateError": "Erreur lors de la mise à jour"
+    "updateError": "Erreur lors de la mise à jour",
+    "sendResetEmail": "Envoyer un email de réinitialisation",
+    "resetEmailSent": "Email de réinitialisation envoyé à {{email}}",
+    "resetEmailError": "Échec de l'envoi de l'email - vérifiez la configuration SMTP"
   },
   "roles": {
     "title": "Rôles",
