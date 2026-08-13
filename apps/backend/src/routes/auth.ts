@@ -91,12 +91,10 @@ router.post("/forgot-password", async (req, res) => {
   }
 
   const rawToken = await createPasswordResetToken(user.id);
-  const resetUrl = `${getAppUrl(req)}/reset-password?token=${rawToken}`;
   try {
+    const resetUrl = `${getAppUrl()}/reset-password?token=${rawToken}`;
     await sendPasswordResetEmail(user.email, resetUrl);
   } catch (err) {
-    // The request must not fail (and must not reveal whether sending
-    // succeeded), a misconfigured SMTP server is an admin-side problem.
     console.error("Failed to send password reset email:", err);
   }
   await audit({ userId: user.id, action: "auth.password_reset_requested", ip: ipFromReq(req) });
