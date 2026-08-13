@@ -3,29 +3,33 @@
 // Ensures i18next is initialized and provides it to all child components.
 import { useEffect } from "react";
 import { I18nextProvider } from "react-i18next";
-import i18n, { detectBrowserLocale, isSupportedLocale } from "@/lib/i18n";
+import i18n, { detectBrowserLocale } from "@/lib/i18n";
+import type { SupportedLocale } from "@/lib/i18n";
 
 const COOKIE_NAME = "justif_locale";
 const COOKIE_MAX_AGE = 365 * 24 * 60 * 60;
 
-function readLocaleCookie(): string | null {
-  if (typeof document === "undefined") return null;
-  const entry = document.cookie.split("; ").find((r) => r.startsWith(`${COOKIE_NAME}=`));
-  const val = entry?.split("=")[1];
-  return val && isSupportedLocale(val) ? val : null;
+function hasLocaleCookie(): boolean {
+  return document.cookie.split("; ").some((r) => r.startsWith(`${COOKIE_NAME}=`));
 }
 
 function writeLocaleCookie(locale: string) {
   document.cookie = `${COOKIE_NAME}=${locale}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
 }
 
-export function I18nProvider({ children }: { children: React.ReactNode }) {
+export function I18nProvider({
+  children,
+  initialLocale,
+}: {
+  children: React.ReactNode;
+  initialLocale: SupportedLocale;
+}) {
+  if (i18n.language !== initialLocale) {
+    void i18n.changeLanguage(initialLocale);
+  }
+
   useEffect(() => {
-    const cookieLocale = readLocaleCookie();
-    if (cookieLocale) {
-      if (cookieLocale !== i18n.language) void i18n.changeLanguage(cookieLocale);
-      return;
-    }
+    if (hasLocaleCookie()) return;
     const detected = detectBrowserLocale();
     writeLocaleCookie(detected);
     if (detected !== i18n.language) void i18n.changeLanguage(detected);
