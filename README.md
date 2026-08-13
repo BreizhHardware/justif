@@ -47,6 +47,7 @@ Requirements: Node.js ≥ 22 (required by vinext), [pnpm](https://pnpm.io/) ≥ 
 ```bash
 pnpm install
 cp .env.example .env
+pnpm --filter backend run db:generate
 pnpm --filter backend run db:migrate
 pnpm run dev
 ```

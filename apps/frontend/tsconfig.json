@@ -15,7 +15,8 @@
     "paths": {
       "@/*": ["./*"],
       "next/navigation": ["./node_modules/vinext/dist/shims/navigation"],
-      "next/link": ["./node_modules/vinext/dist/shims/link"]
+      "next/link": ["./node_modules/vinext/dist/shims/link"],
+      "next/headers": ["./node_modules/vinext/dist/shims/headers"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],

@@ -1,17 +1,20 @@
 // Centralized i18n configuration using react-i18next.
 // To add a new language: add a JSON file in locales/ and register it below.
+//
+// This module pulls in react-i18next at load time, which touches React
+// context — only import it from Client Components. Server Components (e.g.
+// the root layout) that just need locale resolution should import from
+// ./locale instead; see that file's header comment for why.
 
 import i18next from "i18next";
 import { initReactI18next } from "react-i18next";
 import en from "../locales/en.json";
 import fr from "../locales/fr.json";
+import { SUPPORTED, isSupportedLocale, resolveLocale } from "./locale";
+import type { SupportedLocale } from "./locale";
 
-export const SUPPORTED = ["en", "fr"] as const;
-export type SupportedLocale = (typeof SUPPORTED)[number];
-
-export function isSupportedLocale(lang: string): lang is SupportedLocale {
-  return (SUPPORTED as readonly string[]).includes(lang);
-}
+export { SUPPORTED, isSupportedLocale, resolveLocale };
+export type { SupportedLocale };
 
 /** Real browser language, only meaningful when called client-side (post-mount). */
 export function detectBrowserLocale(): SupportedLocale {
