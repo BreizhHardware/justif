@@ -5,12 +5,30 @@
   "baseBranchPatterns": ["develop"],
   "dependencyDashboard": true,
   "dependencyDashboardTitle": "🤖 Renovate – Justif deps status",
+  "timezone": "Europe/Paris",
+  "schedule": ["before 4am on monday"],
+  "semanticCommits": "enabled",
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 10,
+  "prHourlyLimit": 2,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 4am on monday"]
+  },
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "minimumReleaseAge": "1 days"
+  },
   "packageRules": [
     {
       "matchDatasources": ["npm"],
-      "minimumReleaseAge": "1 days",
+      "minimumReleaseAge": "7 days",
       "prCreation": "not-pending",
       "internalChecksFilter": "strict"
+    },
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "minor/patch deps"
     }
   ]
 }
