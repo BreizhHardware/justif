@@ -83,7 +83,18 @@
     "submit": "Se connecter",
     "error": "Identifiants invalides",
     "privacy": "Politique de confidentialité",
-    "forgotPassword": "Mot de passe oublié ?"
+    "forgotPassword": "Mot de passe oublié ?",
+    "ssoDivider": "ou",
+    "ssoButton": "Se connecter avec le SSO de l'entreprise",
+    "ssoErrors": {
+      "oidc_unavailable": "La connexion via SSO n'est pas disponible pour le moment. Réessayez plus tard ou utilisez votre mot de passe.",
+      "oidc_failed": "La connexion via SSO a échoué. Veuillez réessayer.",
+      "oidc_invalid_session": "Votre session de connexion SSO a expiré. Veuillez réessayer.",
+      "oidc_no_email": "Votre fournisseur d'identité n'a pas renvoyé d'adresse email. Contactez votre administrateur.",
+      "oidc_unverified_email": "Votre fournisseur d'identité n'a pas vérifié cette adresse email. Contactez votre administrateur.",
+      "oidc_disabled": "Ce compte a été désactivé.",
+      "default": "La connexion via SSO a échoué. Veuillez réessayer."
+    }
   },
   "forgotPassword": {
     "title": "Réinitialiser votre mot de passe",
@@ -114,6 +125,7 @@
     "submit": "Créer le compte",
     "stepAccount": "Compte",
     "stepConfig": "Configuration",
+    "stepSso": "Authentification unique",
     "minPassword": "8 caractères minimum",
     "creating": "Création…",
     "ocrTitle": "Configuration OCR",
@@ -123,7 +135,11 @@
     "ollamaUrl": "URL Ollama",
     "saving": "Enregistrement…",
     "finish": "Terminer la configuration",
-    "skip": "Passer cette étape"
+    "next": "Suivant",
+    "skip": "Passer cette étape",
+    "configuredViaEnv": "Déjà configuré via une variable d'environnement",
+    "ssoTitle": "Authentification unique (SSO)",
+    "ssoDescription": "Facultatif - permet à votre équipe de se connecter via l'annuaire/IdP de l'entreprise (Entra ID, Okta, Keycloak...). Vous pourrez aussi configurer cela plus tard depuis les Paramètres."
   },
   "dashboard": {
     "reset": "Réinitialiser",
@@ -238,7 +254,15 @@
     "smtpFromPlaceholder": "Justif <no-reply@votre-domaine.example>",
     "testEmail": "Envoyer un email de test",
     "testEmailSuccess": "Email de test envoyé à {{email}}",
-    "testEmailError": "Échec de l'envoi de l'email de test"
+    "testEmailError": "Échec de l'envoi de l'email de test",
+    "oidc": "Authentification unique (OIDC)",
+    "oidcHelp": "Permet aux utilisateurs de se connecter via l'annuaire/IdP de l'entreprise (Entra ID / Azure AD, Okta, Keycloak, Google Workspace...). Enregistrez cette URL de callback auprès de votre fournisseur : {{callbackUrl}}",
+    "oidcIssuerUrl": "URL de l'émetteur (issuer)",
+    "oidcClientId": "Client ID",
+    "oidcClientSecret": "Client secret",
+    "oidcScopes": "Scopes",
+    "oidcGroupsClaim": "Claim des groupes",
+    "oidcGroupsClaimHelp": "Nom du claim du jeton listant les groupes de l'utilisateur, utilisé pour le mapping groupe → rôle sur l'écran Rôles."
   },
   "audit": {
     "title": "Journal d'audit",
@@ -298,6 +322,9 @@
     "createError": "Erreur lors de la création du rôle",
     "updateError": "Erreur lors de la mise à jour du rôle",
     "deleteError": "Erreur lors de la suppression du rôle",
+    "oidcGroups": "Groupes OIDC",
+    "oidcGroupsHelp": "Noms de groupes de l'annuaire/IdP associés à ce rôle. À la connexion SSO, les utilisateurs concernés reçoivent exactement ce jeu de rôles d'après leur claim de groupes.",
+    "oidcGroupsPlaceholder": "ex. Finance-Admins, IT-Support",
     "permissionLabels": {
       "EXPORT": "Exporter les données de dépenses",
       "CONFIG_OCR": "Configurer l'OCR",

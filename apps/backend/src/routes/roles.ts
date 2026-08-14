@@ -11,6 +11,7 @@ function toRoleResponse(role: {
   description: string | null;
   createdAt: Date;
   permissions: { permission: string }[];
+  oidcGroups: { groupName: string }[];
   _count: { users: number };
 }) {
   return {
@@ -18,6 +19,7 @@ function toRoleResponse(role: {
     name: role.name,
     description: role.description,
     permissions: role.permissions.map((p) => p.permission),
+    oidcGroups: role.oidcGroups.map((g) => g.groupName),
     userCount: role._count.users,
     createdAt: role.createdAt,
   };
@@ -27,19 +29,53 @@ function invalidPermissions(permissions: unknown[]): string[] {
   return permissions.filter((p) => !isValidPermission(p)) as string[];
 }
 
+// OIDC groups are normalized (trimmed, deduplicated) and each one may only be
+// mapped to a single role - keeps the group -> role sync on login unambiguous.
+function normalizeGroupNames(groups: unknown[]): string[] {
+  return [
+    ...new Set(
+      groups
+        .filter((g): g is string => typeof g === "string" && g.trim().length > 0)
+        .map((g) => g.trim()),
+    ),
+  ];
+}
+
+async function conflictingGroupOwners(
+  groupNames: string[],
+  excludeRoleId?: string,
+): Promise<{ groupName: string; roleName: string }[]> {
+  if (groupNames.length === 0) return [];
+  const conflicts = await prisma.roleOidcGroup.findMany({
+    where: {
+      groupName: { in: groupNames },
+      ...(excludeRoleId ? { roleId: { not: excludeRoleId } } : {}),
+    },
+    include: { role: { select: { name: true } } },
+  });
+  return conflicts.map((c) => ({ groupName: c.groupName, roleName: c.role.name }));
+}
+
+const roleWithGroupsInclude = {
+  permissions: true,
+  oidcGroups: true,
+  _count: { select: { users: true } },
+} as const;
+
 router.get("/", async (_req, res) => {
   const roles = await prisma.role.findMany({
     orderBy: { createdAt: "asc" },
-    include: { permissions: true, _count: { select: { users: true } } },
+    include: roleWithGroupsInclude,
   });
   res.json(roles.map(toRoleResponse));
 });
 
 router.post("/", async (req, res) => {
-  const { name, description, permissions } = req.body as {
+  const { name, description, permissions, oidcGroups } = req.body as {
     name?: string;
     description?: string;
     permissions?: unknown[];
+    oidcGroups?: unknown[];
   };
 
   if (!name || !name.trim()) {
@@ -50,6 +86,14 @@ router.post("/", async (req, res) => {
   const bad = invalidPermissions(perms);
   if (bad.length > 0) {
     res.status(400).json({ error: `Invalid permission(s): ${bad.join(", ")}` });
+    return;
+  }
+  const groups = normalizeGroupNames(oidcGroups ?? []);
+  const conflicts = await conflictingGroupOwners(groups);
+  if (conflicts.length > 0) {
+    res.status(409).json({
+      error: `Group(s) already mapped to another role: ${conflicts.map((c) => `${c.groupName} → ${c.roleName}`).join(", ")}`,
+    });
     return;
   }
 
@@ -68,9 +112,14 @@ router.post("/", async (req, res) => {
         data: (perms as Permission[]).map((permission) => ({ roleId: created.id, permission })),
       });
     }
+    if (groups.length > 0) {
+      await tx.roleOidcGroup.createMany({
+        data: groups.map((groupName) => ({ roleId: created.id, groupName })),
+      });
+    }
     return tx.role.findUniqueOrThrow({
       where: { id: created.id },
-      include: { permissions: true, _count: { select: { users: true } } },
+      include: roleWithGroupsInclude,
     });
   });
 
@@ -79,7 +128,7 @@ router.post("/", async (req, res) => {
     action: "role.create",
     entityType: "Role",
     entityId: role.id,
-    metadata: { name: role.name, permissions: perms },
+    metadata: { name: role.name, permissions: perms, oidcGroups: groups },
     ip: ipFromReq(req),
   });
 
@@ -87,10 +136,11 @@ router.post("/", async (req, res) => {
 });
 
 router.patch("/:id", async (req, res) => {
-  const { name, description, permissions } = req.body as {
+  const { name, description, permissions, oidcGroups } = req.body as {
     name?: string;
     description?: string;
     permissions?: unknown[];
+    oidcGroups?: unknown[];
   };
 
   if (name !== undefined && !name.trim()) {
@@ -101,6 +151,16 @@ router.patch("/:id", async (req, res) => {
     const bad = invalidPermissions(permissions);
     if (bad.length > 0) {
       res.status(400).json({ error: `Invalid permission(s): ${bad.join(", ")}` });
+      return;
+    }
+  }
+  const groups = oidcGroups !== undefined ? normalizeGroupNames(oidcGroups) : undefined;
+  if (groups !== undefined) {
+    const conflicts = await conflictingGroupOwners(groups, req.params.id);
+    if (conflicts.length > 0) {
+      res.status(409).json({
+        error: `Group(s) already mapped to another role: ${conflicts.map((c) => `${c.groupName} → ${c.roleName}`).join(", ")}`,
+      });
       return;
     }
   }
@@ -124,9 +184,17 @@ router.patch("/:id", async (req, res) => {
         });
       }
     }
+    if (groups !== undefined) {
+      await tx.roleOidcGroup.deleteMany({ where: { roleId: req.params.id } });
+      if (groups.length > 0) {
+        await tx.roleOidcGroup.createMany({
+          data: groups.map((groupName) => ({ roleId: req.params.id, groupName })),
+        });
+      }
+    }
     return tx.role.findUniqueOrThrow({
       where: { id: req.params.id },
-      include: { permissions: true, _count: { select: { users: true } } },
+      include: roleWithGroupsInclude,
     });
   });
 
@@ -135,7 +203,7 @@ router.patch("/:id", async (req, res) => {
     action: "role.update",
     entityType: "Role",
     entityId: role.id,
-    metadata: { name: role.name, permissions: permissions ?? undefined },
+    metadata: { name: role.name, permissions: permissions ?? undefined, oidcGroups: groups },
     ip: ipFromReq(req),
   });
 

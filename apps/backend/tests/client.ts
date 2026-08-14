@@ -23,7 +23,7 @@ export async function startTestServer(): Promise<TestServer> {
 // Petit client fetch avec pot à cookies, pour suivre la session JWT (cookie
 // httpOnly) entre les requêtes d'un même test sans dépendance externe.
 export class TestClient {
-  private cookie: string | undefined;
+  private cookies = new Map<string, string>();
   private baseUrl: string;
 
   constructor(baseUrl: string) {
@@ -35,13 +35,21 @@ export class TestClient {
     if (typeof init.body === "string" && !headers.has("Content-Type")) {
       headers.set("Content-Type", "application/json");
     }
-    if (this.cookie) headers.set("Cookie", this.cookie);
+    if (this.cookies.size > 0) {
+      headers.set("Cookie", [...this.cookies].map(([k, v]) => `${k}=${v}`).join("; "));
+    }
 
     const res = await fetch(`${this.baseUrl}${path}`, { ...init, headers });
 
-    const setCookie = res.headers.get("set-cookie");
-    if (setCookie) {
-      this.cookie = setCookie.split(";")[0];
+    // A response may set several cookies at once (e.g. clearing the OIDC flow
+    // cookie while setting the session cookie) - undici joins multiple
+    // Set-Cookie headers into one comma-separated string on .get(), so use
+    // getSetCookie() to read each one individually.
+    for (const raw of res.headers.getSetCookie()) {
+      const [pair] = raw.split(";");
+      const eq = pair.indexOf("=");
+      if (eq === -1) continue;
+      this.cookies.set(pair.slice(0, eq), pair.slice(eq + 1));
     }
     return res;
   }

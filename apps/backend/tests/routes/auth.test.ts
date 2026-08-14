@@ -16,18 +16,31 @@ afterAll(async () => {
 });
 
 describe("GET /api/auth/status", () => {
-  it("reports setupComplete = false when no user exists", async () => {
+  it("reports setupComplete = false and oidcEnabled = false by default", async () => {
     const client = new TestClient(server.baseUrl);
     const res = await client.get("/api/auth/status");
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ setupComplete: false });
+    expect(await res.json()).toEqual({ setupComplete: false, oidcEnabled: false });
   });
 
   it("reports setupComplete = true once a user exists", async () => {
     await createUser({ email: "admin@justif.test" });
     const client = new TestClient(server.baseUrl);
     const res = await client.get("/api/auth/status");
-    expect(await res.json()).toEqual({ setupComplete: true });
+    expect(await res.json()).toEqual({ setupComplete: true, oidcEnabled: false });
+  });
+
+  it("reports oidcEnabled = true once issuer, client id and secret are configured", async () => {
+    await prisma.setting.createMany({
+      data: [
+        { key: "oidc_issuer_url", value: "https://idp.example.test" },
+        { key: "oidc_client_id", value: "justif" },
+        { key: "oidc_client_secret", value: "secret" },
+      ],
+    });
+    const client = new TestClient(server.baseUrl);
+    const res = await client.get("/api/auth/status");
+    expect((await res.json()).oidcEnabled).toBe(true);
   });
 });
 

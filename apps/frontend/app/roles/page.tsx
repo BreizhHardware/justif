@@ -14,6 +14,7 @@ interface Role {
   name: string;
   description: string | null;
   permissions: Permission[];
+  oidcGroups: string[];
   userCount: number;
   createdAt: string;
 }
@@ -25,6 +26,17 @@ function toggleSetMember(set: Set<Permission>, permission: Permission): Set<Perm
   return next;
 }
 
+function parseGroupList(value: string): string[] {
+  return [
+    ...new Set(
+      value
+        .split(",")
+        .map((g) => g.trim())
+        .filter((g) => g.length > 0),
+    ),
+  ];
+}
+
 export default function RolesPage() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -32,6 +44,7 @@ export default function RolesPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [newPermissions, setNewPermissions] = useState<Set<Permission>>(new Set());
+  const [newOidcGroups, setNewOidcGroups] = useState("");
   const [createError, setCreateError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
@@ -39,6 +52,7 @@ export default function RolesPage() {
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editPermissions, setEditPermissions] = useState<Set<Permission>>(new Set());
+  const [editOidcGroups, setEditOidcGroups] = useState("");
   const [editError, setEditError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -61,11 +75,13 @@ export default function RolesPage() {
           name,
           description: description || undefined,
           permissions: Array.from(newPermissions),
+          oidcGroups: parseGroupList(newOidcGroups),
         }),
       });
       setName("");
       setDescription("");
       setNewPermissions(new Set());
+      setNewOidcGroups("");
       await load();
     } catch (err) {
       setCreateError(err instanceof ApiError ? err.message : t("roles.createError"));
@@ -79,6 +95,7 @@ export default function RolesPage() {
     setEditName(role.name);
     setEditDescription(role.description ?? "");
     setEditPermissions(new Set(role.permissions));
+    setEditOidcGroups(role.oidcGroups.join(", "));
     setEditError(null);
   }
 
@@ -91,6 +108,7 @@ export default function RolesPage() {
           name: editName,
           description: editDescription || undefined,
           permissions: Array.from(editPermissions),
+          oidcGroups: parseGroupList(editOidcGroups),
         }),
       });
       setEditingId(null);
@@ -159,6 +177,18 @@ export default function RolesPage() {
               ))}
             </div>
           </div>
+          <div>
+            <Label htmlFor="newOidcGroups">{t("roles.oidcGroups")}</Label>
+            <Input
+              id="newOidcGroups"
+              value={newOidcGroups}
+              onChange={(e) => setNewOidcGroups(e.target.value)}
+              placeholder={t("roles.oidcGroupsPlaceholder")}
+            />
+            <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+              {t("roles.oidcGroupsHelp")}
+            </p>
+          </div>
           {createError && <p className="text-sm text-red-600">{createError}</p>}
           <Button type="submit" disabled={creating}>
             <Plus size={16} />
@@ -180,6 +210,9 @@ export default function RolesPage() {
                 {t("roles.permissions")}
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                {t("roles.oidcGroups")}
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {t("roles.usersCount")}
               </th>
               <th className="px-4 py-3"></th>
@@ -194,7 +227,7 @@ export default function RolesPage() {
                   className="border-b border-slate-50 last:border-0 dark:border-slate-800/60"
                 >
                   {isEditing ? (
-                    <td colSpan={4} className="px-4 py-3">
+                    <td colSpan={5} className="px-4 py-3">
                       <div className="space-y-3">
                         <div className="flex flex-wrap gap-3">
                           <Input
@@ -226,6 +259,12 @@ export default function RolesPage() {
                             </label>
                           ))}
                         </div>
+                        <Input
+                          value={editOidcGroups}
+                          onChange={(e) => setEditOidcGroups(e.target.value)}
+                          placeholder={t("roles.oidcGroupsPlaceholder")}
+                          className="max-w-md"
+                        />
                         {editError && <p className="text-sm text-red-600">{editError}</p>}
                         <div className="flex gap-2">
                           <Button size="sm" onClick={() => saveEdit(role.id)}>
@@ -255,6 +294,19 @@ export default function RolesPage() {
                             role.permissions.map((permission) => (
                               <Badge key={permission} tone="blue">
                                 {permissionLabel(permission)}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-xs text-slate-400 dark:text-slate-500">-</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <div className="flex flex-wrap gap-1.5">
+                          {role.oidcGroups.length > 0 ? (
+                            role.oidcGroups.map((group) => (
+                              <Badge key={group} tone="amber">
+                                {group}
                               </Badge>
                             ))
                           ) : (
