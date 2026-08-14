@@ -4,6 +4,9 @@ import type { Request } from "express";
 export type AuditAction =
   | "auth.login"
   | "auth.login_failed"
+  | "auth.oidc_login"
+  | "auth.oidc_login_failed"
+  | "auth.oidc_account_linked"
   | "auth.password_reset_requested"
   | "auth.password_reset_completed"
   | "user.create"

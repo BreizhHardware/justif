@@ -188,7 +188,9 @@ router.post("/:id/send-reset-email", async (req, res) => {
     await sendPasswordResetEmail(user.email, resetUrl);
   } catch (err) {
     console.error("Failed to send password reset email:", err);
-    res.status(502).json({ error: "Failed to send the email - check the SMTP and APP_URL settings" });
+    res
+      .status(502)
+      .json({ error: "Failed to send the email - check the SMTP and APP_URL settings" });
     return;
   }
 

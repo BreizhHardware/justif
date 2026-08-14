@@ -39,7 +39,13 @@ model Expense {
 model User {
   id                   String   @id @default(cuid())
   email                String   @unique
-  passwordHash         String
+  // Null for accounts provisioned exclusively via OIDC single sign-on - they
+  // authenticate through the identity provider and never set a local password.
+  passwordHash         String?
+  // Subject ("sub") claim of the OIDC identity provider, once this account has
+  // signed in via SSO at least once (either JIT-provisioned or linked to a
+  // pre-existing password account that shared the same verified email).
+  oidcSubject          String?  @unique
   active               Boolean  @default(true)
   theme                String   @default("system")
   dashboardBreakdownBy String   @default("category")
@@ -61,6 +67,19 @@ model Role {
 
   permissions RolePermission[]
   users       UserRole[]
+  oidcGroups  RoleOidcGroup[]
+}
+
+// Maps an OIDC identity provider group name to a Justif role: on every SSO
+// login, a user's roles are synced to the union of roles mapped from the
+// groups claim returned by the IdP (see routes/auth.ts). A group name can
+// only be mapped to a single role to keep the sync unambiguous.
+model RoleOidcGroup {
+  id        String   @id @default(cuid())
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  groupName String   @unique
+  createdAt DateTime @default(now())
 }
 
 model RolePermission {

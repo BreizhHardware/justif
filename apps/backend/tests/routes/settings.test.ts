@@ -107,6 +107,29 @@ describe("PATCH /api/settings", () => {
     expect(afterBody.smtp_password).toBeUndefined();
     expect(afterBody.smtp_password_set).toBe("true");
   });
+
+  it("round-trips the OIDC settings and never leaks the client secret value", async () => {
+    const admin = await loginAs({ email: "admin7@justif.test", roleNames: ["Admin"] });
+
+    const res = await admin.patch("/api/settings", {
+      oidc_issuer_url: "https://idp.example.com",
+      oidc_client_id: "justif",
+      oidc_scopes: "openid email profile groups",
+      oidc_groups_claim: "groups",
+      oidc_client_secret: "super-secret",
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.oidc_issuer_url).toBe("https://idp.example.com");
+    expect(body.oidc_client_id).toBe("justif");
+    expect(body.oidc_scopes).toBe("openid email profile groups");
+    expect(body.oidc_client_secret).toBeUndefined();
+
+    const after = await admin.get("/api/settings");
+    const afterBody = await after.json();
+    expect(afterBody.oidc_client_secret).toBeUndefined();
+    expect(afterBody.oidc_client_secret_set).toBe("true");
+  });
 });
 
 describe("POST /api/settings/test-email", () => {

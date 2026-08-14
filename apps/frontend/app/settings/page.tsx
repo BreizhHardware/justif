@@ -25,6 +25,11 @@ interface Settings {
   smtp_user: string;
   smtp_from: string;
   smtp_password_set: string;
+  oidc_issuer_url: string;
+  oidc_client_id: string;
+  oidc_scopes: string;
+  oidc_groups_claim: string;
+  oidc_client_secret_set: string;
 }
 
 export default function SettingsPage() {
@@ -33,6 +38,7 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [mistralApiKey, setMistralApiKey] = useState("");
   const [smtpPassword, setSmtpPassword] = useState("");
+  const [oidcClientSecret, setOidcClientSecret] = useState("");
   const [saved, setSaved] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [testing, setTesting] = useState(false);
@@ -66,9 +72,14 @@ export default function SettingsPage() {
       smtp_secure: settings!.smtp_secure,
       smtp_user: settings!.smtp_user,
       smtp_from: settings!.smtp_from,
+      oidc_issuer_url: settings!.oidc_issuer_url,
+      oidc_client_id: settings!.oidc_client_id,
+      oidc_scopes: settings!.oidc_scopes,
+      oidc_groups_claim: settings!.oidc_groups_claim,
     };
     if (mistralApiKey) payload.mistral_api_key = mistralApiKey;
     if (smtpPassword) payload.smtp_password = smtpPassword;
+    if (oidcClientSecret) payload.oidc_client_secret = oidcClientSecret;
     const updated = await apiFetch<Settings>("/api/settings", {
       method: "PATCH",
       body: JSON.stringify(payload),
@@ -76,6 +87,7 @@ export default function SettingsPage() {
     setSettings(updated);
     setMistralApiKey("");
     setSmtpPassword("");
+    setOidcClientSecret("");
     setSaved(true);
   }
 
@@ -391,6 +403,69 @@ export default function SettingsPage() {
                 {testEmailResult.message}
               </span>
             )}
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            {t("settings.oidc")}
+          </h2>
+          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+            {t("settings.oidcHelp", {
+              callbackUrl:
+                typeof window !== "undefined"
+                  ? `${window.location.origin}/api/auth/oidc/callback`
+                  : "/api/auth/oidc/callback",
+            })}
+          </p>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <Label htmlFor="oidcIssuerUrl">{t("settings.oidcIssuerUrl")}</Label>
+              <Input
+                id="oidcIssuerUrl"
+                value={settings.oidc_issuer_url}
+                onChange={(e) => setSettings({ ...settings, oidc_issuer_url: e.target.value })}
+                placeholder="https://login.example.com/your-tenant"
+              />
+            </div>
+            <div>
+              <Label htmlFor="oidcClientId">{t("settings.oidcClientId")}</Label>
+              <Input
+                id="oidcClientId"
+                value={settings.oidc_client_id}
+                onChange={(e) => setSettings({ ...settings, oidc_client_id: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="oidcClientSecret">{t("settings.oidcClientSecret")}</Label>
+              <Input
+                id="oidcClientSecret"
+                type="password"
+                value={oidcClientSecret}
+                onChange={(e) => setOidcClientSecret(e.target.value)}
+                placeholder={settings.oidc_client_secret_set === "true" ? "••••••••••••" : ""}
+              />
+            </div>
+            <div>
+              <Label htmlFor="oidcScopes">{t("settings.oidcScopes")}</Label>
+              <Input
+                id="oidcScopes"
+                value={settings.oidc_scopes}
+                onChange={(e) => setSettings({ ...settings, oidc_scopes: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="oidcGroupsClaim">{t("settings.oidcGroupsClaim")}</Label>
+              <Input
+                id="oidcGroupsClaim"
+                value={settings.oidc_groups_claim}
+                onChange={(e) => setSettings({ ...settings, oidc_groups_claim: e.target.value })}
+              />
+              <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                {t("settings.oidcGroupsClaimHelp")}
+              </p>
+            </div>
           </div>
         </Card>
 

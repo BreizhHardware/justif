@@ -83,7 +83,18 @@
     "privacy": "Privacy policy",
     "submit": "Sign in",
     "error": "Invalid credentials",
-    "forgotPassword": "Forgot your password?"
+    "forgotPassword": "Forgot your password?",
+    "ssoDivider": "or",
+    "ssoButton": "Sign in with single sign-on",
+    "ssoErrors": {
+      "oidc_unavailable": "Single sign-on is not available right now. Please try again later or use your password.",
+      "oidc_failed": "Single sign-on failed. Please try again.",
+      "oidc_invalid_session": "Your single sign-on session expired. Please try again.",
+      "oidc_no_email": "Your identity provider didn't return an email address. Contact your administrator.",
+      "oidc_unverified_email": "Your identity provider hasn't verified this email address. Contact your administrator.",
+      "oidc_disabled": "This account has been disabled.",
+      "default": "Single sign-on failed. Please try again."
+    }
   },
   "forgotPassword": {
     "title": "Reset your password",
@@ -114,6 +125,7 @@
     "submit": "Create account",
     "stepAccount": "Account",
     "stepConfig": "Configuration",
+    "stepSso": "Single sign-on",
     "minPassword": "8 characters minimum",
     "creating": "Creating…",
     "ocrTitle": "OCR Configuration",
@@ -123,7 +135,11 @@
     "ollamaUrl": "Ollama URL",
     "saving": "Saving…",
     "finish": "Complete setup",
-    "skip": "Skip this step"
+    "next": "Next",
+    "skip": "Skip this step",
+    "configuredViaEnv": "Already configured via environment variable",
+    "ssoTitle": "Single sign-on",
+    "ssoDescription": "Optional - let your team log in via your company's identity provider (Entra ID, Okta, Keycloak...). You can also set this up later from Settings."
   },
   "dashboard": {
     "reset": "Reset",
@@ -238,7 +254,15 @@
     "smtpFromPlaceholder": "Justif <no-reply@your-domain.example>",
     "testEmail": "Send test email",
     "testEmailSuccess": "Test email sent to {{email}}",
-    "testEmailError": "Failed to send test email"
+    "testEmailError": "Failed to send test email",
+    "oidc": "Single sign-on (OIDC)",
+    "oidcHelp": "Let users log in via your company's identity provider (Entra ID / Azure AD, Okta, Keycloak, Google Workspace...). Register this callback URL with your provider: {{callbackUrl}}",
+    "oidcIssuerUrl": "Issuer URL",
+    "oidcClientId": "Client ID",
+    "oidcClientSecret": "Client secret",
+    "oidcScopes": "Scopes",
+    "oidcGroupsClaim": "Groups claim",
+    "oidcGroupsClaimHelp": "Name of the token claim listing the user's groups, used for the group → role mapping on the Roles screen."
   },
   "audit": {
     "title": "Audit log",
@@ -298,6 +322,9 @@
     "createError": "Error creating role",
     "updateError": "Error updating role",
     "deleteError": "Error deleting role",
+    "oidcGroups": "OIDC groups",
+    "oidcGroupsHelp": "Identity provider group names mapped to this role. On SSO login, matching users get exactly this role set from their groups claim.",
+    "oidcGroupsPlaceholder": "e.g. Finance-Admins, IT-Support",
     "permissionLabels": {
       "EXPORT": "Export expense data",
       "CONFIG_OCR": "Configure OCR",
