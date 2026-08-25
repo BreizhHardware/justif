@@ -1,4 +1,4 @@
-import ExcelJS from "exceljs";
+import ExcelJS from "@excel.js/exceljs";
 import type { Expense } from "../generated/client.js";
 import { getRateCached } from "./currencyService.js";
 

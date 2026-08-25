@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@archiver/archiver": "^0.1.0",
+    "@excel.js/exceljs": "0.13.0",
     "@prisma/adapter-better-sqlite3": "^7.0.0",
     "@prisma/client": "^7.0.0",
     "bcrypt": "^6.0.0",
@@ -28,7 +29,6 @@
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^17.0.0",
-    "exceljs": "^4.4.0",
     "express": "^5.0.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.0",
