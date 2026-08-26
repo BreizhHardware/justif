@@ -1,0 +1,21 @@
+services:
+  # SMTP:  localhost:1025
+  # Web UI: http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    restart: unless-stopped
+
+  # Issuer URL:    http://localhost:5556/dex
+  # Admin UI:      http://localhost:5556/dex/.well-known/openid-configuration
+  # Test user:     admin@example.com / password
+  dex:
+    image: ghcr.io/dexidp/dex:v2.42.0
+    ports:
+      - "5556:5556"
+    volumes:
+      - ./docker/dex/config.yml:/etc/dex/config.yml:ro
+    command: dex serve /etc/dex/config.yml
+    restart: unless-stopped
