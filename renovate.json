@@ -4,7 +4,7 @@
   "assignees": ["breizhhardware"],
   "baseBranchPatterns": ["develop"],
   "dependencyDashboard": true,
-  "dependencyDashboardTitle": "🤖 Renovate – Justif deps status",
+  "dependencyDashboardTitle": "🤖 Renovate - Justif deps status",
   "timezone": "Europe/Paris",
   "schedule": ["before 4am on monday"],
   "semanticCommits": "enabled",
@@ -27,8 +27,19 @@
       "internalChecksFilter": "strict"
     },
     {
+      "matchManagers": ["npm"],
       "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "minor/patch deps"
+      "groupName": "npm minor/patch deps"
+    },
+    {
+      "matchManagers": ["dockerfile", "docker-compose"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "docker minor/patch deps"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "github actions minor/patch deps"
     }
   ]
 }
