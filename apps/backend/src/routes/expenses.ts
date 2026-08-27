@@ -6,6 +6,7 @@ import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import { randomUUID } from "node:crypto";
 import { ZipArchive } from "@archiver/archiver";
+import { Workbook } from "documonster/excel";
 import { prisma } from "../lib/prisma.js";
 import { convertExpenseAmounts } from "../services/currencyService.js";
 import {
@@ -523,7 +524,7 @@ router.get("/export", async (req, res) => {
     const archive = new ZipArchive({ zlib: { level: 6 } });
     archive.pipe(res);
 
-    const excelBuffer = Buffer.from(await workbook.xlsx.writeBuffer());
+    const excelBuffer = await Workbook.toBuffer(workbook);
     archive.append(excelBuffer, { name: xlsxFilename });
 
     for (const expense of converted) {
@@ -559,7 +560,7 @@ router.get("/export", async (req, res) => {
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   );
   res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-  await workbook.xlsx.write(res);
+  await Workbook.writeStream(workbook, res);
   res.end();
 });
 
