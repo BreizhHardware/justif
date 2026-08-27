@@ -1,5 +1,13 @@
 import nodemailer from "nodemailer";
 import { prisma } from "../lib/prisma.js";
+import {
+  renderEmailLayout,
+  emailButton,
+  emailFallbackLink,
+  emailDivider,
+  emailTextStyle,
+  emailTitleStyle,
+} from "./emailTemplates.js";
 
 interface SmtpConfig {
   host: string;
@@ -99,19 +107,34 @@ function buildPasswordResetEmail(resetUrl: string): {
     "",
     "If you didn't request this, you can safely ignore this email.",
   ].join("\n");
-  const html = `
-    <p>Bonjour,</p>
-    <p>Une demande de réinitialisation de mot de passe a été effectuée pour votre compte Justif.
-    Cliquez sur le lien suivant pour choisir un nouveau mot de passe (valable 1 heure) :</p>
-    <p><a href="${resetUrl}">${resetUrl}</a></p>
-    <p>Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email.</p>
-    <hr>
-    <p>Hello,</p>
-    <p>A password reset was requested for your Justif account.
-    Click the link below to choose a new password (valid for 1 hour):</p>
-    <p><a href="${resetUrl}">${resetUrl}</a></p>
-    <p>If you didn't request this, you can safely ignore this email.</p>
-  `;
+  const html = renderEmailLayout({
+    preheader: "Réinitialisez votre mot de passe Justif / Reset your Justif password",
+    bodyHtml: `
+      <p style="${emailTitleStyle}">Réinitialisation de mot de passe</p>
+      <p style="${emailTextStyle}">Bonjour,</p>
+      <p style="${emailTextStyle}">
+        Une demande de réinitialisation de mot de passe a été effectuée pour votre compte Justif.
+        Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe (valable 1 heure).
+      </p>
+      ${emailButton("Réinitialiser mon mot de passe", resetUrl)}
+      ${emailFallbackLink(resetUrl)}
+      <p style="${emailTextStyle} margin-bottom: 0;">
+        Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email.
+      </p>
+      ${emailDivider}
+      <p style="${emailTitleStyle}">Password reset</p>
+      <p style="${emailTextStyle}">Hello,</p>
+      <p style="${emailTextStyle}">
+        A password reset was requested for your Justif account. Click the button below to
+        choose a new password (valid for 1 hour).
+      </p>
+      ${emailButton("Reset my password", resetUrl)}
+      ${emailFallbackLink(resetUrl)}
+      <p style="${emailTextStyle} margin-bottom: 0;">
+        If you didn't request this, you can safely ignore this email.
+      </p>
+    `,
+  });
   return { subject, text, html };
 }
 
@@ -121,10 +144,24 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string): Prom
 }
 
 export async function sendTestEmail(to: string): Promise<void> {
+  const html = renderEmailLayout({
+    preheader: "Votre configuration SMTP fonctionne / Your SMTP configuration works",
+    bodyHtml: `
+      <p style="${emailTitleStyle}">Email de test</p>
+      <p style="${emailTextStyle}">
+        Cet email confirme que la configuration SMTP de votre instance Justif fonctionne.
+      </p>
+      ${emailDivider}
+      <p style="${emailTitleStyle}">Test email</p>
+      <p style="${emailTextStyle} margin-bottom: 0;">
+        This email confirms your Justif instance's SMTP configuration works.
+      </p>
+    `,
+  });
   await sendMail({
     to,
     subject: "Justif - Email de test / Test email",
     text: "Cet email confirme que la configuration SMTP de votre instance Justif fonctionne.\n\nThis email confirms your Justif instance's SMTP configuration works.",
-    html: "<p>Cet email confirme que la configuration SMTP de votre instance Justif fonctionne.</p><p>This email confirms your Justif instance's SMTP configuration works.</p>",
+    html,
   });
 }
