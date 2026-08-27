@@ -30,7 +30,7 @@ vi.mock("openid-client", () => ({
 }));
 
 function fakeTokens(claims: Record<string, unknown>) {
-  return { access_token: "at", claims: () => claims };
+  return { access_token: "at", claims: () => ({ iss: FAKE_SETTINGS.issuerUrl, ...claims }) };
 }
 
 let server: TestServer;
@@ -97,12 +97,45 @@ describe("GET /api/auth/oidc/callback", () => {
       include: { roles: { include: { role: true } } },
     });
     expect(user?.oidcSubject).toBe("sub-1");
+    expect(user?.oidcIssuer).toBe(FAKE_SETTINGS.issuerUrl);
     expect(user?.passwordHash).toBeNull();
     expect(user?.roles.map((r) => r.role.name)).toEqual(["User"]);
 
     const me = await testClient.get("/api/auth/me");
     expect(me.status).toBe(200);
     expect((await me.json()).email).toBe("new@justif.test");
+  });
+
+  it("does not confuse two accounts sharing the same subject from different issuers", async () => {
+    // Same `sub` value, but scoped to a different issuer than FAKE_SETTINGS -
+    // the OIDC spec only guarantees `sub` uniqueness within a single issuer.
+    await prisma.user.create({
+      data: {
+        email: "other-issuer@justif.test",
+        oidcIssuer: "https://other-idp.example.test",
+        oidcSubject: "shared-sub",
+        active: true,
+      },
+    });
+
+    const testClient = await startFlow();
+    authorizationCodeGrant.mockResolvedValue(
+      fakeTokens({ sub: "shared-sub", email: "new-issuer@justif.test", email_verified: true }),
+    );
+
+    const res = await callback(testClient);
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toContain("/dashboard");
+
+    // A distinct account was provisioned rather than reusing the other issuer's user.
+    const newUser = await prisma.user.findUnique({ where: { email: "new-issuer@justif.test" } });
+    expect(newUser?.oidcIssuer).toBe(FAKE_SETTINGS.issuerUrl);
+    expect(newUser?.oidcSubject).toBe("shared-sub");
+
+    const otherUser = await prisma.user.findUnique({
+      where: { email: "other-issuer@justif.test" },
+    });
+    expect(otherUser?.oidcIssuer).toBe("https://other-idp.example.test");
   });
 
   it("links an existing password account with a matching verified email, keeping the password usable", async () => {
