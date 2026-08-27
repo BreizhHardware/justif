@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { Prisma } from "../generated/client.js";
 import { prisma } from "../lib/prisma.js";
 import { isValidPermission, type Permission } from "../lib/permissions.js";
 import { audit, ipFromReq } from "../services/auditService.js";
@@ -88,6 +89,10 @@ router.post("/", async (req, res) => {
     res.status(400).json({ error: `Invalid permission(s): ${bad.join(", ")}` });
     return;
   }
+  if (oidcGroups !== undefined && !Array.isArray(oidcGroups)) {
+    res.status(400).json({ error: "oidcGroups must be an array" });
+    return;
+  }
   const groups = normalizeGroupNames(oidcGroups ?? []);
   const conflicts = await conflictingGroupOwners(groups);
   if (conflicts.length > 0) {
@@ -103,25 +108,34 @@ router.post("/", async (req, res) => {
     return;
   }
 
-  const role = await prisma.$transaction(async (tx) => {
-    const created = await tx.role.create({
-      data: { name: name.trim(), description: description ?? null },
-    });
-    if (perms.length > 0) {
-      await tx.rolePermission.createMany({
-        data: (perms as Permission[]).map((permission) => ({ roleId: created.id, permission })),
+  let role;
+  try {
+    role = await prisma.$transaction(async (tx) => {
+      const created = await tx.role.create({
+        data: { name: name.trim(), description: description ?? null },
       });
-    }
-    if (groups.length > 0) {
-      await tx.roleOidcGroup.createMany({
-        data: groups.map((groupName) => ({ roleId: created.id, groupName })),
+      if (perms.length > 0) {
+        await tx.rolePermission.createMany({
+          data: (perms as Permission[]).map((permission) => ({ roleId: created.id, permission })),
+        });
+      }
+      if (groups.length > 0) {
+        await tx.roleOidcGroup.createMany({
+          data: groups.map((groupName) => ({ roleId: created.id, groupName })),
+        });
+      }
+      return tx.role.findUniqueOrThrow({
+        where: { id: created.id },
+        include: roleWithGroupsInclude,
       });
-    }
-    return tx.role.findUniqueOrThrow({
-      where: { id: created.id },
-      include: roleWithGroupsInclude,
     });
-  });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      res.status(409).json({ error: "Group(s) already mapped to another role" });
+      return;
+    }
+    throw err;
+  }
 
   await audit({
     userId: req.user!.id,
@@ -154,6 +168,10 @@ router.patch("/:id", async (req, res) => {
       return;
     }
   }
+  if (oidcGroups !== undefined && !Array.isArray(oidcGroups)) {
+    res.status(400).json({ error: "oidcGroups must be an array" });
+    return;
+  }
   const groups = oidcGroups !== undefined ? normalizeGroupNames(oidcGroups) : undefined;
   if (groups !== undefined) {
     const conflicts = await conflictingGroupOwners(groups, req.params.id);
@@ -165,38 +183,47 @@ router.patch("/:id", async (req, res) => {
     }
   }
 
-  const role = await prisma.$transaction(async (tx) => {
-    await tx.role.update({
-      where: { id: req.params.id },
-      data: {
-        ...(name !== undefined && { name: name.trim() }),
-        ...(description !== undefined && { description }),
-      },
-    });
-    if (permissions !== undefined) {
-      await tx.rolePermission.deleteMany({ where: { roleId: req.params.id } });
-      if (permissions.length > 0) {
-        await tx.rolePermission.createMany({
-          data: (permissions as Permission[]).map((permission) => ({
-            roleId: req.params.id,
-            permission,
-          })),
-        });
+  let role;
+  try {
+    role = await prisma.$transaction(async (tx) => {
+      await tx.role.update({
+        where: { id: req.params.id },
+        data: {
+          ...(name !== undefined && { name: name.trim() }),
+          ...(description !== undefined && { description }),
+        },
+      });
+      if (permissions !== undefined) {
+        await tx.rolePermission.deleteMany({ where: { roleId: req.params.id } });
+        if (permissions.length > 0) {
+          await tx.rolePermission.createMany({
+            data: (permissions as Permission[]).map((permission) => ({
+              roleId: req.params.id,
+              permission,
+            })),
+          });
+        }
       }
-    }
-    if (groups !== undefined) {
-      await tx.roleOidcGroup.deleteMany({ where: { roleId: req.params.id } });
-      if (groups.length > 0) {
-        await tx.roleOidcGroup.createMany({
-          data: groups.map((groupName) => ({ roleId: req.params.id, groupName })),
-        });
+      if (groups !== undefined) {
+        await tx.roleOidcGroup.deleteMany({ where: { roleId: req.params.id } });
+        if (groups.length > 0) {
+          await tx.roleOidcGroup.createMany({
+            data: groups.map((groupName) => ({ roleId: req.params.id, groupName })),
+          });
+        }
       }
-    }
-    return tx.role.findUniqueOrThrow({
-      where: { id: req.params.id },
-      include: roleWithGroupsInclude,
+      return tx.role.findUniqueOrThrow({
+        where: { id: req.params.id },
+        include: roleWithGroupsInclude,
+      });
     });
-  });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      res.status(409).json({ error: "Group(s) already mapped to another role" });
+      return;
+    }
+    throw err;
+  }
 
   await audit({
     userId: req.user!.id,

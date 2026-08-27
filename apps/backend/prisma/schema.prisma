@@ -42,10 +42,15 @@ model User {
   // Null for accounts provisioned exclusively via OIDC single sign-on - they
   // authenticate through the identity provider and never set a local password.
   passwordHash         String?
-  // Subject ("sub") claim of the OIDC identity provider, once this account has
-  // signed in via SSO at least once (either JIT-provisioned or linked to a
-  // pre-existing password account that shared the same verified email).
-  oidcSubject          String?  @unique
+  // Issuer ("iss") and subject ("sub") claims of the OIDC identity provider,
+  // once this account has signed in via SSO at least once (either
+  // JIT-provisioned or linked to a pre-existing password account that shared
+  // the same verified email). The `sub` claim is only guaranteed unique
+  // *within* a given issuer (OIDC core spec) - if the instance's IdP is ever
+  // reconfigured, a subject value could otherwise collide with one from a
+  // previous, unrelated issuer, so the two are enforced unique together.
+  oidcIssuer           String?
+  oidcSubject          String?
   active               Boolean  @default(true)
   theme                String   @default("system")
   dashboardBreakdownBy String   @default("category")
@@ -57,6 +62,8 @@ model User {
   auditLogs           AuditLog[]
   roles               UserRole[]
   passwordResetTokens PasswordResetToken[]
+
+  @@unique([oidcIssuer, oidcSubject], name: "oidcIdentity")
 }
 
 model Role {

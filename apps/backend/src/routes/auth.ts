@@ -307,8 +307,9 @@ router.get("/oidc/callback", async (req, res) => {
 
   const claims = tokens.claims();
   const subject = claims?.sub;
+  const issuer = typeof claims?.iss === "string" ? claims.iss : undefined;
   const email = typeof claims?.email === "string" ? claims.email : undefined;
-  if (!subject || !email) {
+  if (!subject || !issuer || !email) {
     await audit({ action: "auth.oidc_login_failed", metadata: { reason: "no_email_claim" }, ip });
     redirectToLoginWithError(res, "oidc_no_email");
     return;
@@ -331,26 +332,29 @@ router.get("/oidc/callback", async (req, res) => {
     }
   }
 
-  let user = await prisma.user.findUnique({ where: { oidcSubject: subject } });
+  // Only proceed when the IdP doesn't explicitly say the email is
+  // unverified - an unverified email can't be trusted to prove ownership of
+  // a pre-existing password account, nor to identify a brand-new account.
+  if (claims.email_verified === false) {
+    await audit({
+      action: "auth.oidc_login_failed",
+      metadata: { reason: "unverified_email", email },
+      ip,
+    });
+    redirectToLoginWithError(res, "oidc_unverified_email");
+    return;
+  }
+
+  let user = await prisma.user.findUnique({
+    where: { oidcIdentity: { oidcIssuer: issuer, oidcSubject: subject } },
+  });
   let linked = false;
   if (!user) {
     const existingByEmail = await prisma.user.findUnique({ where: { email } });
     if (existingByEmail) {
-      // Only auto-link when the IdP doesn't explicitly say the email is
-      // unverified - an unverified email can't be trusted to prove ownership
-      // of a pre-existing password account.
-      if (claims.email_verified === false) {
-        await audit({
-          action: "auth.oidc_login_failed",
-          metadata: { reason: "unverified_email", email },
-          ip,
-        });
-        redirectToLoginWithError(res, "oidc_unverified_email");
-        return;
-      }
       user = await prisma.user.update({
         where: { id: existingByEmail.id },
-        data: { oidcSubject: subject },
+        data: { oidcIssuer: issuer, oidcSubject: subject },
       });
       linked = true;
     }
@@ -360,7 +364,7 @@ router.get("/oidc/callback", async (req, res) => {
     const userRole = await prisma.role.findUnique({ where: { name: SEED_ROLE_NAMES.USER } });
     user = await prisma.$transaction(async (tx) => {
       const created = await tx.user.create({
-        data: { email, oidcSubject: subject, passwordHash: null, active: true },
+        data: { email, oidcIssuer: issuer, oidcSubject: subject, passwordHash: null, active: true },
       });
       if (userRole) {
         await tx.userRole.create({ data: { userId: created.id, roleId: userRole.id } });

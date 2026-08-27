@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { CheckCircle2, Cloud, HardDrive, XCircle } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, apiUrl } from "@/lib/api";
 import { COMMON_CURRENCIES } from "@/lib/currencies";
 import { Button, Card, Input, Label, PageHeader, Select, Textarea } from "@/components/ui";
 
@@ -412,10 +412,7 @@ export default function SettingsPage() {
           </h2>
           <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
             {t("settings.oidcHelp", {
-              callbackUrl:
-                typeof window !== "undefined"
-                  ? `${window.location.origin}/api/auth/oidc/callback`
-                  : "/api/auth/oidc/callback",
+              callbackUrl: apiUrl("/api/auth/oidc/callback"),
             })}
           </p>
 

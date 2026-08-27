@@ -4,7 +4,7 @@ import { Fragment, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { Check, Cloud, HardDrive, LayoutGrid } from "lucide-react";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, apiUrl } from "@/lib/api";
 import { SESSION_KEY } from "@/app/page";
 import { Button, Card, Input, Label } from "@/components/ui";
 
@@ -440,10 +440,7 @@ export default function SetupPage() {
                 </p>
                 <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
                   {t("settings.oidcHelp", {
-                    callbackUrl:
-                      typeof window !== "undefined"
-                        ? `${window.location.origin}/api/auth/oidc/callback`
-                        : "/api/auth/oidc/callback",
+                    callbackUrl: apiUrl("/api/auth/oidc/callback"),
                   })}
                 </p>
               </div>
