@@ -13,7 +13,7 @@ services:
   # Test users:    admin@example.com / password (member of the "justif-admin" group)
   #                user@example.com / password
   keycloak:
-    image: quay.io/keycloak/keycloak:26.4
+    image: quay.io/keycloak/keycloak:26.7
     command: start-dev --import-realm
     environment:
       - KEYCLOAK_ADMIN=admin
