@@ -1,26 +1,27 @@
-import ExcelJS from "exceljs";
+import { Cell, Row, Workbook, Worksheet } from "documonster/excel";
+import type { Fill, Font } from "documonster/excel";
 import type { Expense } from "../generated/client.js";
 import { getRateCached } from "./currencyService.js";
 
-const HEADER_FILL: ExcelJS.Fill = {
+const HEADER_FILL: Fill = {
   type: "pattern",
   pattern: "solid",
   fgColor: { argb: "FF2D6A4F" },
 };
-const HEADER_FONT: Partial<ExcelJS.Font> = { color: { argb: "FFFFFFFF" }, bold: true };
-const ALT_ROW_FILL: ExcelJS.Fill = {
+const HEADER_FONT: Partial<Font> = { color: { argb: "FFFFFFFF" }, bold: true };
+const ALT_ROW_FILL: Fill = {
   type: "pattern",
   pattern: "solid",
   fgColor: { argb: "FFF0F4F2" },
 };
-const TOTAL_FILL: ExcelJS.Fill = {
+const TOTAL_FILL: Fill = {
   type: "pattern",
   pattern: "solid",
   fgColor: { argb: "FFD8EFD3" },
 };
-const TOTAL_FONT: Partial<ExcelJS.Font> = { color: { argb: "FF1A3D2B" }, bold: true };
-const NA_FONT: Partial<ExcelJS.Font> = { color: { argb: "FFCC0000" } };
-const GREY_ITALIC_FONT: Partial<ExcelJS.Font> = { italic: true, color: { argb: "FF888888" } };
+const TOTAL_FONT: Partial<Font> = { color: { argb: "FF1A3D2B" }, bold: true };
+const NA_FONT: Partial<Font> = { color: { argb: "FFCC0000" } };
+const GREY_ITALIC_FONT: Partial<Font> = { italic: true, color: { argb: "FF888888" } };
 
 const CURRENCY_NUMFMT: Record<string, string> = {
   USD: '#,##0.00 "$"',
@@ -34,23 +35,10 @@ function currencyFormat(code: string): string {
   return CURRENCY_NUMFMT[code] ?? `#,##0.00 "${code}"`;
 }
 
-function styleHeaderRow(row: ExcelJS.Row) {
-  row.eachCell((cell) => {
-    cell.fill = HEADER_FILL;
-    cell.font = HEADER_FONT;
-    cell.alignment = { vertical: "middle", horizontal: "center" };
-  });
-}
-
-function autoFitColumns(sheet: ExcelJS.Worksheet) {
-  sheet.columns.forEach((col) => {
-    let max = 10;
-    col.eachCell?.({ includeEmpty: true }, (cell) => {
-      const len = cell.value ? String(cell.value).length : 0;
-      if (len > max) max = len;
-    });
-    col.width = max + 2;
-  });
+function styleHeaderRow(sheet: Worksheet.Handle, rowNumber: number) {
+  Row.setFill(sheet, rowNumber, HEADER_FILL);
+  Row.setFont(sheet, rowNumber, HEADER_FONT);
+  Row.setAlignment(sheet, rowNumber, { vertical: "middle", horizontal: "center" });
 }
 
 export async function ensureConvertedAmounts(
@@ -82,8 +70,8 @@ export async function buildExpensesWorkbook(
   expenses: Expense[],
   defaultCurrency: string,
   attachmentMap?: Map<string, string>,
-): Promise<ExcelJS.Workbook> {
-  const workbook = new ExcelJS.Workbook();
+): Promise<Workbook.Handle> {
+  const workbook = Workbook.create();
   buildExpensesSheet(workbook, expenses, defaultCurrency, attachmentMap);
   buildSummarySheet(workbook, expenses, defaultCurrency);
   return workbook;
@@ -97,14 +85,14 @@ export function getAttachmentFilename(expense: Expense): string | null {
 }
 
 function buildExpensesSheet(
-  workbook: ExcelJS.Workbook,
+  workbook: Workbook.Handle,
   expenses: Expense[],
   defaultCurrency: string,
   attachmentMap?: Map<string, string>,
 ) {
-  const sheet = workbook.addWorksheet("Expenses");
+  const sheet = Workbook.addWorksheet(workbook, "Expenses");
 
-  const headerRow = sheet.addRow([
+  const headerRow = Worksheet.addRow(sheet, [
     "Date",
     "Vendor",
     "Category",
@@ -118,13 +106,13 @@ function buildExpensesSheet(
     "Reference",
     ...(attachmentMap ? ["Attachment"] : []),
   ]);
-  styleHeaderRow(headerRow);
+  styleHeaderRow(sheet, headerRow.number);
 
   let totalHt = 0;
   let totalTtc = 0;
 
   expenses.forEach((expense, index) => {
-    const row = sheet.addRow([
+    const row = Worksheet.addRow(sheet, [
       expense.date,
       expense.fournisseur ?? "",
       expense.categorie,
@@ -140,62 +128,58 @@ function buildExpensesSheet(
     ]);
 
     if (index % 2 === 1) {
-      row.eachCell((cell) => {
-        cell.fill = ALT_ROW_FILL;
-      });
+      Row.setFill(sheet, row.number, ALT_ROW_FILL);
     }
 
-    const dateCell = row.getCell(1);
-    dateCell.numFmt = "DD/MM/YYYY";
+    Cell.setNumFmt(sheet, row.number, 1, "DD/MM/YYYY");
+    Cell.setNumFmt(sheet, row.number, 5, currencyFormat(expense.devise));
+    Cell.setNumFmt(sheet, row.number, 7, "0.0000");
 
-    const montantOriginalCell = row.getCell(5);
-    montantOriginalCell.numFmt = currencyFormat(expense.devise);
-
-    const tauxCell = row.getCell(7);
-    tauxCell.numFmt = "0.0000";
-
-    const tauxDateCell = row.getCell(8);
-    tauxDateCell.numFmt = "DD/MM/YYYY";
+    Cell.setNumFmt(sheet, row.number, 8, "DD/MM/YYYY");
     const depenseDateStr = expense.date.toISOString().slice(0, 10);
     if (expense.taux_change_date && expense.taux_change_date !== depenseDateStr) {
-      tauxDateCell.font = GREY_ITALIC_FONT;
+      Cell.setFont(sheet, row.number, 8, GREY_ITALIC_FONT);
     }
 
-    const htCell = row.getCell(9);
-    const ttcCell = row.getCell(10);
     if (expense.montant_ht_eur === null) {
-      htCell.value = "N/D";
-      htCell.font = NA_FONT;
+      Cell.setValue(sheet, row.number, 9, "N/D");
+      Cell.setFont(sheet, row.number, 9, NA_FONT);
     } else {
-      htCell.numFmt = currencyFormat(defaultCurrency);
+      Cell.setNumFmt(sheet, row.number, 9, currencyFormat(defaultCurrency));
       totalHt += expense.montant_ht_eur;
     }
     if (expense.montant_ttc_eur === null) {
-      ttcCell.value = "N/D";
-      ttcCell.font = NA_FONT;
+      Cell.setValue(sheet, row.number, 10, "N/D");
+      Cell.setFont(sheet, row.number, 10, NA_FONT);
     } else {
-      ttcCell.numFmt = currencyFormat(defaultCurrency);
+      Cell.setNumFmt(sheet, row.number, 10, currencyFormat(defaultCurrency));
       totalTtc += expense.montant_ttc_eur;
     }
   });
 
-  const totalRow = sheet.addRow(["TOTAL", "", "", "", "", "", "", "", totalHt, totalTtc, ""]);
-  totalRow.eachCell((cell) => {
-    cell.fill = TOTAL_FILL;
-    cell.font = TOTAL_FONT;
-  });
-  totalRow.getCell(9).numFmt = currencyFormat(defaultCurrency);
-  totalRow.getCell(10).numFmt = currencyFormat(defaultCurrency);
+  const totalRow = Worksheet.addRow(sheet, [
+    "TOTAL",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    totalHt,
+    totalTtc,
+    "",
+  ]);
+  Row.setFill(sheet, totalRow.number, TOTAL_FILL);
+  Row.setFont(sheet, totalRow.number, TOTAL_FONT);
+  Cell.setNumFmt(sheet, totalRow.number, 9, currencyFormat(defaultCurrency));
+  Cell.setNumFmt(sheet, totalRow.number, 10, currencyFormat(defaultCurrency));
 
-  autoFitColumns(sheet);
+  Worksheet.autoFitColumns(sheet);
 }
 
-function buildSummarySheet(
-  workbook: ExcelJS.Workbook,
-  expenses: Expense[],
-  defaultCurrency: string,
-) {
-  const sheet = workbook.addWorksheet("Summary");
+function buildSummarySheet(workbook: Workbook.Handle, expenses: Expense[], defaultCurrency: string) {
+  const sheet = Workbook.addWorksheet(workbook, "Summary");
 
   const byCategorie = new Map<string, { count: number; total: number }>();
   for (const e of expenses) {
@@ -205,18 +189,22 @@ function buildSummarySheet(
     byCategorie.set(e.categorie, entry);
   }
 
-  const headerA = sheet.addRow(["Category", "# expenses", `Total incl. tax (${defaultCurrency})`]);
-  styleHeaderRow(headerA);
+  const headerA = Worksheet.addRow(sheet, [
+    "Category",
+    "# expenses",
+    `Total incl. tax (${defaultCurrency})`,
+  ]);
+  styleHeaderRow(sheet, headerA.number);
   let rowIndex = 0;
   for (const [categorie, { count, total }] of byCategorie) {
-    const row = sheet.addRow([categorie, count, total]);
-    if (rowIndex % 2 === 1) row.eachCell((cell) => (cell.fill = ALT_ROW_FILL));
-    row.getCell(3).numFmt = currencyFormat(defaultCurrency);
+    const row = Worksheet.addRow(sheet, [categorie, count, total]);
+    if (rowIndex % 2 === 1) Row.setFill(sheet, row.number, ALT_ROW_FILL);
+    Cell.setNumFmt(sheet, row.number, 3, currencyFormat(defaultCurrency));
     rowIndex += 1;
   }
 
-  sheet.addRow([]);
-  sheet.addRow([]);
+  Worksheet.addRow(sheet, []);
+  Worksheet.addRow(sheet, []);
 
   const byDevise = new Map<
     string,
@@ -231,26 +219,26 @@ function buildSummarySheet(
     byDevise.set(e.devise, entry);
   }
 
-  const headerB = sheet.addRow([
+  const headerB = Worksheet.addRow(sheet, [
     "Currency",
     "# expenses",
     "Original total",
     "Avg. rate",
     `Total (${defaultCurrency})`,
   ]);
-  styleHeaderRow(headerB);
+  styleHeaderRow(sheet, headerB.number);
   rowIndex = 0;
   for (const [devise, { count, totalOriginal, totalEur, rates }] of byDevise) {
     const avgRate = rates.length > 0 ? rates.reduce((a, b) => a + b, 0) / rates.length : null;
-    const row = sheet.addRow([devise, count, totalOriginal, avgRate, totalEur]);
-    if (rowIndex % 2 === 1) row.eachCell((cell) => (cell.fill = ALT_ROW_FILL));
-    row.getCell(3).numFmt = currencyFormat(devise);
-    row.getCell(4).numFmt = "0.0000";
-    row.getCell(5).numFmt = currencyFormat(defaultCurrency);
+    const row = Worksheet.addRow(sheet, [devise, count, totalOriginal, avgRate, totalEur]);
+    if (rowIndex % 2 === 1) Row.setFill(sheet, row.number, ALT_ROW_FILL);
+    Cell.setNumFmt(sheet, row.number, 3, currencyFormat(devise));
+    Cell.setNumFmt(sheet, row.number, 4, "0.0000");
+    Cell.setNumFmt(sheet, row.number, 5, currencyFormat(defaultCurrency));
     rowIndex += 1;
   }
 
-  autoFitColumns(sheet);
+  Worksheet.autoFitColumns(sheet);
 }
 
 export function exportFileName(from?: string): string {

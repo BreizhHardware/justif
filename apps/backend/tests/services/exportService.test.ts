@@ -1,3 +1,4 @@
+import { Cell, Workbook } from "documonster/excel";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeExpense } from "../fixtures.js";
 
@@ -94,18 +95,17 @@ describe("buildExpensesWorkbook", () => {
     ];
 
     const workbook = await buildExpensesWorkbook(expenses, "EUR");
-    const sheet = workbook.getWorksheet("Expenses")!;
+    const sheet = Workbook.getWorksheet(workbook, "Expenses")!;
 
-    expect(sheet.getRow(1).getCell(1).value).toBe("Date");
-    expect(sheet.getRow(2).getCell(9).value).toBe(80);
-    expect(sheet.getRow(2).getCell(10).value).toBe(100);
-    expect(sheet.getRow(3).getCell(9).value).toBe("N/D");
-    expect(sheet.getRow(3).getCell(10).value).toBe("N/D");
+    expect(Cell.getValue(sheet, 1, 1)).toBe("Date");
+    expect(Cell.getValue(sheet, 2, 9)).toBe(80);
+    expect(Cell.getValue(sheet, 2, 10)).toBe(100);
+    expect(Cell.getValue(sheet, 3, 9)).toBe("N/D");
+    expect(Cell.getValue(sheet, 3, 10)).toBe("N/D");
 
-    const totalRow = sheet.getRow(4);
-    expect(totalRow.getCell(1).value).toBe("TOTAL");
-    expect(totalRow.getCell(9).value).toBe(80);
-    expect(totalRow.getCell(10).value).toBe(100);
+    expect(Cell.getValue(sheet, 4, 1)).toBe("TOTAL");
+    expect(Cell.getValue(sheet, 4, 9)).toBe(80);
+    expect(Cell.getValue(sheet, 4, 10)).toBe(100);
   });
 
   it("builds a Summary sheet grouping by category and by currency", async () => {
@@ -137,17 +137,16 @@ describe("buildExpensesWorkbook", () => {
     ];
 
     const workbook = await buildExpensesWorkbook(expenses, "EUR");
-    const sheet = workbook.getWorksheet("Summary")!;
+    const sheet = Workbook.getWorksheet(workbook, "Summary")!;
 
     const rowValues = (rowNumber: number, lastColumn: number) =>
-      Array.from({ length: lastColumn }, (_, i) => sheet.getRow(rowNumber).getCell(i + 1).value);
+      Array.from({ length: lastColumn }, (_, i) => Cell.getValue(sheet, rowNumber, i + 1));
 
     expect(rowValues(1, 3)).toEqual(["Category", "# expenses", "Total incl. tax (EUR)"]);
     expect(rowValues(2, 3)).toEqual(["Repas", 2, 80]);
     expect(rowValues(3, 3)).toEqual(["Transport", 1, 18]);
 
-    const deviseHeaderRow = sheet.getRow(6);
-    expect(deviseHeaderRow.getCell(1).value).toBe("Currency");
+    expect(Cell.getValue(sheet, 6, 1)).toBe("Currency");
     expect(rowValues(7, 5)).toEqual(["EUR", 2, 80, 1, 80]);
     expect(rowValues(8, 5)).toEqual(["USD", 1, 20, 0.9, 18]);
   });
