@@ -8,14 +8,18 @@ services:
       - "8025:8025"  # Web UI
     restart: unless-stopped
 
-  # Issuer URL:    http://localhost:5556/dex
-  # Admin UI:      http://localhost:5556/dex/.well-known/openid-configuration
-  # Test user:     admin@example.com / password
-  dex:
-    image: ghcr.io/dexidp/dex:v2.42.0
+  # Issuer URL:    http://localhost:8080/realms/justif-dev
+  # Admin console: http://localhost:8080 (admin / admin)
+  # Test users:    admin@example.com / password (member of the "justif-admin" group)
+  #                user@example.com / password
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.4
+    command: start-dev --import-realm
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
     ports:
-      - "5556:5556"
+      - "8080:8080"
     volumes:
-      - ./docker/dex/config.yml:/etc/dex/config.yml:ro
-    command: dex serve /etc/dex/config.yml
+      - ./docker/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
     restart: unless-stopped

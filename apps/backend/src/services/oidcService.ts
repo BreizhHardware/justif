@@ -52,10 +52,16 @@ export async function discoverOidcClient(): Promise<{
 } | null> {
   const settings = await getOidcSettings();
   if (!settings) return null;
+  // oauth4webapi rejects plain HTTP issuers by default. A non-HTTPS issuer
+  // only happens with a self-hosted dev IdP (e.g. the keycloak container in
+  // docker-compose.dev.yml) - opt in to insecure requests for that case only.
+  const isHttp = new URL(settings.issuerUrl).protocol === "http:";
   const config = await client.discovery(
     new URL(settings.issuerUrl),
     settings.clientId,
     settings.clientSecret,
+    undefined,
+    isHttp ? { execute: [client.allowInsecureRequests] } : undefined,
   );
   return { config, settings };
 }
