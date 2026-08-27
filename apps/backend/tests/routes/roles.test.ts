@@ -88,6 +88,53 @@ describe("POST /api/roles", () => {
     const res = await admin.post("/api/roles", { name: "  ", permissions: [] });
     expect(res.status).toBe(400);
   });
+
+  it("creates a role with OIDC group mappings, trimmed and deduplicated", async () => {
+    const admin = await loginAs({ email: "admin-groups@justif.test", roleNames: ["Admin"] });
+    const res = await admin.post("/api/roles", {
+      name: "Finance",
+      permissions: [],
+      oidcGroups: [" Finance-Team ", "Finance-Team", "Finance-Leads"],
+    });
+    expect(res.status).toBe(201);
+    expect((await res.json()).oidcGroups.sort()).toEqual(["Finance-Leads", "Finance-Team"]);
+  });
+
+  it("rejects a group already mapped to another role", async () => {
+    const admin = await loginAs({ email: "admin-groups2@justif.test", roleNames: ["Admin"] });
+    await admin.post("/api/roles", {
+      name: "RoleA",
+      permissions: [],
+      oidcGroups: ["Shared-Group"],
+    });
+
+    const res = await admin.post("/api/roles", {
+      name: "RoleB",
+      permissions: [],
+      oidcGroups: ["Shared-Group"],
+    });
+    expect(res.status).toBe(409);
+  });
+
+  it("rejects a non-array oidcGroups value", async () => {
+    const admin = await loginAs({ email: "admin-groups5@justif.test", roleNames: ["Admin"] });
+    const res = await admin.post("/api/roles", {
+      name: "BadGroups",
+      permissions: [],
+      oidcGroups: "Finance-Team",
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects an object oidcGroups value", async () => {
+    const admin = await loginAs({ email: "admin-groups6@justif.test", roleNames: ["Admin"] });
+    const res = await admin.post("/api/roles", {
+      name: "BadGroups2",
+      permissions: [],
+      oidcGroups: { group: "Finance-Team" },
+    });
+    expect(res.status).toBe(400);
+  });
 });
 
 describe("PATCH /api/roles/:id", () => {
@@ -102,6 +149,54 @@ describe("PATCH /api/roles/:id", () => {
     });
     expect(res.status).toBe(200);
     expect([...(await res.json()).permissions].sort()).toEqual(["CONFIG_OCR", "VIEW_DASHBOARD"]);
+  });
+
+  it("replaces the OIDC group mapping", async () => {
+    const admin = await loginAs({ email: "admin-groups3@justif.test", roleNames: ["Admin"] });
+    const created = await (
+      await admin.post("/api/roles", {
+        name: "Support",
+        permissions: [],
+        oidcGroups: ["Support-L1"],
+      })
+    ).json();
+
+    const res = await admin.patch(`/api/roles/${created.id}`, {
+      oidcGroups: ["Support-L2"],
+    });
+    expect(res.status).toBe(200);
+    expect((await res.json()).oidcGroups).toEqual(["Support-L2"]);
+  });
+
+  it("rejects moving a group that's mapped to a different role", async () => {
+    const admin = await loginAs({ email: "admin-groups4@justif.test", roleNames: ["Admin"] });
+    await admin.post("/api/roles", { name: "RoleC", permissions: [], oidcGroups: ["Taken-Group"] });
+    const roleD = await (await admin.post("/api/roles", { name: "RoleD", permissions: [] })).json();
+
+    const res = await admin.patch(`/api/roles/${roleD.id}`, { oidcGroups: ["Taken-Group"] });
+    expect(res.status).toBe(409);
+  });
+
+  it("rejects a non-array oidcGroups value", async () => {
+    const admin = await loginAs({ email: "admin-groups7@justif.test", roleNames: ["Admin"] });
+    const created = await (
+      await admin.post("/api/roles", { name: "PatchBadGroups", permissions: [] })
+    ).json();
+
+    const res = await admin.patch(`/api/roles/${created.id}`, { oidcGroups: "Support-L1" });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects an object oidcGroups value", async () => {
+    const admin = await loginAs({ email: "admin-groups8@justif.test", roleNames: ["Admin"] });
+    const created = await (
+      await admin.post("/api/roles", { name: "PatchBadGroups2", permissions: [] })
+    ).json();
+
+    const res = await admin.patch(`/api/roles/${created.id}`, {
+      oidcGroups: { group: "Support-L1" },
+    });
+    expect(res.status).toBe(400);
   });
 });
 

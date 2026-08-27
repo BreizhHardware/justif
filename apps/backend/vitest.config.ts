@@ -13,6 +13,13 @@ export default defineConfig({
       UPLOAD_DIR: TEST_UPLOAD_DIR,
       OCR_PROVIDER: "cloud",
       DEFAULT_CURRENCY: "EUR",
+      APP_URL: "http://localhost:3001",
+      MISTRAL_API_KEY: "",
+      SMTP_HOST: "",
+      SMTP_FROM: "",
+      OIDC_ISSUER_URL: "",
+      OIDC_CLIENT_ID: "",
+      OIDC_CLIENT_SECRET: "",
     },
   },
 });

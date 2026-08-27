@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import "./globals.css";
 import { I18nProvider } from "@/components/I18nProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { resolveLocale } from "@/lib/locale";
 
 export const metadata: Metadata = {
   title: "Justif",
@@ -10,14 +12,17 @@ export const metadata: Metadata = {
 
 const themeScript = `(function(){var t=document.cookie.split('; ').find(function(r){return r.startsWith('justif_theme=');});t=t?t.split('=')[1]:'system';if(t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark');}})();`;
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const cookieStore = await cookies();
+  const locale = resolveLocale(cookieStore.get("justif_locale")?.value);
+
   return (
-    <html lang="en">
+    <html lang={locale}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 antialiased">
-        <I18nProvider>
+        <I18nProvider initialLocale={locale}>
           <ThemeProvider>{children}</ThemeProvider>
         </I18nProvider>
       </body>

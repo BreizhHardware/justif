@@ -1,6 +1,6 @@
 generator client {
-  provider           = "prisma-client"
-  output             = "../src/generated"
+  provider            = "prisma-client"
+  output              = "../src/generated"
   moduleFormat        = "esm"
   importFileExtension = "js"
 }
@@ -31,25 +31,39 @@ model Expense {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  userId    String
-  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   reportedIn ExpenseReportItem[]
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  active       Boolean  @default(true)
-  theme        String   @default("system")
-  dashboardBreakdownBy String @default("category")
-  dashboardGranularity String @default("month")
-  createdAt    DateTime @default(now())
+  id                   String   @id @default(cuid())
+  email                String   @unique
+  // Null for accounts provisioned exclusively via OIDC single sign-on - they
+  // authenticate through the identity provider and never set a local password.
+  passwordHash         String?
+  // Issuer ("iss") and subject ("sub") claims of the OIDC identity provider,
+  // once this account has signed in via SSO at least once (either
+  // JIT-provisioned or linked to a pre-existing password account that shared
+  // the same verified email). The `sub` claim is only guaranteed unique
+  // *within* a given issuer (OIDC core spec) - if the instance's IdP is ever
+  // reconfigured, a subject value could otherwise collide with one from a
+  // previous, unrelated issuer, so the two are enforced unique together.
+  oidcIssuer           String?
+  oidcSubject          String?
+  active               Boolean  @default(true)
+  theme                String   @default("system")
+  dashboardBreakdownBy String   @default("category")
+  dashboardGranularity String   @default("month")
+  createdAt            DateTime @default(now())
 
-  expenses  Expense[]
-  reports   ExpenseReport[]
-  auditLogs AuditLog[]
-  roles     UserRole[]
+  expenses            Expense[]
+  reports             ExpenseReport[]
+  auditLogs           AuditLog[]
+  roles               UserRole[]
+  passwordResetTokens PasswordResetToken[]
+
+  @@unique([oidcIssuer, oidcSubject], name: "oidcIdentity")
 }
 
 model Role {
@@ -60,6 +74,19 @@ model Role {
 
   permissions RolePermission[]
   users       UserRole[]
+  oidcGroups  RoleOidcGroup[]
+}
+
+// Maps an OIDC identity provider group name to a Justif role: on every SSO
+// login, a user's roles are synced to the union of roles mapped from the
+// groups claim returned by the IdP (see routes/auth.ts). A group name can
+// only be mapped to a single role to keep the sync unambiguous.
+model RoleOidcGroup {
+  id        String   @id @default(cuid())
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  groupName String   @unique
+  createdAt DateTime @default(now())
 }
 
 model RolePermission {
@@ -81,6 +108,20 @@ model UserRole {
   @@unique([userId, roleId])
 }
 
+// PasswordResetToken stores only a hash of the token sent by email - the raw
+// token is never persisted, so a database leak alone can't be used to reset
+// accounts. Tokens are single-use (usedAt) and short-lived (expiresAt).
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
 // AuditLog records sensitive actions for compliance and investigation purposes.
 // GDPR note: userId uses SetNull on delete - logs are pseudonymised when a user
 // exercises their right to erasure while preserving the audit trail integrity.
@@ -88,12 +129,12 @@ model UserRole {
 model AuditLog {
   id           String   @id @default(cuid())
   timestamp    DateTime @default(now())
-  action       String   // e.g. "expense.create", "user.update", "export.zip"
-  entityType   String?  // "Expense" | "User" | "Setting" | "ExpenseReport"
-  entityId     String?  // ID of the affected entity
-  targetUserId String?  // Set when an admin acts on another user's data
-  metadata     String?  // JSON string - no passwords, no API key values, minimal PII
-  ip           String?  // Client IP (GDPR: personal data)
+  action       String // e.g. "expense.create", "user.update", "export.zip"
+  entityType   String? // "Expense" | "User" | "Setting" | "ExpenseReport"
+  entityId     String? // ID of the affected entity
+  targetUserId String? // Set when an admin acts on another user's data
+  metadata     String? // JSON string - no passwords, no API key values, minimal PII
+  ip           String? // Client IP (GDPR: personal data)
 
   userId String?
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -114,10 +155,10 @@ model ExpenseReport {
 model ExpenseReportItem {
   id String @id @default(cuid())
 
-  reportId String
-  report   ExpenseReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  reportId  String
+  report    ExpenseReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
   expenseId String
-  expense   Expense      @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  expense   Expense       @relation(fields: [expenseId], references: [id], onDelete: Cascade)
 
   @@unique([reportId, expenseId])
 }

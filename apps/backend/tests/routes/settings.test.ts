@@ -82,4 +82,68 @@ describe("PATCH /api/settings", () => {
     expect(res.status).toBe(200);
     expect((await res.json()).ocr_extract_reference_number).toBe("true");
   });
+
+  it("round-trips the SMTP settings and never leaks the password value", async () => {
+    const admin = await loginAs({ email: "admin5@justif.test", roleNames: ["Admin"] });
+
+    const res = await admin.patch("/api/settings", {
+      smtp_host: "smtp.example.com",
+      smtp_port: "2525",
+      smtp_secure: "true",
+      smtp_user: "no-reply@example.com",
+      smtp_from: "Justif <no-reply@example.com>",
+      smtp_password: "super-secret",
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.smtp_host).toBe("smtp.example.com");
+    expect(body.smtp_port).toBe("2525");
+    expect(body.smtp_secure).toBe("true");
+    expect(body.smtp_from).toBe("Justif <no-reply@example.com>");
+    expect(body.smtp_password).toBeUndefined();
+
+    const after = await admin.get("/api/settings");
+    const afterBody = await after.json();
+    expect(afterBody.smtp_password).toBeUndefined();
+    expect(afterBody.smtp_password_set).toBe("true");
+  });
+
+  it("round-trips the OIDC settings and never leaks the client secret value", async () => {
+    const admin = await loginAs({ email: "admin7@justif.test", roleNames: ["Admin"] });
+
+    const res = await admin.patch("/api/settings", {
+      oidc_issuer_url: "https://idp.example.com",
+      oidc_client_id: "justif",
+      oidc_scopes: "openid email profile groups",
+      oidc_groups_claim: "groups",
+      oidc_client_secret: "super-secret",
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.oidc_issuer_url).toBe("https://idp.example.com");
+    expect(body.oidc_client_id).toBe("justif");
+    expect(body.oidc_scopes).toBe("openid email profile groups");
+    expect(body.oidc_client_secret).toBeUndefined();
+
+    const after = await admin.get("/api/settings");
+    const afterBody = await after.json();
+    expect(afterBody.oidc_client_secret).toBeUndefined();
+    expect(afterBody.oidc_client_secret_set).toBe("true");
+  });
+});
+
+describe("POST /api/settings/test-email", () => {
+  it("returns success:false without throwing when SMTP is not configured", async () => {
+    const admin = await loginAs({ email: "admin6@justif.test", roleNames: ["Admin"] });
+    const res = await admin.post("/api/settings/test-email");
+    expect(res.status).toBe(502);
+    const body = await res.json();
+    expect(body.success).toBe(false);
+  });
+
+  it("rejects a non-admin user", async () => {
+    const client = await loginAs({ email: "plain2@justif.test", roleNames: ["User"] });
+    const res = await client.post("/api/settings/test-email");
+    expect(res.status).toBe(403);
+  });
 });

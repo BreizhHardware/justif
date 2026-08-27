@@ -14,13 +14,20 @@ vi.mock("@/lib/api", () => ({
 import LoginPage from "@/app/login/page";
 import { apiFetch } from "@/lib/api";
 import { mockPush } from "./__mocks__/next-navigation";
+import { useSearchParams } from "next/navigation";
 
 const mockedApiFetch = vi.mocked(apiFetch);
+const mockedUseSearchParams = vi.mocked(useSearchParams);
 
 describe("LoginPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    // Default response for the /api/auth/status check the login page fires on
+    // mount to decide whether to show the SSO button; individual tests below
+    // override this for their own apiFetch("/api/auth/login", ...) calls.
+    mockedApiFetch.mockResolvedValue({ setupComplete: true, oidcEnabled: false });
+    mockedUseSearchParams.mockReturnValue(new URLSearchParams());
   });
 
   it("renders email, password fields and submit button", () => {
@@ -34,6 +41,12 @@ describe("LoginPage", () => {
     render(<LoginPage />);
     const link = screen.getByRole("link", { name: "login.privacy" });
     expect(link).toHaveAttribute("href", "/privacy");
+  });
+
+  it("shows a forgot-password link pointing to /forgot-password", () => {
+    render(<LoginPage />);
+    const link = screen.getByRole("link", { name: "login.forgotPassword" });
+    expect(link).toHaveAttribute("href", "/forgot-password");
   });
 
   it("redirects to /dashboard on successful login", async () => {
@@ -78,5 +91,26 @@ describe("LoginPage", () => {
       expect(screen.getByText("login.error")).toBeInTheDocument();
     });
     expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it("does not show the SSO button when OIDC isn't configured", async () => {
+    render(<LoginPage />);
+    await waitFor(() => {
+      expect(mockedApiFetch).toHaveBeenCalledWith("/api/auth/status");
+    });
+    expect(screen.queryByRole("link", { name: "login.ssoButton" })).not.toBeInTheDocument();
+  });
+
+  it("shows the SSO button linking to the OIDC login route when enabled", async () => {
+    mockedApiFetch.mockResolvedValue({ setupComplete: true, oidcEnabled: true });
+    render(<LoginPage />);
+    const link = await screen.findByRole("link", { name: "login.ssoButton" });
+    expect(link).toHaveAttribute("href", "/api/auth/oidc/login");
+  });
+
+  it("shows a translated error message from the SSO error query param", () => {
+    mockedUseSearchParams.mockReturnValue(new URLSearchParams("error=oidc_disabled"));
+    render(<LoginPage />);
+    expect(screen.getByText("login.ssoErrors.oidc_disabled")).toBeInTheDocument();
   });
 });

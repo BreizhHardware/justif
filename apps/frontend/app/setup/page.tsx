@@ -1,19 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { Check, Cloud, HardDrive, LayoutGrid } from "lucide-react";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, apiUrl } from "@/lib/api";
 import { SESSION_KEY } from "@/app/page";
 import { Button, Card, Input, Label } from "@/components/ui";
 
-type Step = 1 | 2;
+type Step = 1 | 2 | 3;
+
+interface FetchedSettings {
+  ocr_provider: "cloud" | "local";
+  mistral_model: string;
+  ollama_url: string;
+  ollama_model: string;
+  ocr_extract_reference_number: string;
+  require_validation: string;
+  mistral_api_key_set: string;
+  oidc_issuer_url: string;
+  oidc_client_id: string;
+  oidc_scopes: string;
+  oidc_groups_claim: string;
+  oidc_client_secret_set: string;
+}
 
 export default function SetupPage() {
   const router = useRouter();
   const { t } = useTranslation();
   const [step, setStep] = useState<Step>(1);
+  const [oidcEnabled, setOidcEnabled] = useState(false);
 
   // Step 1
   const [email, setEmail] = useState("");
@@ -24,6 +40,7 @@ export default function SetupPage() {
   // Step 2
   const [ocrProvider, setOcrProvider] = useState<"cloud" | "local">("cloud");
   const [mistralApiKey, setMistralApiKey] = useState("");
+  const [mistralApiKeySet, setMistralApiKeySet] = useState(false);
   const [mistralModel, setMistralModel] = useState("pixtral-12b-2409");
   const [ollamaUrl, setOllamaUrl] = useState("http://localhost:11434");
   const [ollamaModel, setOllamaModel] = useState("llava");
@@ -31,10 +48,21 @@ export default function SetupPage() {
   const [requireValidation, setRequireValidation] = useState(false);
   const [step2Loading, setStep2Loading] = useState(false);
 
+  // Step 3
+  const [oidcIssuerUrl, setOidcIssuerUrl] = useState("");
+  const [oidcIssuerPreconfigured, setOidcIssuerPreconfigured] = useState(false);
+  const [oidcClientId, setOidcClientId] = useState("");
+  const [oidcClientSecret, setOidcClientSecret] = useState("");
+  const [oidcClientSecretSet, setOidcClientSecretSet] = useState(false);
+  const [oidcScopes, setOidcScopes] = useState("openid email profile");
+  const [oidcGroupsClaim, setOidcGroupsClaim] = useState("groups");
+  const [step3Loading, setStep3Loading] = useState(false);
+
   useEffect(() => {
-    apiFetch<{ setupComplete: boolean }>("/api/auth/status")
+    apiFetch<{ setupComplete: boolean; oidcEnabled: boolean }>("/api/auth/status")
       .then((s) => {
         if (s.setupComplete) router.replace("/");
+        setOidcEnabled(Boolean(s.oidcEnabled));
       })
       .catch(() => {});
   }, [router]);
@@ -48,6 +76,28 @@ export default function SetupPage() {
         body: JSON.stringify({ email, password }),
       });
       localStorage.setItem(SESSION_KEY, "1");
+
+      // Existing settings (from a previous session or env vars) only become
+      // readable once we're authenticated as the freshly-created admin
+      try {
+        const existing = await apiFetch<FetchedSettings>("/api/settings");
+        setOcrProvider(existing.ocr_provider);
+        setMistralModel(existing.mistral_model);
+        setMistralApiKeySet(existing.mistral_api_key_set === "true");
+        setOllamaUrl(existing.ollama_url);
+        setOllamaModel(existing.ollama_model);
+        setExtractReferenceNumber(existing.ocr_extract_reference_number === "true");
+        setRequireValidation(existing.require_validation === "true");
+        setOidcIssuerUrl(existing.oidc_issuer_url);
+        setOidcIssuerPreconfigured(Boolean(existing.oidc_issuer_url));
+        setOidcClientId(existing.oidc_client_id);
+        setOidcClientSecretSet(existing.oidc_client_secret_set === "true");
+        setOidcScopes(existing.oidc_scopes || "openid email profile");
+        setOidcGroupsClaim(existing.oidc_groups_claim || "groups");
+      } catch {
+        // Non-blocking: the wizard still works with its built-in defaults.
+      }
+
       setStep(2);
     } catch (err) {
       setStep1Error(err instanceof Error ? err.message : t("settings.error"));
@@ -83,8 +133,44 @@ export default function SetupPage() {
     } finally {
       setStep2Loading(false);
     }
+    if (oidcEnabled) {
+      router.push("/expenses");
+    } else {
+      setStep(3);
+    }
+  }
+
+  async function saveOidcConfig() {
+    const payload: Record<string, string> = {
+      oidc_issuer_url: oidcIssuerUrl,
+      oidc_client_id: oidcClientId,
+      oidc_scopes: oidcScopes,
+      oidc_groups_claim: oidcGroupsClaim,
+    };
+    if (oidcClientSecret) payload.oidc_client_secret = oidcClientSecret;
+    await apiFetch("/api/settings", {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async function handleStep3() {
+    setStep3Loading(true);
+    try {
+      await saveOidcConfig();
+    } catch {
+      // Non-blocking: SSO can be configured later in settings.
+    } finally {
+      setStep3Loading(false);
+    }
     router.push("/expenses");
   }
+
+  const steps: { n: Step; label: string }[] = [
+    { n: 1, label: t("setup.stepAccount") },
+    { n: 2, label: t("setup.stepConfig") },
+    ...(oidcEnabled ? [] : [{ n: 3 as Step, label: t("setup.stepSso") }]),
+  ];
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 dark:bg-slate-950">
@@ -101,48 +187,35 @@ export default function SetupPage() {
 
         {/* Step indicator */}
         <div className="mb-6 flex items-start justify-center">
-          {/* Step 1 */}
-          <div className="flex flex-col items-center gap-1.5">
-            <div
-              className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-all ${
-                step > 1
-                  ? "bg-brand-500 text-white"
-                  : "border-2 border-brand-500 bg-white text-brand-600"
-              }`}
-            >
-              {step > 1 ? <Check size={13} /> : "1"}
-            </div>
-            <span
-              className={`text-xs font-medium ${step === 1 ? "text-brand-600" : "text-slate-500 dark:text-slate-400"}`}
-            >
-              {t("setup.stepAccount")}
-            </span>
-          </div>
-
-          {/* Connector */}
-          <div className="mx-3 mt-3.5 w-16 shrink-0">
-            <div
-              className={`h-0.5 transition-all ${step > 1 ? "bg-brand-500" : "bg-slate-200 dark:bg-slate-700"}`}
-            />
-          </div>
-
-          {/* Step 2 */}
-          <div className="flex flex-col items-center gap-1.5">
-            <div
-              className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-all ${
-                step === 2
-                  ? "border-2 border-brand-500 bg-white text-brand-600 dark:bg-slate-950"
-                  : "border-2 border-slate-200 bg-white text-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-500"
-              }`}
-            >
-              2
-            </div>
-            <span
-              className={`text-xs font-medium ${step === 2 ? "text-brand-600" : "text-slate-400 dark:text-slate-500"}`}
-            >
-              {t("setup.stepConfig")}
-            </span>
-          </div>
+          {steps.map((s, i) => (
+            <Fragment key={s.n}>
+              {i > 0 && (
+                <div className="mx-3 mt-3.5 w-16 shrink-0">
+                  <div
+                    className={`h-0.5 transition-all ${step > steps[i - 1].n ? "bg-brand-500" : "bg-slate-200 dark:bg-slate-700"}`}
+                  />
+                </div>
+              )}
+              <div className="flex flex-col items-center gap-1.5">
+                <div
+                  className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-all ${
+                    step > s.n
+                      ? "bg-brand-500 text-white"
+                      : step === s.n
+                        ? "border-2 border-brand-500 bg-white text-brand-600 dark:bg-slate-950"
+                        : "border-2 border-slate-200 bg-white text-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-500"
+                  }`}
+                >
+                  {step > s.n ? <Check size={13} /> : s.n}
+                </div>
+                <span
+                  className={`text-xs font-medium ${step === s.n ? "text-brand-600" : "text-slate-500 dark:text-slate-400"}`}
+                >
+                  {s.label}
+                </span>
+              </div>
+            </Fragment>
+          ))}
         </div>
 
         {/* Step 1 - Account creation */}
@@ -265,10 +338,15 @@ export default function SetupPage() {
                     <Input
                       id="mistralKey"
                       type="password"
-                      placeholder="sk-…"
+                      placeholder={mistralApiKeySet ? "••••••••••••" : "sk-…"}
                       value={mistralApiKey}
                       onChange={(e) => setMistralApiKey(e.target.value)}
                     />
+                    {mistralApiKeySet && (
+                      <p className="mt-1 text-xs text-brand-600 dark:text-brand-400">
+                        {t("setup.configuredViaEnv")}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="mistralModel">{t("setup.model")}</Label>
@@ -325,7 +403,105 @@ export default function SetupPage() {
 
               <div className="flex flex-col gap-2 pt-1">
                 <Button type="submit" disabled={step2Loading} className="w-full">
-                  {step2Loading ? t("setup.saving") : t("setup.finish")}
+                  {step2Loading
+                    ? t("setup.saving")
+                    : oidcEnabled
+                      ? t("setup.finish")
+                      : t("setup.next")}
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => router.push("/expenses")}
+                  className="py-1 text-center text-sm text-slate-400 transition hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
+                >
+                  {t("setup.skip")}
+                </button>
+              </div>
+            </form>
+          </Card>
+        )}
+
+        {/* Step 3 - SSO configuration (only reachable if not already configured) */}
+        {step === 3 && (
+          <Card className="p-6">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void handleStep3();
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  {t("setup.ssoTitle")}
+                </h1>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {t("setup.ssoDescription")}
+                </p>
+                <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
+                  {t("settings.oidcHelp", {
+                    callbackUrl: apiUrl("/api/auth/oidc/callback"),
+                  })}
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="oidcIssuerUrl">{t("settings.oidcIssuerUrl")}</Label>
+                <Input
+                  id="oidcIssuerUrl"
+                  value={oidcIssuerUrl}
+                  onChange={(e) => setOidcIssuerUrl(e.target.value)}
+                  placeholder="https://login.example.com/your-tenant"
+                />
+                {oidcIssuerPreconfigured && (
+                  <p className="mt-1 text-xs text-brand-600 dark:text-brand-400">
+                    {t("setup.configuredViaEnv")}
+                  </p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="oidcClientId">{t("settings.oidcClientId")}</Label>
+                <Input
+                  id="oidcClientId"
+                  value={oidcClientId}
+                  onChange={(e) => setOidcClientId(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="oidcClientSecret">{t("settings.oidcClientSecret")}</Label>
+                <Input
+                  id="oidcClientSecret"
+                  type="password"
+                  value={oidcClientSecret}
+                  onChange={(e) => setOidcClientSecret(e.target.value)}
+                  placeholder={oidcClientSecretSet ? "••••••••••••" : ""}
+                />
+                {oidcClientSecretSet && (
+                  <p className="mt-1 text-xs text-brand-600 dark:text-brand-400">
+                    {t("setup.configuredViaEnv")}
+                  </p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="oidcScopes">{t("settings.oidcScopes")}</Label>
+                <Input
+                  id="oidcScopes"
+                  value={oidcScopes}
+                  onChange={(e) => setOidcScopes(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="oidcGroupsClaim">{t("settings.oidcGroupsClaim")}</Label>
+                <Input
+                  id="oidcGroupsClaim"
+                  value={oidcGroupsClaim}
+                  onChange={(e) => setOidcGroupsClaim(e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-2 pt-1">
+                <Button type="submit" disabled={step3Loading} className="w-full">
+                  {step3Loading ? t("setup.saving") : t("setup.finish")}
                 </Button>
                 <button
                   type="button"

@@ -1,0 +1,25 @@
+services:
+  # SMTP:  localhost:1025
+  # Web UI: http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    restart: unless-stopped
+
+  # Issuer URL:    http://localhost:8080/realms/justif-dev
+  # Admin console: http://localhost:8080 (admin / admin)
+  # Test users:    admin@example.com / password (member of the "justif-admin" group)
+  #                user@example.com / password
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.4
+    command: start-dev --import-realm
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./docker/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    restart: unless-stopped

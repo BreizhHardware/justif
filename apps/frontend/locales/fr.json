@@ -82,7 +82,42 @@
     "password": "Mot de passe",
     "submit": "Se connecter",
     "error": "Identifiants invalides",
-    "privacy": "Politique de confidentialité"
+    "privacy": "Politique de confidentialité",
+    "forgotPassword": "Mot de passe oublié ?",
+    "ssoDivider": "ou",
+    "ssoButton": "Se connecter avec le SSO de l'entreprise",
+    "ssoErrors": {
+      "oidc_unavailable": "La connexion via SSO n'est pas disponible pour le moment. Réessayez plus tard ou utilisez votre mot de passe.",
+      "oidc_failed": "La connexion via SSO a échoué. Veuillez réessayer.",
+      "oidc_invalid_session": "Votre session de connexion SSO a expiré. Veuillez réessayer.",
+      "oidc_no_email": "Votre fournisseur d'identité n'a pas renvoyé d'adresse email. Contactez votre administrateur.",
+      "oidc_unverified_email": "Votre fournisseur d'identité n'a pas vérifié cette adresse email. Contactez votre administrateur.",
+      "oidc_disabled": "Ce compte a été désactivé.",
+      "default": "La connexion via SSO a échoué. Veuillez réessayer."
+    }
+  },
+  "forgotPassword": {
+    "title": "Réinitialiser votre mot de passe",
+    "description": "Indiquez l'email de votre compte : s'il existe, nous vous enverrons un lien pour choisir un nouveau mot de passe.",
+    "email": "Email",
+    "submit": "Envoyer le lien",
+    "sending": "Envoi…",
+    "success": "Si un compte existe pour cet email, un lien de réinitialisation a été envoyé. Vérifiez votre boîte de réception.",
+    "backToLogin": "Retour à la connexion"
+  },
+  "resetPassword": {
+    "title": "Choisir un nouveau mot de passe",
+    "password": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le nouveau mot de passe",
+    "minPassword": "8 caractères minimum",
+    "submit": "Réinitialiser le mot de passe",
+    "saving": "Enregistrement…",
+    "mismatch": "Les mots de passe ne correspondent pas",
+    "invalidToken": "Ce lien de réinitialisation est invalide ou a expiré.",
+    "requestNewLink": "Demander un nouveau lien",
+    "genericError": "Une erreur est survenue. Réessayez.",
+    "success": "Votre mot de passe a été mis à jour. Connexion en cours…",
+    "missingToken": "Ce lien de réinitialisation n'a pas de jeton valide."
   },
   "setup": {
     "title": "Bienvenue sur Justif",
@@ -90,6 +125,7 @@
     "submit": "Créer le compte",
     "stepAccount": "Compte",
     "stepConfig": "Configuration",
+    "stepSso": "Authentification unique",
     "minPassword": "8 caractères minimum",
     "creating": "Création…",
     "ocrTitle": "Configuration OCR",
@@ -99,7 +135,11 @@
     "ollamaUrl": "URL Ollama",
     "saving": "Enregistrement…",
     "finish": "Terminer la configuration",
-    "skip": "Passer cette étape"
+    "next": "Suivant",
+    "skip": "Passer cette étape",
+    "configuredViaEnv": "Déjà configuré via une variable d'environnement",
+    "ssoTitle": "Authentification unique (SSO)",
+    "ssoDescription": "Facultatif - permet à votre équipe de se connecter via l'annuaire/IdP de l'entreprise (Entra ID, Okta, Keycloak...). Vous pourrez aussi configurer cela plus tard depuis les Paramètres."
   },
   "dashboard": {
     "reset": "Réinitialiser",
@@ -202,7 +242,27 @@
     "saved": "Paramètres enregistrés",
     "error": "Erreur",
     "requireValidation": "Activer le circuit de validation",
-    "requireValidationHelp": "Lorsqu'il est activé, les dépenses doivent être soumises pour validation et approuvées par un administrateur avant d'être exportées."
+    "requireValidationHelp": "Lorsqu'il est activé, les dépenses doivent être soumises pour validation et approuvées par un administrateur avant d'être exportées.",
+    "smtp": "Email (SMTP)",
+    "smtpHelp": "Utilisé pour envoyer les emails de réinitialisation de mot de passe aux utilisateurs.",
+    "smtpHost": "Serveur SMTP",
+    "smtpPort": "Port",
+    "smtpSecure": "Utiliser TLS (SSL)",
+    "smtpUser": "Nom d'utilisateur",
+    "smtpPassword": "Mot de passe",
+    "smtpFrom": "Adresse d'expédition",
+    "smtpFromPlaceholder": "Justif <no-reply@votre-domaine.example>",
+    "testEmail": "Envoyer un email de test",
+    "testEmailSuccess": "Email de test envoyé à {{email}}",
+    "testEmailError": "Échec de l'envoi de l'email de test",
+    "oidc": "Authentification unique (OIDC)",
+    "oidcHelp": "Permet aux utilisateurs de se connecter via l'annuaire/IdP de l'entreprise (Entra ID / Azure AD, Okta, Keycloak, Google Workspace...). Enregistrez cette URL de callback auprès de votre fournisseur : {{callbackUrl}}",
+    "oidcIssuerUrl": "URL de l'émetteur (issuer)",
+    "oidcClientId": "Client ID",
+    "oidcClientSecret": "Client secret",
+    "oidcScopes": "Scopes",
+    "oidcGroupsClaim": "Claim des groupes",
+    "oidcGroupsClaimHelp": "Nom du claim du jeton listant les groupes de l'utilisateur, utilisé pour le mapping groupe → rôle sur l'écran Rôles."
   },
   "audit": {
     "title": "Journal d'audit",
@@ -241,7 +301,10 @@
     "cancelEdit": "Annuler",
     "you": "vous",
     "createError": "Erreur lors de la création",
-    "updateError": "Erreur lors de la mise à jour"
+    "updateError": "Erreur lors de la mise à jour",
+    "sendResetEmail": "Envoyer un email de réinitialisation",
+    "resetEmailSent": "Email de réinitialisation envoyé à {{email}}",
+    "resetEmailError": "Échec de l'envoi de l'email - vérifiez la configuration SMTP"
   },
   "roles": {
     "title": "Rôles",
@@ -259,6 +322,9 @@
     "createError": "Erreur lors de la création du rôle",
     "updateError": "Erreur lors de la mise à jour du rôle",
     "deleteError": "Erreur lors de la suppression du rôle",
+    "oidcGroups": "Groupes OIDC",
+    "oidcGroupsHelp": "Noms de groupes de l'annuaire/IdP associés à ce rôle. À la connexion SSO, les utilisateurs concernés reçoivent exactement ce jeu de rôles d'après leur claim de groupes.",
+    "oidcGroupsPlaceholder": "ex. Finance-Admins, IT-Support",
     "permissionLabels": {
       "EXPORT": "Exporter les données de dépenses",
       "CONFIG_OCR": "Configurer l'OCR",

@@ -37,8 +37,11 @@ interface UserSummary {
 const ACTION_VALUES = [
   "auth.login",
   "auth.login_failed",
+  "auth.password_reset_requested",
+  "auth.password_reset_completed",
   "user.create",
   "user.update",
+  "user.password_reset_sent",
   "expense.create",
   "expense.update",
   "expense.delete",
@@ -52,7 +55,13 @@ type ActionTone = "slate" | "brand" | "blue" | "amber" | "red";
 
 function actionTone(action: string): ActionTone {
   if (action === "expense.delete") return "red";
-  if (action === "auth.login_failed" || action === "settings.update") return "amber";
+  if (
+    action === "auth.login_failed" ||
+    action === "settings.update" ||
+    action === "auth.password_reset_requested" ||
+    action === "user.password_reset_sent"
+  )
+    return "amber";
   if (action === "expense.create" || action.startsWith("export.")) return "brand";
   return "blue";
 }
