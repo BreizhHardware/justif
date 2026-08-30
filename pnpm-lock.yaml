@@ -76,8 +76,8 @@ importers:
         specifier: ^6.0.0
         version: 6.0.0
       '@types/better-sqlite3':
-        specifier: ^7.0.0
-        version: 7.6.13
+        specifier: ^9.0.0
+        version: 9.6.0
       '@types/cookie-parser':
         specifier: ^1.4.7
         version: 1.4.10(@types/express@5.0.6)
@@ -1422,8 +1422,8 @@ packages:
   '@types/bcrypt@6.0.0':
     resolution: {integrity: sha512-/oJGukuH3D2+D+3H4JWLaAsJ/ji86dhRidzZ/Od7H/i8g+aCmvkeCc6Ni/f9uxGLSQVCRZkX2/lqEFG2BvWtlQ==}
 
-  '@types/better-sqlite3@7.6.13':
-    resolution: {integrity: sha512-NMv9ASNARoKksWtsq/SHakpYAYnhBrQgGD8zkLYk/jaK8jUGn08CfEdTRgYhMypUQAfzSP8W6gNLe0q19/t4VA==}
+  '@types/better-sqlite3@9.6.0':
+    resolution: {integrity: sha512-ZEEwBSgMu7GYJOynoagg5X9JbxfL6dTJDsgViJIqh67jV44kyOr9RXfmFjLK5rzC4MWssP06t9hu/JwGDnUbCg==}
 
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
@@ -4497,7 +4497,7 @@ snapshots:
     dependencies:
       '@types/node': 24.13.3
 
-  '@types/better-sqlite3@7.6.13':
+  '@types/better-sqlite3@9.6.0':
     dependencies:
       '@types/node': 24.13.3
 
