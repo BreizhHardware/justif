@@ -20,7 +20,7 @@
     "seed:e2e": "tsx src/scripts/seed-e2e.ts"
   },
   "dependencies": {
-    "@archiver/archiver": "^0.1.0",
+    "@archiver/archiver": "^0.2.0",
     "@prisma/adapter-better-sqlite3": "^7.0.0",
     "@prisma/client": "^7.0.0",
     "bcrypt": "^6.0.0",
@@ -28,7 +28,7 @@
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^17.0.0",
-    "documonster": "^0.10.0",
+    "documonster": "^0.11.0",
     "express": "^5.0.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.0",
