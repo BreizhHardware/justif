@@ -7,7 +7,7 @@
   "features": {
     "ghcr.io/devcontainers-extra/features/pnpm:2": {},
     "ghcr.io/helpers4/devcontainer/pnpm-store:1": {},
-    "ghcr.io/devcontainers/features/docker-in-docker:4.1.0": {
+    "ghcr.io/devcontainers/features/docker-in-docker:4.1.1": {
       "moby": false
     }
   },
