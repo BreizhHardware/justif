@@ -20,12 +20,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v7
+      - name: Install pnpm and Node.js
+        uses: pnpm/setup@1
         with:
-          node-version: 24
-
-      - name: Enable pnpm
-        run: corepack enable && corepack prepare pnpm@9.12.0 --activate
+          runtime: node@24
+          cache: true
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

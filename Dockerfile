@@ -7,7 +7,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends openssl python3 make g++ \
     && rm -rf /var/lib/apt/lists/*
 
-RUN corepack enable && corepack prepare pnpm@11.10.0 --activate
+RUN npm install -g pnpm@12.7.0
 ENV PNPM_CONFIG_VERIFY_DEPS_BEFORE_RUN=false
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
@@ -32,7 +32,7 @@ RUN pnpm deploy --filter backend --prod --legacy /deploy/backend
 FROM node:24-bookworm-slim AS frontend-build
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@11.10.0 --activate
+RUN npm install -g pnpm@12.7.0
 ENV PNPM_CONFIG_VERIFY_DEPS_BEFORE_RUN=false
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
@@ -56,7 +56,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends openssl \
     && rm -rf /var/lib/apt/lists/*
 
-RUN corepack enable && corepack prepare pnpm@11.10.0 --activate
+RUN npm install -g pnpm@12.7.0
 ENV PNPM_CONFIG_VERIFY_DEPS_BEFORE_RUN=false
 
 RUN groupadd -r app && useradd -r -m -g app -d /home/app app
