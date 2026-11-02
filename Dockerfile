@@ -1,7 +1,7 @@
 # Single image: backend + frontend + internal proxy, one exposed port.
 
 # ---------- Backend build ----------
-FROM node:24-bookworm-slim AS backend-build
+FROM node:26-bookworm-slim AS backend-build
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends openssl python3 make g++ \
@@ -29,7 +29,7 @@ RUN pnpm --filter backend run db:generate && pnpm --filter backend run build
 RUN pnpm deploy --filter backend --prod --legacy /deploy/backend
 
 # ---------- Frontend build ----------
-FROM node:24-bookworm-slim AS frontend-build
+FROM node:26-bookworm-slim AS frontend-build
 WORKDIR /app
 
 RUN npm install -g pnpm@12.7.0
@@ -50,7 +50,7 @@ RUN pnpm --filter frontend run build
 RUN pnpm deploy --filter frontend --legacy /deploy/frontend
 
 # ---------- Runtime ----------
-FROM node:24-bookworm-slim AS runtime
+FROM node:26-bookworm-slim AS runtime
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends openssl \
