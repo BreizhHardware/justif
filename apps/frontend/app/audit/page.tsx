@@ -183,6 +183,9 @@ export default function AuditPage() {
                 {t("audit.columns.actor")}
               </th>
               <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                {t("audit.columns.ip")}
+              </th>
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {t("audit.columns.action")}
               </th>
               <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
@@ -197,7 +200,7 @@ export default function AuditPage() {
             {response?.data.length === 0 && (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="px-4 py-10 text-center text-slate-400 dark:text-slate-500"
                 >
                   {t("audit.noResults")}
@@ -218,6 +221,9 @@ export default function AuditPage() {
                       {t("audit.deletedUser")}
                     </span>
                   )}
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-slate-500 dark:text-slate-400">
+                  {log.ip ? log.ip.replace(/^::ffff:/, "") : "-"}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3">
                   <Badge tone={actionTone(log.action)}>{log.action}</Badge>

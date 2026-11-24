@@ -278,6 +278,7 @@
     },
     "columns": {
       "timestamp": "Timestamp",
+      "ip": "IP address",
       "actor": "Actor",
       "action": "Action",
       "entity": "Entity",

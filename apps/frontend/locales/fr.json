@@ -278,6 +278,7 @@
     },
     "columns": {
       "timestamp": "Horodatage",
+      "ip": "Adresse IP",
       "actor": "Acteur",
       "action": "Action",
       "entity": "Entité",
