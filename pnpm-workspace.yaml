@@ -8,3 +8,6 @@ allowBuilds:
   esbuild: true
   prisma: true
   sharp: true
+overrides:
+  effect: "^3.22.1"
+  fflate: ">=0.7.5"
