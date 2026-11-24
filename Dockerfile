@@ -74,6 +74,9 @@ RUN mkdir -p /app/backend/uploads /app/backend/db \
 
 # Single public port. BACKEND_PORT/FRONTEND_PORT are internal ports.
 ENV PORT=3000
+# The image's internal proxy is one hop in front of the backend. Behind your own reverse
+# proxy, set TRUST_PROXY=2 so the real client IP is read from X-Forwarded-For.
+ENV TRUST_PROXY=1
 ENV BACKEND_PORT=3001
 ENV FRONTEND_PORT=3002
 
