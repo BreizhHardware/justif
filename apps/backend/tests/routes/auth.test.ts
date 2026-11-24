@@ -283,7 +283,7 @@ describe("PATCH /api/auth/me", () => {
         password: "brand-new-password",
       });
       expect(res.status).toBe(200);
-      expect((await res.json()).token).toBeDefined();
+      expect((await res.json()).ok).toBe(true);
 
       // The new session cookie set by reset-password should already be authenticated.
       const me = await client.get("/api/auth/me");

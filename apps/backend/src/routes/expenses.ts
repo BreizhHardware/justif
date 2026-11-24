@@ -23,9 +23,18 @@ import type { Permission } from "../lib/permissions.js";
 const router = Router();
 const UPLOAD_DIR = process.env.UPLOAD_DIR ?? "./uploads";
 
+const ALLOWED_UPLOAD_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 15 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (!ALLOWED_UPLOAD_TYPES.includes(file.mimetype)) {
+      cb(new Error("Unsupported format. Use JPEG, PNG, WebP or PDF."));
+      return;
+    }
+    cb(null, true);
+  },
 });
 
 function cuid(): string {
@@ -40,8 +49,8 @@ async function saveUploadedFile(file: Express.Multer.File, date: Date): Promise<
   await fs.mkdir(dir, { recursive: true });
 
   const isImage = file.mimetype.startsWith("image/");
-  const ext = isImage ? "jpg" : path.extname(file.originalname) || ".pdf";
-  const filename = `${cuid()}${isImage ? "." + ext : ext}`;
+  // Extension is derived from the validated type, never from the client's filename.
+  const filename = `${cuid()}${isImage ? ".jpg" : ".pdf"}`;
   const fullPath = path.join(dir, filename);
 
   if (isImage) {
@@ -71,6 +80,57 @@ function parseExpenseBody(body: Record<string, string>) {
     pays: body.pays ?? undefined,
     langue_detectee: body.langue_detectee ?? undefined,
   };
+}
+
+const MAX_TEXT = 500;
+
+// Returns an error message when the parsed body contains an unusable value, so bad
+// input yields a 400 instead of a database error / 500.
+function validateExpenseBody(parsed: ReturnType<typeof parseExpenseBody>): string | null {
+  if (parsed.date && Number.isNaN(parsed.date.getTime())) return "Invalid date";
+  for (const key of ["montant_ttc", "montant_ht", "tva"] as const) {
+    const value = parsed[key];
+    if (value !== undefined && !Number.isFinite(value)) return `Invalid ${key}`;
+  }
+  if (parsed.devise !== undefined && !/^[A-Za-z]{3}$/.test(parsed.devise)) {
+    return "Invalid currency code";
+  }
+  for (const key of [
+    "fournisseur",
+    "numero_reference",
+    "categorie",
+    "description",
+    "pays",
+    "langue_detectee",
+  ] as const) {
+    const value = parsed[key];
+    if (value !== undefined && value.length > MAX_TEXT) return `${key} is too long`;
+  }
+  return null;
+}
+
+function isValidDateParam(value: string | undefined): boolean {
+  return value === undefined || value === "" || !Number.isNaN(new Date(value).getTime());
+}
+
+// Rejects the request when ?from= / ?to= aren't valid dates.
+function rejectInvalidRange(req: Request, res: Response): boolean {
+  const { from, to } = req.query as Record<string, string | undefined>;
+  if (!isValidDateParam(from) || !isValidDateParam(to)) {
+    res.status(400).json({ error: "Invalid from/to date" });
+    return true;
+  }
+  return false;
+}
+
+// Blocks cross-site navigations (e.g. a malicious page linking to the export URL,
+// which would otherwise flip expense statuses via a state-changing GET).
+function rejectCrossSite(req: Request, res: Response): boolean {
+  if (req.headers["sec-fetch-site"] === "cross-site") {
+    res.status(403).json({ error: "Cross-site requests are not allowed" });
+    return true;
+  }
+  return false;
 }
 
 // Resolves whose expenses to display: the caller themselves, or,
@@ -153,8 +213,9 @@ router.get("/", async (req, res) => {
 
   const where = buildWhere({ from, to, categorie, devise, q, status }, targetUserId);
 
-  const pageNum = Math.max(1, Number(page));
-  const limitNum = Math.max(1, Number(limit));
+  if (rejectInvalidRange(req, res)) return;
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
   const allowedSort = [
     "date",
     "fournisseur",
@@ -182,62 +243,78 @@ router.get("/", async (req, res) => {
   res.json({ data, total, page: pageNum, pages: Math.ceil(total / limitNum) });
 });
 
-router.post("/", upload.single("fichier"), async (req, res) => {
-  try {
-    const parsed = parseExpenseBody(req.body);
-    if (!parsed.date) {
-      res.status(400).json({ error: "Date required" });
-      return;
-    }
+router.post(
+  "/",
+  (req, res, next) =>
+    upload.single("fichier")(req, res, (err) => {
+      if (err) {
+        res.status(400).json({ error: err instanceof Error ? err.message : "Invalid upload" });
+        return;
+      }
+      next();
+    }),
+  async (req, res) => {
+    try {
+      const parsed = parseExpenseBody(req.body);
+      if (!parsed.date) {
+        res.status(400).json({ error: "Date required" });
+        return;
+      }
+      const invalid = validateExpenseBody(parsed);
+      if (invalid) {
+        res.status(400).json({ error: invalid });
+        return;
+      }
 
-    const defaultCurrency = await getDefaultCurrency();
-    const devise = parsed.devise ?? defaultCurrency;
+      const defaultCurrency = await getDefaultCurrency();
+      const devise = parsed.devise ?? defaultCurrency;
 
-    let fichier: string | undefined;
-    if (req.file) {
-      fichier = await saveUploadedFile(req.file, parsed.date);
-    }
+      let fichier: string | undefined;
+      if (req.file) {
+        fichier = await saveUploadedFile(req.file, parsed.date);
+      }
 
-    const conversion = await convertExpenseAmounts({
-      devise,
-      date: parsed.date,
-      montant_ttc: parsed.montant_ttc ?? null,
-      montant_ht: parsed.montant_ht ?? null,
-      defaultCurrency,
-    });
-
-    const expense = await prisma.expense.create({
-      data: {
-        date: parsed.date,
-        fournisseur: parsed.fournisseur,
-        numero_reference: parsed.numero_reference,
-        categorie: parsed.categorie ?? "Autre",
-        description: parsed.description,
+      const conversion = await convertExpenseAmounts({
         devise,
-        montant_ttc: parsed.montant_ttc,
-        montant_ht: parsed.montant_ht,
-        tva: parsed.tva,
-        pays: parsed.pays,
-        langue_detectee: parsed.langue_detectee,
-        fichier,
+        date: parsed.date,
+        montant_ttc: parsed.montant_ttc ?? null,
+        montant_ht: parsed.montant_ht ?? null,
+        defaultCurrency,
+      });
+
+      const expense = await prisma.expense.create({
+        data: {
+          date: parsed.date,
+          fournisseur: parsed.fournisseur,
+          numero_reference: parsed.numero_reference,
+          categorie: parsed.categorie ?? "Autre",
+          description: parsed.description,
+          devise,
+          montant_ttc: parsed.montant_ttc,
+          montant_ht: parsed.montant_ht,
+          tva: parsed.tva,
+          pays: parsed.pays,
+          langue_detectee: parsed.langue_detectee,
+          fichier,
+          userId: req.user!.id,
+          ...conversion,
+        },
+      });
+      await audit({
         userId: req.user!.id,
-        ...conversion,
-      },
-    });
-    await audit({
-      userId: req.user!.id,
-      action: "expense.create",
-      entityType: "Expense",
-      entityId: expense.id,
-      metadata: { categorie: expense.categorie, devise: expense.devise },
-      ip: ipFromReq(req),
-    });
-    res.status(201).json(expense);
-  } catch (err) {
-    console.error("[expenses] Creation error:", err);
-    res.status(500).json({ error: "Error creating expense" });
-  }
-});
+        action: "expense.create",
+        entityType: "Expense",
+        entityId: expense.id,
+        metadata: { categorie: expense.categorie, devise: expense.devise },
+        ip: ipFromReq(req),
+      });
+      res.status(201).json(expense);
+    } catch (err) {
+      console.error("[expenses] Creation error:", err);
+      res.status(500).json({ error: "Error creating expense" });
+    }
+  },
+);
 
 router.patch("/:id", async (req, res) => {
   try {
@@ -252,6 +329,11 @@ router.patch("/:id", async (req, res) => {
     }
 
     const parsed = parseExpenseBody(req.body);
+    const invalid = validateExpenseBody(parsed);
+    if (invalid) {
+      res.status(400).json({ error: invalid });
+      return;
+    }
     const defaultCurrency = await getDefaultCurrency();
 
     const nextDate = parsed.date ?? existing.date;
@@ -414,6 +496,7 @@ router.delete("/:id", async (req, res) => {
 // Before generating an export, returns which expenses in the current filter have already
 // been included in a previous report, so the user can choose to re-include them or not.
 router.get("/export-overlap", async (req, res) => {
+  if (rejectInvalidRange(req, res)) return;
   const targetUserId = await resolveTargetUserId(req, res, "EXPORT");
   if (!targetUserId) return;
 
@@ -452,6 +535,7 @@ router.get("/export-overlap", async (req, res) => {
 });
 
 router.get("/export", async (req, res) => {
+  if (rejectCrossSite(req, res) || rejectInvalidRange(req, res)) return;
   const targetUserId = await resolveTargetUserId(req, res, "EXPORT");
   if (!targetUserId) return;
 
@@ -525,7 +609,7 @@ router.get("/export", async (req, res) => {
     archive.pipe(res);
 
     const excelBuffer = await Workbook.toBuffer(workbook);
-    archive.append(excelBuffer, { name: xlsxFilename });
+    archive.append(Buffer.from(excelBuffer), { name: xlsxFilename });
 
     for (const expense of converted) {
       const attachmentFilename = attachmentMap.get(expense.id);

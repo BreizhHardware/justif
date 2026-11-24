@@ -34,7 +34,7 @@ export default defineConfig({
       // the dev database. Port 3000 must be free when running `pnpm test`.
       command: "pnpm --filter backend run dev",
       port: 3000,
-      env: { DATABASE_URL: E2E_DATABASE_URL },
+      env: { DATABASE_URL: E2E_DATABASE_URL, RATE_LIMIT_DISABLED: "true" },
       reuseExistingServer: false,
       timeout: 60_000,
     },

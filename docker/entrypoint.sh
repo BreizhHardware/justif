@@ -7,7 +7,8 @@ FRONTEND_PORT="${FRONTEND_PORT:-3002}"
 
 cd /app/backend
 pnpm run db:deploy
-PORT="$BACKEND_PORT" node dist/index.js &
+# Loopback only: the backend must be reached through the internal proxy (trusted X-Forwarded-For).
+BACKEND_HOST=127.0.0.1 PORT="$BACKEND_PORT" node dist/index.js &
 BACKEND_PID=$!
 
 cd /app/frontend

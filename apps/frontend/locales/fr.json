@@ -217,6 +217,7 @@
     }
   },
   "upload": {
+    "saveError": "Erreur lors de l'enregistrement",
     "title": "Importer un justificatif",
     "dropzone": "Glissez un fichier ici ou cliquez pour sélectionner",
     "analyzing": "Analyse en cours...",
@@ -278,6 +279,7 @@
     },
     "columns": {
       "timestamp": "Horodatage",
+      "ip": "Adresse IP",
       "actor": "Acteur",
       "action": "Action",
       "entity": "Entité",
