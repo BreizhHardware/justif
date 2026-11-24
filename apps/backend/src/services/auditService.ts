@@ -34,12 +34,9 @@ export interface AuditEntry {
   ip?: string | null;
 }
 
+// Relies on Express's `req.ip`, which only honours X-Forwarded-For when
+// `trust proxy` is configured (TRUST_PROXY env), so clients can't spoof it.
 export function ipFromReq(req: Request): string | null {
-  const forwarded = req.headers["x-forwarded-for"];
-  if (forwarded) {
-    const first = Array.isArray(forwarded) ? forwarded[0] : forwarded.split(",")[0];
-    return first?.trim() ?? null;
-  }
   return req.ip ?? null;
 }
 

@@ -23,9 +23,18 @@ import type { Permission } from "../lib/permissions.js";
 const router = Router();
 const UPLOAD_DIR = process.env.UPLOAD_DIR ?? "./uploads";
 
+const ALLOWED_UPLOAD_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 15 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (!ALLOWED_UPLOAD_TYPES.includes(file.mimetype)) {
+      cb(new Error("Unsupported format. Use JPEG, PNG, WebP or PDF."));
+      return;
+    }
+    cb(null, true);
+  },
 });
 
 function cuid(): string {
@@ -40,8 +49,8 @@ async function saveUploadedFile(file: Express.Multer.File, date: Date): Promise<
   await fs.mkdir(dir, { recursive: true });
 
   const isImage = file.mimetype.startsWith("image/");
-  const ext = isImage ? "jpg" : path.extname(file.originalname) || ".pdf";
-  const filename = `${cuid()}${isImage ? "." + ext : ext}`;
+  // Extension is derived from the validated type, never from the client's filename.
+  const filename = `${cuid()}${isImage ? ".jpg" : ".pdf"}`;
   const fullPath = path.join(dir, filename);
 
   if (isImage) {
@@ -182,62 +191,73 @@ router.get("/", async (req, res) => {
   res.json({ data, total, page: pageNum, pages: Math.ceil(total / limitNum) });
 });
 
-router.post("/", upload.single("fichier"), async (req, res) => {
-  try {
-    const parsed = parseExpenseBody(req.body);
-    if (!parsed.date) {
-      res.status(400).json({ error: "Date required" });
-      return;
-    }
+router.post(
+  "/",
+  (req, res, next) =>
+    upload.single("fichier")(req, res, (err) => {
+      if (err) {
+        res.status(400).json({ error: err instanceof Error ? err.message : "Invalid upload" });
+        return;
+      }
+      next();
+    }),
+  async (req, res) => {
+    try {
+      const parsed = parseExpenseBody(req.body);
+      if (!parsed.date) {
+        res.status(400).json({ error: "Date required" });
+        return;
+      }
 
-    const defaultCurrency = await getDefaultCurrency();
-    const devise = parsed.devise ?? defaultCurrency;
+      const defaultCurrency = await getDefaultCurrency();
+      const devise = parsed.devise ?? defaultCurrency;
 
-    let fichier: string | undefined;
-    if (req.file) {
-      fichier = await saveUploadedFile(req.file, parsed.date);
-    }
+      let fichier: string | undefined;
+      if (req.file) {
+        fichier = await saveUploadedFile(req.file, parsed.date);
+      }
 
-    const conversion = await convertExpenseAmounts({
-      devise,
-      date: parsed.date,
-      montant_ttc: parsed.montant_ttc ?? null,
-      montant_ht: parsed.montant_ht ?? null,
-      defaultCurrency,
-    });
-
-    const expense = await prisma.expense.create({
-      data: {
-        date: parsed.date,
-        fournisseur: parsed.fournisseur,
-        numero_reference: parsed.numero_reference,
-        categorie: parsed.categorie ?? "Autre",
-        description: parsed.description,
+      const conversion = await convertExpenseAmounts({
         devise,
-        montant_ttc: parsed.montant_ttc,
-        montant_ht: parsed.montant_ht,
-        tva: parsed.tva,
-        pays: parsed.pays,
-        langue_detectee: parsed.langue_detectee,
-        fichier,
+        date: parsed.date,
+        montant_ttc: parsed.montant_ttc ?? null,
+        montant_ht: parsed.montant_ht ?? null,
+        defaultCurrency,
+      });
+
+      const expense = await prisma.expense.create({
+        data: {
+          date: parsed.date,
+          fournisseur: parsed.fournisseur,
+          numero_reference: parsed.numero_reference,
+          categorie: parsed.categorie ?? "Autre",
+          description: parsed.description,
+          devise,
+          montant_ttc: parsed.montant_ttc,
+          montant_ht: parsed.montant_ht,
+          tva: parsed.tva,
+          pays: parsed.pays,
+          langue_detectee: parsed.langue_detectee,
+          fichier,
+          userId: req.user!.id,
+          ...conversion,
+        },
+      });
+      await audit({
         userId: req.user!.id,
-        ...conversion,
-      },
-    });
-    await audit({
-      userId: req.user!.id,
-      action: "expense.create",
-      entityType: "Expense",
-      entityId: expense.id,
-      metadata: { categorie: expense.categorie, devise: expense.devise },
-      ip: ipFromReq(req),
-    });
-    res.status(201).json(expense);
-  } catch (err) {
-    console.error("[expenses] Creation error:", err);
-    res.status(500).json({ error: "Error creating expense" });
-  }
-});
+        action: "expense.create",
+        entityType: "Expense",
+        entityId: expense.id,
+        metadata: { categorie: expense.categorie, devise: expense.devise },
+        ip: ipFromReq(req),
+      });
+      res.status(201).json(expense);
+    } catch (err) {
+      console.error("[expenses] Creation error:", err);
+      res.status(500).json({ error: "Error creating expense" });
+    }
+  },
+);
 
 router.patch("/:id", async (req, res) => {
   try {
@@ -525,7 +545,7 @@ router.get("/export", async (req, res) => {
     archive.pipe(res);
 
     const excelBuffer = await Workbook.toBuffer(workbook);
-    archive.append(excelBuffer, { name: xlsxFilename });
+    archive.append(Buffer.from(excelBuffer), { name: xlsxFilename });
 
     for (const expense of converted) {
       const attachmentFilename = attachmentMap.get(expense.id);

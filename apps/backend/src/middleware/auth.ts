@@ -1,9 +1,10 @@
 import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { prisma } from "../lib/prisma.js";
+import { getJwtSecret } from "../lib/jwtSecret.js";
 import { getUserRolesAndPermissions, type Permission } from "../lib/permissions.js";
 
-const JWT_SECRET = process.env.JWT_SECRET ?? "change_me_in_production_min_32_chars";
+const JWT_SECRET = getJwtSecret();
 const TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
 const RENEW_THRESHOLD_SECONDS = 7 * 24 * 60 * 60;
 
@@ -65,6 +66,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       res.cookie("token", fresh, {
         httpOnly: true,
         sameSite: "lax",
+        secure: process.env.COOKIE_SECURE === "true",
         maxAge: TOKEN_TTL_SECONDS * 1000,
       });
     }

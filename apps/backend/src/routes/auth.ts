@@ -11,16 +11,24 @@ import {
   consumePasswordResetToken,
 } from "../services/passwordResetService.js";
 import { sendPasswordResetEmail } from "../services/emailService.js";
+import { authLimiter } from "../middleware/rateLimit.js";
 import { discoverOidcClient, getOidcSettings } from "../services/oidcService.js";
 
 const router = Router();
-const COOKIE_OPTS = { httpOnly: true, sameSite: "lax" as const, maxAge: 30 * 24 * 60 * 60 * 1000 };
+const DUMMY_HASH = bcrypt.hashSync("dummy-password-for-timing", 12);
+const COOKIE_OPTS = {
+  httpOnly: true,
+  sameSite: "lax" as const,
+  secure: process.env.COOKIE_SECURE === "true",
+  maxAge: 30 * 24 * 60 * 60 * 1000,
+};
 // Short-lived cookie holding the PKCE verifier, state and nonce of an in-flight
 // OIDC login, scoped to the /oidc routes only. Not a session credential.
 const OIDC_FLOW_COOKIE = "oidc_flow";
 const OIDC_FLOW_COOKIE_OPTS = {
   httpOnly: true,
   sameSite: "lax" as const,
+  secure: process.env.COOKIE_SECURE === "true",
   maxAge: 10 * 60 * 1000,
   path: "/api/auth/oidc",
 };
@@ -33,13 +41,7 @@ function redirectToLoginWithError(res: Response, code: string) {
   res.redirect(`${getAppUrl()}/login?error=${encodeURIComponent(code)}`);
 }
 
-router.post("/setup", async (req, res) => {
-  const existing = await prisma.user.findFirst();
-  if (existing) {
-    res.status(403).json({ error: "An account already exists" });
-    return;
-  }
-
+router.post("/setup", authLimiter, async (req, res) => {
   const { email, password } = req.body as { email?: string; password?: string };
   if (!email || !password || password.length < 8) {
     res.status(400).json({ error: "Email and password (min. 8 characters) required" });
@@ -48,18 +50,25 @@ router.post("/setup", async (req, res) => {
 
   const passwordHash = await bcrypt.hash(password, 12);
   const adminRole = await prisma.role.findUniqueOrThrow({ where: { name: SEED_ROLE_NAMES.ADMIN } });
+  // The "no user yet" check and the creation run in one transaction (writes are
+  // serialized), so concurrent requests can't each create an admin.
   const user = await prisma.$transaction(async (tx) => {
+    if (await tx.user.findFirst()) return null;
     const created = await tx.user.create({ data: { email, passwordHash } });
     await tx.userRole.create({ data: { userId: created.id, roleId: adminRole.id } });
     return created;
   });
+  if (!user) {
+    res.status(403).json({ error: "An account already exists" });
+    return;
+  }
 
   const token = signToken(user.id);
   res.cookie("token", token, COOKIE_OPTS);
   res.json({ token });
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", authLimiter, async (req, res) => {
   const { email, password } = req.body as { email?: string; password?: string };
   if (!email || !password) {
     res.status(400).json({ error: "Email and password required" });
@@ -69,7 +78,9 @@ router.post("/login", async (req, res) => {
   const ip = ipFromReq(req);
   const user = await prisma.user.findUnique({ where: { email } });
   // Accounts provisioned exclusively via OIDC have no local password to check.
-  if (!user || !user.passwordHash || !(await bcrypt.compare(password, user.passwordHash))) {
+  // Always run a bcrypt comparison so response time doesn't reveal whether the account exists.
+  const passwordOk = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_HASH);
+  if (!user || !user.passwordHash || !passwordOk) {
     await audit({ action: "auth.login_failed", metadata: { reason: "invalid_credentials" }, ip });
     res.status(401).json({ error: "Invalid credentials" });
     return;
@@ -91,7 +102,7 @@ router.post("/login", async (req, res) => {
   res.json({ token });
 });
 
-router.post("/forgot-password", async (req, res) => {
+router.post("/forgot-password", authLimiter, async (req, res) => {
   const { email } = req.body as { email?: string };
   if (!email) {
     res.status(400).json({ error: "Email required" });
@@ -122,7 +133,7 @@ router.post("/forgot-password", async (req, res) => {
   res.json(genericResponse);
 });
 
-router.post("/reset-password", async (req, res) => {
+router.post("/reset-password", authLimiter, async (req, res) => {
   const { token, password } = req.body as { token?: string; password?: string };
   if (!token || !password || password.length < 8) {
     res.status(400).json({ error: "Token and password (min. 8 characters) required" });
@@ -351,6 +362,17 @@ router.get("/oidc/callback", async (req, res) => {
   let linked = false;
   if (!user) {
     const existingByEmail = await prisma.user.findUnique({ where: { email } });
+    // Linking to a pre-existing account by email requires the IdP to positively
+    // assert the email is verified (a missing claim isn't enough).
+    if (existingByEmail && claims.email_verified !== true) {
+      await audit({
+        action: "auth.oidc_login_failed",
+        metadata: { reason: "email_not_verified_for_linking", email },
+        ip,
+      });
+      redirectToLoginWithError(res, "oidc_unverified_email");
+      return;
+    }
     if (existingByEmail) {
       user = await prisma.user.update({
         where: { id: existingByEmail.id },

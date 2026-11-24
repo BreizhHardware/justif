@@ -178,7 +178,11 @@ function buildExpensesSheet(
   Worksheet.autoFitColumns(sheet);
 }
 
-function buildSummarySheet(workbook: Workbook.Handle, expenses: Expense[], defaultCurrency: string) {
+function buildSummarySheet(
+  workbook: Workbook.Handle,
+  expenses: Expense[],
+  defaultCurrency: string,
+) {
   const sheet = Workbook.addWorksheet(workbook, "Summary");
 
   const byCategorie = new Map<string, { count: number; total: number }>();
