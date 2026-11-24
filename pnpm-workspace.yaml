@@ -10,4 +10,4 @@ allowBuilds:
   sharp: true
 overrides:
   effect: "^3.22.1"
-  fflate: ">=0.7.5"
+  fflate: "^0.7.5"

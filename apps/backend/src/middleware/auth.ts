@@ -10,6 +10,8 @@ const RENEW_THRESHOLD_SECONDS = 7 * 24 * 60 * 60;
 
 export interface AuthTokenPayload {
   sub: string;
+  /** Session version: User.sessionsValidFrom (epoch ms) at issuance, 0 if never revoked. */
+  sv?: number;
   iat: number;
   exp: number;
 }
@@ -31,8 +33,17 @@ declare global {
   }
 }
 
-export function signToken(userId: string): string {
-  return jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: TOKEN_TTL_SECONDS });
+export function sessionVersion(sessionsValidFrom: Date | null | undefined): number {
+  return sessionsValidFrom ? sessionsValidFrom.getTime() : 0;
+}
+
+// The token embeds the user's current session version. A password change/reset bumps
+// User.sessionsValidFrom, which invalidates every token carrying the old version
+// (exact comparison: no clock-resolution gap, unlike comparing against `iat`).
+export function signToken(userId: string, sessionsValidFrom?: Date | null): string {
+  return jwt.sign({ sub: userId, sv: sessionVersion(sessionsValidFrom) }, JWT_SECRET, {
+    expiresIn: TOKEN_TTL_SECONDS,
+  });
 }
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
@@ -49,11 +60,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       res.status(401).json({ error: "Account disabled or not found" });
       return;
     }
-    // Reject sessions issued before the last password change/reset (iat has 1s resolution).
-    if (
-      user.sessionsValidFrom &&
-      payload.iat < Math.floor(user.sessionsValidFrom.getTime() / 1000)
-    ) {
+    if ((payload.sv ?? 0) !== sessionVersion(user.sessionsValidFrom)) {
       res.status(401).json({ error: "Invalid or expired session" });
       return;
     }
@@ -70,7 +77,20 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 
     const secondsLeft = payload.exp - Math.floor(Date.now() / 1000);
     if (secondsLeft < RENEW_THRESHOLD_SECONDS) {
-      const fresh = signToken(user.id);
+      // Re-read the version: a password change may have committed since we loaded `user`.
+      const current = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { active: true, sessionsValidFrom: true },
+      });
+      if (
+        !current ||
+        !current.active ||
+        (payload.sv ?? 0) !== sessionVersion(current.sessionsValidFrom)
+      ) {
+        res.status(401).json({ error: "Invalid or expired session" });
+        return;
+      }
+      const fresh = signToken(user.id, current.sessionsValidFrom);
       res.cookie("token", fresh, {
         httpOnly: true,
         sameSite: "lax",

@@ -63,7 +63,7 @@ router.post("/setup", authLimiter, async (req, res) => {
     return;
   }
 
-  res.cookie("token", signToken(user.id), COOKIE_OPTS);
+  res.cookie("token", signToken(user.id, user.sessionsValidFrom), COOKIE_OPTS);
   res.json({ ok: true });
 });
 
@@ -95,7 +95,17 @@ router.post("/login", authLimiter, async (req, res) => {
     return;
   }
 
-  res.cookie("token", signToken(user.id), COOKIE_OPTS);
+  // Bind the session to the password that was just verified: if it was changed or reset
+  // while bcrypt was running, don't issue a session for the old credentials.
+  const current = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { passwordHash: true, sessionsValidFrom: true, active: true },
+  });
+  if (!current || !current.active || current.passwordHash !== user.passwordHash) {
+    res.status(401).json({ error: "Invalid credentials" });
+    return;
+  }
+  res.cookie("token", signToken(user.id, current.sessionsValidFrom), COOKIE_OPTS);
   await audit({ userId: user.id, action: "auth.login", ip });
   res.json({ ok: true });
 });
@@ -156,7 +166,7 @@ router.post("/reset-password", authLimiter, async (req, res) => {
     return;
   }
 
-  res.cookie("token", signToken(user.id), COOKIE_OPTS);
+  res.cookie("token", signToken(user.id, user.sessionsValidFrom), COOKIE_OPTS);
   res.json({ ok: true });
 });
 
@@ -416,7 +426,7 @@ router.get("/oidc/callback", async (req, res) => {
   }
   await audit({ userId: user.id, action: "auth.oidc_login", ip });
 
-  const token = signToken(user.id);
+  const token = signToken(user.id, user.sessionsValidFrom);
   res.cookie("token", token, COOKIE_OPTS);
   res.redirect(`${getAppUrl()}/dashboard`);
 });

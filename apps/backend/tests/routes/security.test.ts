@@ -172,3 +172,16 @@ describe("export CSRF guard", () => {
     expect(res.status).toBe(403);
   });
 });
+
+describe("session version binding", () => {
+  it("rejects a token carrying an outdated session version, even within the same second", async () => {
+    const user = await createUser({ email: "sv@justif.test" });
+    const client = await login("sv@justif.test");
+    expect((await client.get("/api/auth/me")).status).toBe(200);
+    const { prisma } = await import("../../src/lib/prisma.js");
+    await prisma.user.update({ where: { id: user.id }, data: { sessionsValidFrom: new Date() } });
+    expect((await client.get("/api/auth/me")).status).toBe(401);
+    const fresh = await login("sv@justif.test");
+    expect((await fresh.get("/api/auth/me")).status).toBe(200);
+  });
+});

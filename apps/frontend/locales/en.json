@@ -217,6 +217,7 @@
     }
   },
   "upload": {
+    "saveError": "Failed to save the expense",
     "title": "Import a receipt",
     "dropzone": "Drop a file here or click to select",
     "analyzing": "Analyzing…",
