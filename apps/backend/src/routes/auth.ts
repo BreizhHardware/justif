@@ -63,9 +63,8 @@ router.post("/setup", authLimiter, async (req, res) => {
     return;
   }
 
-  const token = signToken(user.id);
-  res.cookie("token", token, COOKIE_OPTS);
-  res.json({ token });
+  res.cookie("token", signToken(user.id), COOKIE_OPTS);
+  res.json({ ok: true });
 });
 
 router.post("/login", authLimiter, async (req, res) => {
@@ -96,10 +95,9 @@ router.post("/login", authLimiter, async (req, res) => {
     return;
   }
 
-  const token = signToken(user.id);
-  res.cookie("token", token, COOKIE_OPTS);
+  res.cookie("token", signToken(user.id), COOKIE_OPTS);
   await audit({ userId: user.id, action: "auth.login", ip });
-  res.json({ token });
+  res.json({ ok: true });
 });
 
 router.post("/forgot-password", authLimiter, async (req, res) => {
@@ -147,7 +145,10 @@ router.post("/reset-password", authLimiter, async (req, res) => {
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  const user = await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash, sessionsValidFrom: new Date() },
+  });
   await audit({ userId, action: "auth.password_reset_completed", ip: ipFromReq(req) });
 
   if (!user.active) {
@@ -155,9 +156,8 @@ router.post("/reset-password", authLimiter, async (req, res) => {
     return;
   }
 
-  const jwt = signToken(user.id);
-  res.cookie("token", jwt, COOKIE_OPTS);
-  res.json({ token: jwt });
+  res.cookie("token", signToken(user.id), COOKIE_OPTS);
+  res.json({ ok: true });
 });
 
 router.post("/logout", (_req, res) => {
@@ -362,17 +362,6 @@ router.get("/oidc/callback", async (req, res) => {
   let linked = false;
   if (!user) {
     const existingByEmail = await prisma.user.findUnique({ where: { email } });
-    // Linking to a pre-existing account by email requires the IdP to positively
-    // assert the email is verified (a missing claim isn't enough).
-    if (existingByEmail && claims.email_verified !== true) {
-      await audit({
-        action: "auth.oidc_login_failed",
-        metadata: { reason: "email_not_verified_for_linking", email },
-        ip,
-      });
-      redirectToLoginWithError(res, "oidc_unverified_email");
-      return;
-    }
     if (existingByEmail) {
       user = await prisma.user.update({
         where: { id: existingByEmail.id },

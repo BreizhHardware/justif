@@ -49,6 +49,14 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       res.status(401).json({ error: "Account disabled or not found" });
       return;
     }
+    // Reject sessions issued before the last password change/reset (iat has 1s resolution).
+    if (
+      user.sessionsValidFrom &&
+      payload.iat < Math.floor(user.sessionsValidFrom.getTime() / 1000)
+    ) {
+      res.status(401).json({ error: "Invalid or expired session" });
+      return;
+    }
     const { roles, permissions } = await getUserRolesAndPermissions(user.id);
     req.user = {
       id: user.id,

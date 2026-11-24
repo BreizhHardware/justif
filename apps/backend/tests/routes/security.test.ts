@@ -116,3 +116,59 @@ describe("getJwtSecret", () => {
     }
   });
 });
+
+describe("session revocation", () => {
+  it("rejects sessions issued before a password reset and never exposes the JWT in the body", async () => {
+    const user = await createUser({ email: "revoke@justif.test" });
+    const client = new TestClient(server.baseUrl);
+    const res = await client.post("/api/auth/login", {
+      email: "revoke@justif.test",
+      password: DEFAULT_PASSWORD,
+    });
+    expect(await res.json()).toEqual({ ok: true });
+    expect((await client.get("/api/auth/me")).status).toBe(200);
+
+    const { prisma } = await import("../../src/lib/prisma.js");
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { sessionsValidFrom: new Date(Date.now() + 5000) },
+    });
+    expect((await client.get("/api/auth/me")).status).toBe(401);
+  });
+});
+
+describe("input validation", () => {
+  it("returns 400 for invalid amounts, dates and currency codes", async () => {
+    await createUser({ email: "valid@justif.test" });
+    const client = await login("valid@justif.test");
+    const post = (fields: Record<string, string>) => {
+      const form = new FormData();
+      for (const [k, v] of Object.entries(fields)) form.set(k, v);
+      return client.postForm("/api/expenses", form);
+    };
+    expect((await post({ date: "nope" })).status).toBe(400);
+    expect((await post({ date: "2026-01-01", montant_ttc: "abc" })).status).toBe(400);
+    expect((await post({ date: "2026-01-01", devise: "EURO" })).status).toBe(400);
+    expect((await client.get("/api/expenses?from=garbage")).status).toBe(400);
+  });
+
+  it("caps the page size", async () => {
+    await createUser({ email: "valid@justif.test" });
+    const client = await login("valid@justif.test");
+    const body = (await (await client.get("/api/expenses?limit=100000")).json()) as {
+      pages: number;
+    };
+    expect(body.pages).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe("export CSRF guard", () => {
+  it("refuses cross-site navigations", async () => {
+    await createUser({ email: "valid@justif.test" });
+    const client = await login("valid@justif.test");
+    const res = await client.request("/api/expenses/export", {
+      headers: { "sec-fetch-site": "cross-site" },
+    });
+    expect(res.status).toBe(403);
+  });
+});

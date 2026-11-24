@@ -82,6 +82,57 @@ function parseExpenseBody(body: Record<string, string>) {
   };
 }
 
+const MAX_TEXT = 500;
+
+// Returns an error message when the parsed body contains an unusable value, so bad
+// input yields a 400 instead of a database error / 500.
+function validateExpenseBody(parsed: ReturnType<typeof parseExpenseBody>): string | null {
+  if (parsed.date && Number.isNaN(parsed.date.getTime())) return "Invalid date";
+  for (const key of ["montant_ttc", "montant_ht", "tva"] as const) {
+    const value = parsed[key];
+    if (value !== undefined && !Number.isFinite(value)) return `Invalid ${key}`;
+  }
+  if (parsed.devise !== undefined && !/^[A-Za-z]{3}$/.test(parsed.devise)) {
+    return "Invalid currency code";
+  }
+  for (const key of [
+    "fournisseur",
+    "numero_reference",
+    "categorie",
+    "description",
+    "pays",
+    "langue_detectee",
+  ] as const) {
+    const value = parsed[key];
+    if (value !== undefined && value.length > MAX_TEXT) return `${key} is too long`;
+  }
+  return null;
+}
+
+function isValidDateParam(value: string | undefined): boolean {
+  return value === undefined || value === "" || !Number.isNaN(new Date(value).getTime());
+}
+
+// Rejects the request when ?from= / ?to= aren't valid dates.
+function rejectInvalidRange(req: Request, res: Response): boolean {
+  const { from, to } = req.query as Record<string, string | undefined>;
+  if (!isValidDateParam(from) || !isValidDateParam(to)) {
+    res.status(400).json({ error: "Invalid from/to date" });
+    return true;
+  }
+  return false;
+}
+
+// Blocks cross-site navigations (e.g. a malicious page linking to the export URL,
+// which would otherwise flip expense statuses via a state-changing GET).
+function rejectCrossSite(req: Request, res: Response): boolean {
+  if (req.headers["sec-fetch-site"] === "cross-site") {
+    res.status(403).json({ error: "Cross-site requests are not allowed" });
+    return true;
+  }
+  return false;
+}
+
 // Resolves whose expenses to display: the caller themselves, or,
 // for a caller holding requiredPermission, another user via ?userId= (global view by tab).
 async function resolveTargetUserId(
@@ -162,8 +213,9 @@ router.get("/", async (req, res) => {
 
   const where = buildWhere({ from, to, categorie, devise, q, status }, targetUserId);
 
-  const pageNum = Math.max(1, Number(page));
-  const limitNum = Math.max(1, Number(limit));
+  if (rejectInvalidRange(req, res)) return;
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
   const allowedSort = [
     "date",
     "fournisseur",
@@ -206,6 +258,11 @@ router.post(
       const parsed = parseExpenseBody(req.body);
       if (!parsed.date) {
         res.status(400).json({ error: "Date required" });
+        return;
+      }
+      const invalid = validateExpenseBody(parsed);
+      if (invalid) {
+        res.status(400).json({ error: invalid });
         return;
       }
 
@@ -272,6 +329,11 @@ router.patch("/:id", async (req, res) => {
     }
 
     const parsed = parseExpenseBody(req.body);
+    const invalid = validateExpenseBody(parsed);
+    if (invalid) {
+      res.status(400).json({ error: invalid });
+      return;
+    }
     const defaultCurrency = await getDefaultCurrency();
 
     const nextDate = parsed.date ?? existing.date;
@@ -434,6 +496,7 @@ router.delete("/:id", async (req, res) => {
 // Before generating an export, returns which expenses in the current filter have already
 // been included in a previous report, so the user can choose to re-include them or not.
 router.get("/export-overlap", async (req, res) => {
+  if (rejectInvalidRange(req, res)) return;
   const targetUserId = await resolveTargetUserId(req, res, "EXPORT");
   if (!targetUserId) return;
 
@@ -472,6 +535,7 @@ router.get("/export-overlap", async (req, res) => {
 });
 
 router.get("/export", async (req, res) => {
+  if (rejectCrossSite(req, res) || rejectInvalidRange(req, res)) return;
   const targetUserId = await resolveTargetUserId(req, res, "EXPORT");
   if (!targetUserId) return;
 

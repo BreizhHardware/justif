@@ -132,7 +132,7 @@ router.patch("/:id", async (req, res) => {
     }
   }
 
-  const data: { active?: boolean; passwordHash?: string } = {};
+  const data: { active?: boolean; passwordHash?: string; sessionsValidFrom?: Date } = {};
   if (active !== undefined) data.active = active;
   if (password) {
     if (password.length < 8) {
@@ -140,6 +140,7 @@ router.patch("/:id", async (req, res) => {
       return;
     }
     data.passwordHash = await bcrypt.hash(password, 12);
+    data.sessionsValidFrom = new Date();
   }
 
   const user = await prisma.$transaction(async (tx) => {

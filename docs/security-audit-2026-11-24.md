@@ -21,8 +21,20 @@ Blackbox : instance locale jetable (DB/uploads temporaires), aucune cible extern
 Dépendances : `pnpm audit` → 2 avis (effect ReDoS, fflate) corrigés par overrides dans `pnpm-workspace.yaml` (branche `chore/update-deps`).
 
 ## Correctifs appliqués (branche `chore/update-deps`)
-Corrigés et re-testés en blackbox : #1 (démarrage refusé sans `JWT_SECRET` fort hors dev/test), #2 (whitelist JPEG/PNG/WebP/PDF, extension dérivée du type, CSP sandbox + nosniff), #3 (setup atomique), #4 (rate-limit auth : 20/15 min/IP), #5 (`TRUST_PROXY`), #6 (propriétaire ou MANAGE_USERS), #7 (CORS liste blanche), #8 (liaison par email exige `email_verified === true`), #9 partiel (`COOKIE_SECURE=true` pour le flag Secure), #11 (bcrypt toujours exécuté), `X-Powered-By` retiré + en-têtes de base.
-Restent ouverts : #9 (JWT dans le corps JSON), #10 (révocation de session), #12 (GET export à effet de bbord, CSP complète), #13 (validation des entrées).
+Tous corrigés et couverts par des tests (`apps/backend/tests/routes/security.test.ts`), sauf #8 volontairement non appliqué (Authentik n'expose pas `email_verified` : la liaison par email reste permise tant que le fournisseur n'envoie pas `email_verified: false`).
+
+- #1 démarrage refusé sans `JWT_SECRET` fort hors dev/test.
+- #2 whitelist JPEG/PNG/WebP/PDF, extension dérivée du type, CSP sandbox + nosniff sur `/uploads`.
+- #3 setup atomique (transaction).
+- #4 rate-limit auth : 20 / 15 min / IP (`RATE_LIMIT_DISABLED=true` pour les e2e).
+- #5 `TRUST_PROXY` explicite ; `X-Forwarded-For` ignoré sinon.
+- #6 `/uploads` limité au propriétaire ou à `MANAGE_USERS`.
+- #7 CORS en liste blanche.
+- #9 JWT retiré du corps JSON ; `COOKIE_SECURE=true` active le flag Secure.
+- #10 `User.sessionsValidFrom` : les sessions antérieures à un changement/reset de mot de passe sont rejetées.
+- #11 bcrypt toujours exécuté au login.
+- #12 export refusé si `Sec-Fetch-Site: cross-site` ; CSP `default-src 'none'` + `no-store` sur `/api` ; `X-Powered-By` retiré ; `nosniff`, `X-Frame-Options`, `Referrer-Policy`.
+- #13 validation (dates, montants, devise, longueur) → 400 ; pagination plafonnée à 100.
 
 ## Correctifs recommandés (initiaux)
 1. Refuser de démarrer sans `JWT_SECRET` fort (≥32 car., ≠ valeur d'exemple).

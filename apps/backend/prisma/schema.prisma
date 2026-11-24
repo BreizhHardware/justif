@@ -56,6 +56,9 @@ model User {
   dashboardBreakdownBy String   @default("category")
   dashboardGranularity String   @default("month")
   createdAt            DateTime @default(now())
+  // Session tokens issued before this instant are rejected (set on password
+  // change/reset so a stolen session dies with the old password).
+  sessionsValidFrom    DateTime?
 
   expenses            Expense[]
   reports             ExpenseReport[]

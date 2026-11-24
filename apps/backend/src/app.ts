@@ -60,6 +60,12 @@ export function createApp() {
       credentials: true,
     }),
   );
+  // API responses are data, never documents: forbid scripting/framing outright.
+  app.use("/api", (_req, res, next) => {
+    res.setHeader("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'");
+    res.setHeader("Cache-Control", "no-store");
+    next();
+  });
   app.use(cookieParser());
   app.use(express.json());
   // Receipts contain private per-user data: authentication required.
