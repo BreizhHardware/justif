@@ -91,6 +91,7 @@ export default function ExpensesPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [modalImage, setModalImage] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Partial<Expense>>({});
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -180,16 +181,24 @@ export default function ExpensesPage() {
   }
 
   function startEdit(expense: Expense) {
+    setEditError(null);
     setEditingId(expense.id);
     setEditValues(expense);
   }
 
   async function saveEdit() {
     if (!editingId) return;
-    await apiFetch(`/api/expenses/${editingId}`, {
-      method: "PATCH",
-      body: JSON.stringify(editValues),
-    });
+    setEditError(null);
+    try {
+      await apiFetch(`/api/expenses/${editingId}`, {
+        method: "PATCH",
+        body: JSON.stringify(editValues),
+      });
+    } catch (err) {
+      // Keep the row open so the user can fix the value the server rejected.
+      setEditError(err instanceof Error ? err.message : "Error");
+      return;
+    }
     setEditingId(null);
     loadExpenses();
   }
@@ -525,6 +534,7 @@ export default function ExpensesPage() {
                   >
                     {isEditing ? (
                       <Input
+                        maxLength={500}
                         value={editValues.description ?? ""}
                         onChange={(e) =>
                           setEditValues({ ...editValues, description: e.target.value })
@@ -610,13 +620,20 @@ export default function ExpensesPage() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     {isEditing ? (
-                      <div className="flex justify-end gap-2">
-                        <Button size="sm" variant="primary" onClick={saveEdit}>
-                          OK
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
-                          <X size={14} />
-                        </Button>
+                      <div className="flex flex-col items-end gap-1">
+                        {editError && (
+                          <span role="alert" className="max-w-[12rem] text-xs text-red-600">
+                            {editError}
+                          </span>
+                        )}
+                        <div className="flex justify-end gap-2">
+                          <Button size="sm" variant="primary" onClick={saveEdit}>
+                            OK
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
+                            <X size={14} />
+                          </Button>
+                        </div>
                       </div>
                     ) : (
                       <div className="flex items-center justify-end gap-2">

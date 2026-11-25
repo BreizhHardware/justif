@@ -1,13 +1,13 @@
 # Single image: backend + frontend + internal proxy, one exposed port.
 
 # ---------- Backend build ----------
-FROM node:24-bookworm-slim AS backend-build
+FROM node:26-bookworm-slim AS backend-build
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends openssl python3 make g++ \
     && rm -rf /var/lib/apt/lists/*
 
-RUN corepack enable && corepack prepare pnpm@11.10.0 --activate
+RUN npm install -g pnpm@12.7.0
 ENV PNPM_CONFIG_VERIFY_DEPS_BEFORE_RUN=false
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
@@ -29,10 +29,10 @@ RUN pnpm --filter backend run db:generate && pnpm --filter backend run build
 RUN pnpm deploy --filter backend --prod --legacy /deploy/backend
 
 # ---------- Frontend build ----------
-FROM node:24-bookworm-slim AS frontend-build
+FROM node:26-bookworm-slim AS frontend-build
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@11.10.0 --activate
+RUN npm install -g pnpm@12.7.0
 ENV PNPM_CONFIG_VERIFY_DEPS_BEFORE_RUN=false
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
@@ -50,13 +50,13 @@ RUN pnpm --filter frontend run build
 RUN pnpm deploy --filter frontend --legacy /deploy/frontend
 
 # ---------- Runtime ----------
-FROM node:24-bookworm-slim AS runtime
+FROM node:26-bookworm-slim AS runtime
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends openssl \
     && rm -rf /var/lib/apt/lists/*
 
-RUN corepack enable && corepack prepare pnpm@11.10.0 --activate
+RUN npm install -g pnpm@12.7.0
 ENV PNPM_CONFIG_VERIFY_DEPS_BEFORE_RUN=false
 
 RUN groupadd -r app && useradd -r -m -g app -d /home/app app
@@ -74,6 +74,9 @@ RUN mkdir -p /app/backend/uploads /app/backend/db \
 
 # Single public port. BACKEND_PORT/FRONTEND_PORT are internal ports.
 ENV PORT=3000
+# The image's internal proxy is one hop in front of the backend. Behind your own reverse
+# proxy, set TRUST_PROXY=2 so the real client IP is read from X-Forwarded-For.
+ENV TRUST_PROXY=1
 ENV BACKEND_PORT=3001
 ENV FRONTEND_PORT=3002
 

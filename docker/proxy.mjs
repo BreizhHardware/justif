@@ -17,8 +17,15 @@ const server = http.createServer((req, res) => {
   const pathname = (req.url ?? "/").split("?")[0];
   const port = targetPortFor(pathname);
 
+  // Append the address of whoever connected to us, so the backend (TRUST_PROXY=1 in the
+  // image) sees the real client IP, not 127.0.0.1. Anything the client put in
+  // X-Forwarded-For stays to the left and is ignored by Express.
+  const remote = req.socket.remoteAddress ?? "";
+  const forwardedFor = [req.headers["x-forwarded-for"], remote].filter(Boolean).join(", ");
+  const headers = { ...req.headers, "x-forwarded-for": forwardedFor };
+
   const proxyReq = http.request(
-    { hostname: "127.0.0.1", port, path: req.url, method: req.method, headers: req.headers },
+    { hostname: "127.0.0.1", port, path: req.url, method: req.method, headers },
     (proxyRes) => {
       res.writeHead(proxyRes.statusCode ?? 502, proxyRes.headers);
       proxyRes.pipe(res);

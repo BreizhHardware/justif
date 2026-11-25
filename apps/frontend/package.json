@@ -23,32 +23,32 @@
     "@nivo/core": "^0.99.0",
     "@nivo/line": "^0.99.0",
     "@nivo/pie": "^0.99.0",
-    "i18next": "^26.3.5",
+    "i18next": "^27.2.5",
     "lucide-react": "^1.0.0",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
-    "react-i18next": "^17.0.8"
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-i18next": "^18.0.3"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4.3.2",
-    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/jest-dom": "^8.0.0",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^24.0.0",
+    "@types/node": "^26.0.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.3",
-    "@vitejs/plugin-rsc": "^0.5.26",
-    "@vitest/coverage-v8": "^4.1.10",
+    "@vitejs/plugin-rsc": "^0.5.37",
+    "@vitest/coverage-v8": "^5.0.0",
     "autoprefixer": "^10.4.20",
-    "jsdom": "^29.1.1",
+    "jsdom": "^31.0.1",
     "postcss": "^8.4.47",
     "tailwindcss": "^4.0.0",
     "typescript": "^7.0.0",
-    "vinext": "^0.2.0",
+    "vinext": "^1.0.0",
     "vite": "^8.0.0",
-    "vitest": "^4.1.10"
+    "vitest": "^5.0.0"
   },
   "engines": {
     "node": ">=22"

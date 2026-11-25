@@ -35,6 +35,7 @@ export default function UploadPage() {
   const [ocrError, setOcrError] = useState<string | null>(null);
   const [form, setForm] = useState<OcrResult | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   async function handleFile(selected: File) {
     setFile(selected);
@@ -87,6 +88,7 @@ export default function UploadPage() {
   async function handleSave() {
     if (!form) return;
     setSaving(true);
+    setSaveError(null);
     try {
       const formData = new FormData();
       if (file) formData.append("fichier", file);
@@ -104,6 +106,8 @@ export default function UploadPage() {
 
       await apiFetch("/api/expenses", { method: "POST", body: formData });
       router.push("/expenses");
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : t("upload.saveError"));
     } finally {
       setSaving(false);
     }
@@ -278,11 +282,19 @@ export default function UploadPage() {
                   <Label htmlFor="description">{t("expenses.description")}</Label>
                   <Input
                     id="description"
+                    maxLength={500}
                     value={form.description ?? ""}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                   />
                 </div>
               </div>
+
+              {saveError && (
+                <div role="alert" className="flex items-center gap-2 text-sm text-red-600">
+                  <AlertTriangle size={16} />
+                  {saveError}
+                </div>
+              )}
 
               <div className="flex gap-3 border-t border-slate-100 pt-5 dark:border-slate-800">
                 <Button type="submit" disabled={saving}>

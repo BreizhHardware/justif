@@ -2,6 +2,8 @@ services:
   app:
     build: .
     ports:
+      # Behind a reverse proxy with TRUST_PROXY=2, publish only to localhost / a private
+      # network (e.g. "127.0.0.1:3000:3000") so clients cannot forge X-Forwarded-For.
       - "3000:3000"
     volumes:
       - ./data/uploads:/app/backend/uploads
