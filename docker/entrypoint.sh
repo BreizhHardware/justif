@@ -6,13 +6,15 @@ BACKEND_PORT="${BACKEND_PORT:-3001}"
 FRONTEND_PORT="${FRONTEND_PORT:-3002}"
 
 cd /app/backend
-pnpm run db:deploy
+# Call the binaries directly: pnpm 12 would try to resolve/write a lockfile at startup,
+# which fails for the non-root user (read-only app dirs).
+./node_modules/.bin/prisma migrate deploy
 # Loopback only: the backend must be reached through the internal proxy (trusted X-Forwarded-For).
 BACKEND_HOST=127.0.0.1 PORT="$BACKEND_PORT" node dist/index.js &
 BACKEND_PID=$!
 
 cd /app/frontend
-PORT="$FRONTEND_PORT" pnpm run start &
+PORT="$FRONTEND_PORT" ./node_modules/.bin/vinext start &
 FRONTEND_PID=$!
 
 cd /app
